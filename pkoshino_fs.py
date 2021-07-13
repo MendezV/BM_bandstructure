@@ -232,17 +232,17 @@ def eigsystem2(numbers):
     #a= np.linalg.eigvalsh(Hxi) - en_shift
     (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
     return kx, ky, Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
-    
+
 
 with concurrent.futures.ProcessPoolExecutor() as executor:
     results = executor.map(eigsystem2, k_points_all, chunksize=int(np.size(k_points_all)/8))
-    
+
     for result in results:
         k_points_all2.append([result[0],result[1]])
         spect.append(np.real(result[2]))
         #print(np.shape(cois[1]))
         funcs.append(result[3])
-    
+
 
 
 Edisp=np.array(spect)
@@ -264,10 +264,8 @@ for k_x_i in range(kn_pointsx):
             """
             energy_cut2[k_x_i,k_y_i] =Edisp[ind,1];
 
-"""
+
 print(np.max(energy_cut2), np.min(energy_cut2))
 plt.imshow(energy_cut2,cmap='jet')
 plt.colorbar()
 plt.show()
-
-"""
