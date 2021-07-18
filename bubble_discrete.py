@@ -1,43 +1,240 @@
-#integrates a dispersion to get the polarization bubble
-
-import concurrent.futures
+#implements the Koshino continuum model
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import linalg as la
 import sys
 import scipy
+np.set_printoptions(threshold=sys.maxsize)
+import time
 
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#       DEFINING PARAMETERS THAT SPECIFY THE GEOMETRY OF THE MOIRE RECIPROCAL VECTOR
+#
+####################################################################################
+####################################################################################
+####################################################################################
 
-################################
-################################
-################################ddd
-################################
-#defining triangular lattice
-a=1
-a_1=a*np.array([1,0,0])
-a_2=a*np.array([1/2,np.sqrt(3)/2,0])
+##########################################
+#parameters energy calculation
+##########################################
+hv = 2.1354; # eV
+theta=1.05*np.pi/180  #1.05*np.pi/180 #twist Angle
+mu=0.289/1000 #chemical potential
+u = 0.0797; # eV
+up = 0.0975; # eV
+w = np.exp(1j*2*np.pi/3); # enters into the hamiltonian
+en0 = 1.6598/1000; # band energy of the flat bands, eV
+en_shift = 10.0/1000; #10/1000; # to sort energies correctly, eV
+art_gap = 0.0/1000; # artificial gap
+paulix=np.array([[0,1],[1,0]])
+pauliy=np.array([[0,-1j],[1j,0]])
+##########################################
+#lattice vectors
+##########################################
+#i vectror j coordinate
+a=np.array([[1,0],[1/2,np.sqrt(3)/2]])
+astar=(2*np.pi)*np.array([[1,-1/np.sqrt(3)],[0,2/np.sqrt(3)]])
+Rotth1=np.array([[np.cos(theta/2),-np.sin(theta/2)],[np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix +thet
+Rotth2=np.array([[np.cos(theta/2),np.sin(theta/2)],[-np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix -thet
+
+a1=np.dot(a,Rotth1) #top layer
+a2=np.dot(a,Rotth2) #bottom layer
+astar1=np.dot(astar,Rotth1) #top layer
+astar2=np.dot(astar,Rotth2)  #bottom layer
+
+GM1=astar1[0,:]-astar2[0,:] #see Koshino-liang fu paper for further illustration (going off towards negative quadrant in the middle of the edge of the MBZ)
+GM2=astar1[1,:]-astar2[1,:] #see Koshino-liang fu paper for further illustration (Going horizontal towards middle of the edge of the MBZ)
+LM1=2*np.pi*np.array([GM2[1],-GM2[0]])/la.det(np.array([GM1,GM2]))
+LM2=2*np.pi*np.array([-GM1[1],GM1[0]])/la.det(np.array([GM1,GM2]))
+
+LM=np.sqrt(np.dot(LM1,LM1)) #moire period 2/np.sin(theta/2)
+GM=np.sqrt(np.dot(GM1,GM1)) #reciprocal space period  8*np.pi/np.sqrt(3)*np.sin(theta/2)
+
+##volume of the MBZ
 zhat=np.array([0,0,1])
-
-Vol_real=np.dot(np.cross(a_1,a_2),zhat)
-b_1=np.cross(a_2,zhat)*(2*np.pi)/Vol_real
-b_2=np.cross(zhat,a_1)*(2*np.pi)/Vol_real
+b_1=np.array([GM1[0],GM1[1],0])
+b_2=np.array([GM2[0],GM2[1],0])
 Vol_rec=np.dot(np.cross(b_1,b_2),zhat)
+#print(np.sqrt(np.dot(LM1,LM1)),0.5/np.sin(theta/2)) #verify the relation with the moire period
 
-a_1=a_1[0:2]
-a_2=a_2[0:2]
-b_1=b_1[0:2]
-b_2=b_2[0:2]
+##########################################
+#Valley locations
+##########################################
+#1,2 label layer and  + - labels valley from the  original graphene dispersion
+Kplus1=-(2*astar1[0,:]+astar1[1,:])/3
+Kplus2=-(2*astar2[0,:]+astar2[1,:])/3
+Kmin1=+(2*astar1[0,:]+astar1[1,:])/3
+Kmin2=+(2*astar2[0,:]+astar2[1,:])/3
+Ktopplus=Kplus2-GM1
+Kbottommin=Kmin2+GM1
+Mpoint=(Kplus1+Kplus2)/2 #position of the M point in the - valley
+Mpointneg=-(Kplus1+Kplus2)/2 #position of the M point in the - valley
 
-def hexagon_a(pos):
-    Radius_inscribed_hex=1.000000000000001*4*np.pi/3
-    x, y = map(abs, pos) #only first quadrant matters
-    return y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
+##########################################
+#definitions of the BZ grid
+##########################################
+nbands=4 #Number of bands
+k_window_sizex = GM2[0]/2 #4*(np.pi/np.sqrt(3))*np.sin(theta/2) (half size of  MBZ from edge to edge)
+k_window_sizey = Ktopplus[1]   #(1/np.sqrt(3))*GM2[0] ( half size of MBZ from k to k' along a diagonal)
+kn_pointsx = 61
+kn_pointsy = 61
 
 
-#getting the first brilloin zone from the Voronoi decomp of the recipprocal lattice
-#input: reciprocal lattice vectors
-#output: Points that delimit the FBZ -
-#high symmetry points (for now just the triangular lattice will be implemented)
+
+gridp=np.arange(-50,50,1) #grid to calculate wavefunct
+n1,n2=np.meshgrid(gridp,gridp) #grid to calculate wavefunct
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      ENERGY DISPERSION IN THE CONTINUUM MODEL
+#
+####################################################################################
+####################################################################################
+####################################################################################
+tp=1 
+T=0.01*tp
+mu=-1.5
+
+def eigsystem(kx, ky, xi, nbands, n1, n2):
+    ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
+    return [ed,ed],ed
+
+
+
+def Disp(kx, ky,mu):
+    ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))
+    return ed-mu
+
+x = np.linspace(-GM, GM, 300)
+X, Y = np.meshgrid(x, x)
+Z = Disp(X, Y, mu)
+
+band_max=np.max(Z)
+band_min=np.min(Z)
+
+# c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
+# plt.show()
+
+def eigsystem2(kx, ky, xi, nbands, n1, n2):
+    #we diagonalize a matrix made up
+    qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
+    qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
+    vals = np.sqrt(qx_dif**2+qy_dif**2)
+    ind_to_sum = np.where(vals <= 4*GM) #Finding the indices where the difference of  q lies inside threshold
+    n1_val = n1[ind_to_sum]
+    n2_val = n2[ind_to_sum]
+    N = np.shape(ind_to_sum)[1]
+
+    qx = kx+GM1[0]*n1_val+GM2[0]*n2_val
+    qy = ky+GM1[1]*n1_val+GM2[1]*n2_val
+
+    if xi<0:
+        qx_1= (+(qx-Kmin1[0])*np.cos(theta/2) - (qy-Kmin1[1])*np.sin(theta/2) ) #rotated momenta
+        qy_1= (+(qx-Kmin1[0])*np.sin(theta/2) + (qy-Kmin1[1])*np.cos(theta/2) ) #rotated momenta
+        qx_2= (+(qx-Kmin2[0])*np.cos(theta/2) + (qy-Kmin2[1])*np.sin(theta/2) ) #rotated momenta
+        qy_2= (-(qx-Kmin2[0])*np.sin(theta/2) + (qy-Kmin2[1])*np.cos(theta/2) ) #rotated momenta
+    else:
+        qx_1= (+(qx-Kplus1[0])*np.cos(theta/2) - (qy-Kplus1[1])*np.sin(theta/2) ) #rotated momenta
+        qy_1= (+(qx-Kplus1[0])*np.sin(theta/2) + (qy-Kplus1[1])*np.cos(theta/2) ) #rotated momenta7/89+-78
+        qx_2= (+(qx-Kplus2[0])*np.cos(theta/2) + (qy-Kplus2[1])*np.sin(theta/2) ) #rotated momenta
+        qy_2= (-(qx-Kplus2[0])*np.sin(theta/2) + (qy-Kplus2[1])*np.cos(theta/2) ) #rotated moment
+
+    #the following block generates the momentum space rep of the interlayer coupling matrix
+    matG2=np.zeros([N,N])
+    matG4=np.zeros([N,N])
+    for i in range(N):
+        indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]))
+        if np.size(indi1)>0:
+            matG2[i,indi1]=1
+        indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]-xi))
+        if np.size(indi1)>0:
+            matG4[i,indi1]=1
+
+    #Matrices that  appeared as coefficients of the real space ops
+    #full product is the kronecker product of both matrices
+    matu1=np.array([[u,up],[up,u]])
+    matu2=np.array([[u,up*(w**(-xi))],[up*(w**(xi)),u]])
+
+    #assembling the matrix to be diagonalized
+    U=(np.kron(matu1,np.eye(N,N))+np.kron(matu2,matG2)+np.kron(matu2.T,matG4)) #interlayer coupling
+    H1=-hv*(np.kron(xi*paulix,np.diag(qx_1))+np.kron(pauliy,np.diag(qy_1)))
+    H2=-hv*(np.kron(xi*paulix,np.diag(qx_2))+np.kron(pauliy,np.diag(qy_2)))
+    Hxi=np.bmat([[H1, (U.conj()).T], [U, H2]]) #Full matrix
+    #a= np.linalg.eigvalsh(Hxi) - en_shift
+    (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
+
+
+#print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#     EVALUATING IN THE FBZ
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+s=time.time()
+
+Nsamp=6
+n_1=np.arange(0,Nsamp,1)
+n_2=np.arange(0,Nsamp,1)
+k1=np.array([1,0])
+k2=np.array([1/2,np.sqrt(3)/2])
+n_1p,n_2p=np.meshgrid(n_1,n_2)
+G1=k1*Nsamp
+G2=k2*Nsamp
+
+XsLatt=(GM/Nsamp)*(k1[0]*n_1p+k2[0]*n_2p).T
+YsLatt=(GM/Nsamp)*(k1[1]*n_1p+k2[1]*n_2p).T
+S=np.empty((0))
+for l in range(Nsamp*Nsamp):
+    i=int(l%Nsamp)
+    j=int((l-i)/Nsamp)
+    #print(XsLatt[i,j],YsLatt[i,j])
+    E=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0][1]
+    #print(E)
+    S=np.append(S,E)
+
+Z1= S.flatten() 
+e=time.time()
+print("time for dispersion", e-s)
+# plt.scatter(XsLatt,YsLatt, c=Z1)
+# plt.show()
+
+
+Z= np.reshape(S,[Nsamp,Nsamp])
+n_1pp=(n_1p+int(Nsamp/2))%Nsamp
+n_2pp=(n_2p+int(Nsamp/2))%Nsamp
+
+Z2=Z[n_1pp,n_2pp]
+
+# plt.scatter(XsLatt,YsLatt, c=Z2.flatten())
+# plt.show()
+
+
+
+
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      GEOMETRY AND RESHAPING ARRAYS
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
 from scipy.spatial import Voronoi, voronoi_plot_2d
 def FBZ_points(b_1,b_2):
     #creating reciprocal lattice
@@ -82,7 +279,103 @@ def FBZ_points(b_1,b_2):
 
     return Vertices_list, Gamma, K, Kp, M, Mp
 
-Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(b_1,b_2)
+Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(G1,G2)  #FOR RESHAPING THE STORED ARRAY
+Vertices_list_MBZ, Gamma_MBZ, K_MBZ, Kp_MBZ, M_MBZ, Mp_MBZ=FBZ_points(GM1,GM2) #DESCRIBING THE MBZ 
+
+##DIFFERENT HEXAGONS USED TO DELIMIT THE REGIONS 
+## THAT ARE GOING TO BE REARANGED IN THE CONVENTIONAL UNIT CELL
+VL=np.array(Vertices_list)
+
+VL2=np.array(VL)
+VL2[:,0]=VL[:,0]+G1[0]
+VL2[:,1]=VL[:,1]+G1[1]
+Vertices_list2=list(VL2)
+
+VL3=np.array(VL)
+VL3[:,0]=VL[:,0]+G2[0]
+VL3[:,1]=VL[:,1]+G2[1]
+Vertices_list3=list(VL3)
+
+VL4=np.array(VL)
+VL4[:,0]=VL[:,0]+G2[0]+G1[0]
+VL4[:,1]=VL[:,1]+G2[1]+G1[1]
+Vertices_list4=list(VL4)
+
+
+##METHOD THAT CHECKS WHETHER A POINT IS INSIDE A GIVEN CONVEX POLYGON
+def is_within_polygon(polygon, point):
+    A = []
+    B = []
+    C = []  
+    for i in range(len(polygon)):
+        p1 = polygon[i]
+        p2 = polygon[(i + 1) % len(polygon)]
+
+        # calculate A, B and C
+        a = -(p2[1] - p1[1])
+        b = p2[0] - p1[0]
+        c = -(a * p1[0] + b * p1[1])
+        
+        A.append(a)
+        B.append(b)
+        C.append(c)
+
+    D = []
+    for i in range(len(A)):
+        d = A[i] * point[0] + B[i] * point[1] + C[i]
+        D.append(d)
+
+    t1 = np.all([d >= 0 for d in D])
+    t2 = np.all([d <= 0 for d in D])
+    x=t1 or t2
+    return x
+
+
+
+XsLatt_hex=(k1[0]*n_1p+k2[0]*n_2p).T
+YsLatt_hex=(k1[1]*n_1p+k2[1]*n_2p).T
+for l in range(Nsamp*Nsamp):
+    i=int(l%Nsamp)
+    j=int((l-i)/Nsamp)
+    point=[ XsLatt_hex[i,j],YsLatt_hex[i,j] ]
+    if is_within_polygon(Vertices_list, point ):
+        XsLatt_hex[i,j]=XsLatt_hex[i,j]
+        YsLatt_hex[i,j]=YsLatt_hex[i,j]
+    elif is_within_polygon(Vertices_list2,  point ):
+        XsLatt_hex[i,j]=XsLatt_hex[i,j]-G1[0]
+        YsLatt_hex[i,j]=YsLatt_hex[i,j]-G1[1]
+    elif is_within_polygon(Vertices_list3, point):
+        XsLatt_hex[i,j]=XsLatt_hex[i,j]-G2[0]
+        YsLatt_hex[i,j]=YsLatt_hex[i,j]-G2[1]
+    elif is_within_polygon(Vertices_list4,  point):
+        XsLatt_hex[i,j]=XsLatt_hex[i,j]-G2[0]-G1[0]
+        YsLatt_hex[i,j]=YsLatt_hex[i,j]-G2[1]-G1[1]
+    else:
+        XsLatt_hex[i,j]=XsLatt_hex[i,j]-G1[0]
+        YsLatt_hex[i,j]=YsLatt_hex[i,j]-G1[1]
+
+VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
+KX_in=(GM/Nsamp)*XsLatt_hex
+KY_in=(GM/Nsamp)*YsLatt_hex
+# plt.plot(VV[:,0],VV[:,1])
+# plt.scatter(KX_in,KY_in, s=30, c=Z1)
+# plt.show()
+
+# plt.plot(VV[:,0],VV[:,1])
+# plt.scatter(KX_in,KY_in, s=30, c=Z2)
+# plt.show()
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      PATH IN RECIPROCAL SPACE
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+
 
 #linear parametrization accross different points in the BZ
 def linpam(Kps,Npoints_q):
@@ -95,148 +388,101 @@ def linpam(Kps,Npoints_q):
 
     return linparam
 
-VV=Vertices_list+[Vertices_list[0]]
+
 Nt=1000
 kpath=linpam(VV,Nt)
 
-def hexsamp2(npoints_x,npoints_y):
-    ##########################################
-    #definitions of the BZ grid
-    ##########################################
-    k_window_sizey = K[2][1] #4*(np.pi/np.sqrt(3))*np.sin(theta/2) (half size of  MBZ from edge to edge)
-    k_window_sizex = K[1][0]   #(1/np.sqrt(3))*GM2[0] ( half size of MBZ from k to k' along a diagonal)
-    kn_pointsx = npoints_x
-    kn_pointsy = npoints_y
-    kx_rangex = np.linspace(-k_window_sizex,k_window_sizex,kn_pointsx)
-    ky_rangey = np.linspace(-k_window_sizey,k_window_sizey,kn_pointsy)
-    step_x = kx_rangex[1]-kx_rangex[0]
-    step_y = ky_rangey[2]-ky_rangey[1]
-
-    tot_kpoints=kn_pointsx*kn_pointsy
-    step = min([ step_x, step_y])
-    bz = np.zeros([kn_pointsx,kn_pointsy])
-
-    ##########################################
-    #check if a point is inside of an Hexagon inscribed in a circle of radius Radius_inscribed_hex
-    ##########################################
-    Radius_inscribed_hex=1.00001*k_window_sizex
-    def hexagon(pos):
-        x, y = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
-        return y < (3**0.5) * min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
-
-    ##########################################
-    #Setting up kpoint arrays
-    ##########################################
-    #Number of relevant kpoints
-    for x in range(kn_pointsx):
-        for y in range(kn_pointsy):
-            if hexagon((kx_rangex[x],ky_rangey[y])):
-                bz[x,y]=1
-    num_kpoints=int(np.sum(bz))
-
-    #x axis of the BZ along Y axis of the plot
-    #plt.imshow(bz)
-    #plt.gca().set_aspect('equal', adjustable='box')
-    #plt.show()
-
-
-    #filling kpoint arrays
-
-    KX2=[]
-    KY2=[]
-    for x in range(kn_pointsx):
-        for y in range(kn_pointsy):
-
-            if hexagon((kx_rangex[x],ky_rangey[y])):
-                #plt.scatter(kx_rangex[x],ky_rangey[y])
-                KX2.append(kx_rangex[x])
-                KY2.append(ky_rangey[y])
-
-    return np.array(KX2),np.array(KY2),step_x*step_y
-ni=60
-KX_in, KY_in, dS_in=hexsamp2(ni,ni)
-print(np.shape(KX_in))
-# plt.scatter(KX_in,KY_in)
-# plt.show()
-
-tp=1 
-T=0.05*tp
-
-
-mu=-5.8
-def Disp(kx,ky,mu):
-    ed=-tp*(2*np.cos(kx)+4*np.cos((kx)/2)*np.cos(np.sqrt(3)*(ky)/2))
-    ed=ed-mu
-    return ed
-
-x = np.linspace(-3.8, 3.8, 300)
-X, Y = np.meshgrid(x, x)
-Z = Disp(X, Y, mu)
-
-band_max=np.max(Z)
-band_min=np.min(Z)
-
-c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
-v = c.collections[0].get_paths()[0].vertices
-xFS2 = v[::10,0]
-yFS2 = v[::10,1]
-KFx2=xFS2[0]
-KFy2=yFS2[0]
-plt.scatter(KFx2,KFy2)
-plt.plot(kpath[:,0],kpath[:,1])
-plt.show()
-
-
-def integrand(qx,qy,kx,ky,w,mu,T):
-    edk=Disp(kx,ky,mu)
-    edkq=Disp(kx+qx,ky+qy,mu)
-    nfk= 1/(np.exp(edk/T)+1)
-    nfkq= 1/(np.exp(edkq/T)+1)
-    eps=0.51
-
-    fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-    return np.imag(fac_p)
-
-
-plt.scatter(KX_in,KY_in, c=((integrand(0.1,0.1,KX_in,KY_in,0.059,mu,T))), s=1)
-plt.colorbar()
-plt.show()
-
-
-# L=[]
-# L=L+[K[1]]+[Gamma]+[Mp[1]]+[[np.pi,0]]
-# Nt=50
-# kpath2=linpam(L,Nt)
-
 L=[]
-L=L+[Gamma]+[K[1]]
-Nt=20
+L=L+[Gamma_MBZ]+[K_MBZ[1]]
+Nt=25
 kpath2=linpam(L,Nt)
 
-Nomegs=40
-maxomeg=2*band_max
-minomeg=0*band_min
-omegas=np.linspace(minomeg,maxomeg,Nomegs)
-#omegas=np.logspace(-5,1,Nomegs)
-t=np.arange(0,len(kpath2),1)
-t_m,omegas_m=np.meshgrid(t,omegas)
+# plt.plot(kpath[:,0],kpath[:,1])
+# plt.plot(kpath2[:,0],kpath2[:,1])
+# plt.show()
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      INTEGRALS
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+dS_in=Vol_rec/(Nsamp*Nsamp)
+xi=1
+def integrand(nx,ny,ek,w,mu,T):
+    edk=ek
+    edkq=ek[nx,ny]
+    nfk= 1/(np.exp(edk/T)+1)
+    nfkq= 1/(np.exp(edkq/T)+1)
+    eps=1e-1
+
+    fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+    return (fac_p)
+
+
+# plt.scatter(KX_in,KY_in, c=np.log10(abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T) +1e-17)), s=30)
+# plt.colorbar()
+# plt.show()
+
+
+# plt.scatter(KX_in,KY_in, c=np.abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T)) , s=30)
+# plt.colorbar()
+# plt.show()
+
+
+Nomegs=15
+maxomeg=band_max*2
+minomeg=0
+omegas=np.linspace(0.01,maxomeg,Nomegs)
 integ=[]
-for t_m_i in t:
+s=time.time()
+for omegas_m_i in omegas:
     sd=[]
-    print(t_m_i,"/",np.size(t))
-    for omegas_m_i in omegas:
-        sd.append( np.sum((integrand(kpath2[t_m_i,0],kpath2[t_m_i,1],KX_in,KY_in,omegas_m_i,mu,T)))*dS_in )
+    for l in range(Nsamp*Nsamp):
+        i=int(l%Nsamp)
+        j=int((l-i)/Nsamp)
+        ek= np.reshape(S,[Nsamp,Nsamp])
+        n_1pp=(n_1p+n_1p[i,j])%Nsamp
+        n_2pp=(n_2p+n_2p[i,j])%Nsamp
+        sd.append( np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in )
         #print(omegas_m_i,t_m_i)
     integ.append(sd)
-integ_arr=np.array(integ)
+integ_arr=np.reshape(np.array(integ),[15,Nsamp,Nsamp])
+e=time.time()
+print("Time for bubble",e-s)
 
+print(np.shape(integ_arr))
+
+
+plt.plot(VV[:,0],VV[:,1])
+plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
+plt.gca().set_aspect('equal')
+plt.show()
+
+# plt.plot(VV[:,0],VV[:,1])
+# plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[5,:,:]) )
+# plt.gca().set_aspect('equal')
+# plt.show()
+
+# plt.plot(VV[:,0],VV[:,1])
+# plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[10,:,:]) )
+# plt.gca().set_aspect('equal')
+# plt.show()
+
+
+
+"""
 limits_X=1
 limits_Y=maxomeg
 N_X=len(kpath2)
 N_Y=Nomegs
 
 
-plt.imshow(integ_arr.T, origin='lower')
+plt.imshow(np.imag(integ_arr.T), origin='lower', aspect='auto')
 
 
 ticks_X=5
@@ -256,11 +502,14 @@ plt.colorbar()
 plt.show()
 
 
-plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,1])
-plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,1])
+plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]), s=30)
+plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]))
+plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]), s=30)
+plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]))
 
 
 # plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
 # plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
 
 plt.show()
+"""

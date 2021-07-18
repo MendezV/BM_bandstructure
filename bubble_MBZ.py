@@ -5,6 +5,7 @@ from scipy import linalg as la
 import sys
 import scipy
 np.set_printoptions(threshold=sys.maxsize)
+import time
 
 ####################################################################################
 ####################################################################################
@@ -51,6 +52,12 @@ LM2=2*np.pi*np.array([-GM1[1],GM1[0]])/la.det(np.array([GM1,GM2]))
 
 LM=np.sqrt(np.dot(LM1,LM1)) #moire period 2/np.sin(theta/2)
 GM=np.sqrt(np.dot(GM1,GM1)) #reciprocal space period  8*np.pi/np.sqrt(3)*np.sin(theta/2)
+
+##volume of the MBZ
+zhat=np.array([0,0,1])
+b_1=np.array([GM1[0],GM1[1],0])
+b_2=np.array([GM2[0],GM2[1],0])
+Vol_rec=np.dot(np.cross(b_1,b_2),zhat)
 #print(np.sqrt(np.dot(LM1,LM1)),0.5/np.sin(theta/2)) #verify the relation with the moire period
 
 ##########################################
@@ -76,6 +83,7 @@ kn_pointsx = 61
 kn_pointsy = 61
 
 
+
 gridp=np.arange(-50,50,1) #grid to calculate wavefunct
 n1,n2=np.meshgrid(gridp,gridp) #grid to calculate wavefunct
 
@@ -89,9 +97,31 @@ n1,n2=np.meshgrid(gridp,gridp) #grid to calculate wavefunct
 ####################################################################################
 ####################################################################################
 ####################################################################################
-
+tp=1 
+T=0.01*tp
+mu=-1.5
 
 def eigsystem(kx, ky, xi, nbands, n1, n2):
+    ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
+    return [ed,ed],ed
+
+
+
+def Disp(kx, ky,mu):
+    ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))
+    return ed-mu
+
+x = np.linspace(-GM, GM, 300)
+X, Y = np.meshgrid(x, x)
+Z = Disp(X, Y, mu)
+
+band_max=np.max(Z)
+band_min=np.min(Z)
+
+# c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
+# plt.show()
+
+def eigsystem2(kx, ky, xi, nbands, n1, n2):
     #we diagonalize a matrix made up
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
@@ -111,7 +141,7 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
         qy_2= (-(qx-Kmin2[0])*np.sin(theta/2) + (qy-Kmin2[1])*np.cos(theta/2) ) #rotated momenta
     else:
         qx_1= (+(qx-Kplus1[0])*np.cos(theta/2) - (qy-Kplus1[1])*np.sin(theta/2) ) #rotated momenta
-        qy_1= (+(qx-Kplus1[0])*np.sin(theta/2) + (qy-Kplus1[1])*np.cos(theta/2) ) #rotated momenta
+        qy_1= (+(qx-Kplus1[0])*np.sin(theta/2) + (qy-Kplus1[1])*np.cos(theta/2) ) #rotated momenta7/89+-78
         qx_2= (+(qx-Kplus2[0])*np.cos(theta/2) + (qy-Kplus2[1])*np.sin(theta/2) ) #rotated momenta
         qy_2= (-(qx-Kplus2[0])*np.sin(theta/2) + (qy-Kplus2[1])*np.cos(theta/2) ) #rotated moment
 
@@ -142,7 +172,6 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
 
 
 print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
-
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -153,9 +182,9 @@ print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
 ####################################################################################
 ####################################################################################
 
+s=time.time()
 
-
-Nsamp=61
+Nsamp=60
 n_1=np.arange(0,Nsamp,1)
 n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
@@ -175,11 +204,12 @@ for l in range(Nsamp*Nsamp):
     #print(E)
     S=np.append(S,E)
 
-Z= S.flatten() 
-#plt.scatter(XsLatt,YsLatt, c=Z)
-#plt.show()
+Z1= S.flatten() 
+# plt.scatter(XsLatt,YsLatt, c=Z1)
+# plt.show()
 
-
+e=time.time()
+print("time for dispersion", e-s)
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -189,7 +219,6 @@ Z= S.flatten()
 ####################################################################################
 ####################################################################################
 ####################################################################################
-
 
 from scipy.spatial import Voronoi, voronoi_plot_2d
 def FBZ_points(b_1,b_2):
@@ -235,8 +264,8 @@ def FBZ_points(b_1,b_2):
 
     return Vertices_list, Gamma, K, Kp, M, Mp
 
-Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(G1,G2)
-
+Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(G1,G2)  #FOR RESHAPING THE STORED ARRAY
+Vertices_list_MBZ, Gamma_MBZ, K_MBZ, Kp_MBZ, M_MBZ, Mp_MBZ=FBZ_points(GM1,GM2) #DESCRIBING THE MBZ 
 
 ##DIFFERENT HEXAGONS USED TO DELIMIT THE REGIONS 
 ## THAT ARE GOING TO BE REARANGED IN THE CONVENTIONAL UNIT CELL
@@ -258,7 +287,7 @@ VL4[:,1]=VL[:,1]+G2[1]+G1[1]
 Vertices_list4=list(VL4)
 
 
-##METHODs THAT CHECK WHETHER A POINT IS INSIDE A GIVEN CONVEX POLYGON
+##METHOD THAT CHECKS WHETHER A POINT IS INSIDE A GIVEN CONVEX POLYGON
 def is_within_polygon(polygon, point):
     A = []
     B = []
@@ -287,34 +316,6 @@ def is_within_polygon(polygon, point):
     return x
 
 
-def is_within_polygon_no_edge(polygon, point):
-    A = []
-    B = []
-    C = []  
-    for i in range(len(polygon)):
-        p1 = polygon[i]
-        p2 = polygon[(i + 1) % len(polygon)]
-        
-        
-        # calculate A, B and C
-        a = -(p2[1] - p1[1])
-        b = p2[0] - p1[0]
-        c = -(a * p1[0] + b * p1[1])
-        
-        A.append(a)
-        B.append(b)
-        C.append(c)
-
-    D = []
-    for i in range(len(A)):
-        d = A[i] * point[0] + B[i] * point[1] + C[i]
-        D.append(d)
-        
-    t1 = np.all([d > 0 for d in D])
-    t2 = np.all([d < 0 for d in D])
-    x=t1 or t2
-    return x
-
 
 XsLatt_hex=(k1[0]*n_1p+k2[0]*n_2p).T
 YsLatt_hex=(k1[1]*n_1p+k2[1]*n_2p).T
@@ -338,7 +339,134 @@ for l in range(Nsamp*Nsamp):
         XsLatt_hex[i,j]=XsLatt_hex[i,j]-G1[0]
         YsLatt_hex[i,j]=YsLatt_hex[i,j]-G1[1]
 
-VV=np.array(Vertices_list+[Vertices_list[0]])
+VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
+KX_in=(GM/Nsamp)*XsLatt_hex
+KY_in=(GM/Nsamp)*YsLatt_hex
 plt.plot(VV[:,0],VV[:,1])
-plt.scatter(XsLatt_hex,YsLatt_hex, s=30, c=Z)
+plt.scatter(KX_in,KY_in, s=30, c=Z1)
 plt.show()
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      PATH IN RECIPROCAL SPACE
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+
+
+#linear parametrization accross different points in the BZ
+def linpam(Kps,Npoints_q):
+    Npoints=len(Kps)
+    t=np.linspace(0, 1, Npoints_q)
+    linparam=np.zeros([Npoints_q*(Npoints-1),2])
+    for i in range(Npoints-1):
+        linparam[i*Npoints_q:(i+1)*Npoints_q,0]=Kps[i][0]*(1-t)+t*Kps[i+1][0]
+        linparam[i*Npoints_q:(i+1)*Npoints_q,1]=Kps[i][1]*(1-t)+t*Kps[i+1][1]
+
+    return linparam
+
+
+Nt=1000
+kpath=linpam(VV,Nt)
+
+L=[]
+L=L+[Gamma_MBZ]+[K_MBZ[1]]
+Nt=25
+kpath2=linpam(L,Nt)
+
+# plt.plot(kpath[:,0],kpath[:,1])
+# plt.plot(kpath2[:,0],kpath2[:,1])
+# plt.show()
+
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      INTEGRALS
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+dS_in=Vol_rec/(Nsamp*Nsamp)
+xi=1
+def integrand(qx,qy,kx,ky,w,mu,T):
+    edk=eigsystem(kx, ky, xi, nbands, n1, n2)[0][1]
+    edkq=eigsystem(kx+qx,ky+qy, xi, nbands, n1, n2)[0][1]
+    nfk= 1/(np.exp(edk/T)+1)
+    nfkq= 1/(np.exp(edkq/T)+1)
+    eps=1e-1
+
+    fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+    return (fac_p)
+
+
+# plt.scatter(KX_in,KY_in, c=np.log10(abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T) +1e-17)), s=30)
+# plt.colorbar()
+# plt.show()
+
+
+# plt.scatter(KX_in,KY_in, c=np.abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T)) , s=30)
+# plt.colorbar()
+# plt.show()
+
+
+Nomegs=50
+maxomeg=band_max*2
+minomeg=0
+omegas=np.linspace(0.01,maxomeg,Nomegs)
+#omegas=np.logspace(-5,1,Nomegs)
+t=np.arange(0,len(kpath2),1)
+t_m,omegas_m=np.meshgrid(t,omegas)
+integ=[]
+for t_m_i in t:
+    sd=[]
+    print(t_m_i,"/",np.size(t))
+    for omegas_m_i in omegas:
+        sd.append( np.sum((integrand(kpath2[t_m_i,0],kpath2[t_m_i,1],KX_in,KY_in,omegas_m_i,mu,T)))*dS_in )
+        #print(omegas_m_i,t_m_i)
+    integ.append(sd)
+integ_arr=np.array(integ)
+
+limits_X=1
+limits_Y=maxomeg
+N_X=len(kpath2)
+N_Y=Nomegs
+
+
+plt.imshow(np.imag(integ_arr.T), origin='lower', aspect='auto')
+
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+#axhline(N_Y/2 -7, c='r')
+#print(omegas[int(N_Y/2 -7)])
+plt.colorbar()
+plt.show()
+
+
+plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]), s=30)
+plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]))
+plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]), s=30)
+plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]))
+
+
+# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
+# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
+
+plt.show()
+
+
