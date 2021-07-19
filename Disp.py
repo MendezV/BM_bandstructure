@@ -138,6 +138,8 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     Hxi=np.bmat([[H1, (U.conj()).T], [U, H2]]) #Full matrix
     #a= np.linalg.eigvalsh(Hxi) - en_shift
     (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+    psi=np.zeros(np.shape(n1), nbands)
+
     return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
 
 
