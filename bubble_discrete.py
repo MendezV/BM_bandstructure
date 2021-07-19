@@ -101,27 +101,15 @@ tp=1
 T=0.01*tp
 mu=-1.5
 
-def eigsystem(kx, ky, xi, nbands, n1, n2):
+def eigsystem2(kx, ky, xi, nbands, n1, n2):
     ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
     return [ed,ed],ed
 
 
-
-def Disp(kx, ky,mu):
-    ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))
-    return ed-mu
-
-x = np.linspace(-GM, GM, 300)
-X, Y = np.meshgrid(x, x)
-Z = Disp(X, Y, mu)
-
-band_max=np.max(Z)
-band_min=np.min(Z)
-
 # c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
 # plt.show()
 
-def eigsystem2(kx, ky, xi, nbands, n1, n2):
+def eigsystem(kx, ky, xi, nbands, n1, n2):
     #we diagonalize a matrix made up
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
@@ -210,7 +198,8 @@ e=time.time()
 print("time for dispersion", e-s)
 # plt.scatter(XsLatt,YsLatt, c=Z1)
 # plt.show()
-
+band_max=np.max(Z1)
+band_min=np.min(Z1)
 
 Z= np.reshape(S,[Nsamp,Nsamp])
 n_1pp=(n_1p+int(Nsamp/2))%Nsamp
@@ -502,6 +491,8 @@ L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 ####################################################################################
 ####################################################################################
 
+
+#####INTEGRAND FUNCTION
 dS_in=Vol_rec/(Nsamp*Nsamp)
 xi=1
 def integrand(nx,ny,ek,w,mu,T):
@@ -519,11 +510,7 @@ def integrand(nx,ny,ek,w,mu,T):
 # plt.colorbar()
 # plt.show()
 
-
-# plt.scatter(KX_in,KY_in, c=np.abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T)) , s=30)
-# plt.colorbar()
-# plt.show()
-
+####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
 Nomegs=50
 maxomeg=band_max*2
@@ -559,7 +546,7 @@ plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
 plt.gca().set_aspect('equal')
 plt.show()
 
-
+####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
 
 path,kpath=findpath(L2,XsLatt,YsLatt)
 
@@ -573,6 +560,8 @@ ind_path=np.array([path for l in range(Nomegs)]).astype('int')
 ind_omegs=np.array([np.arange(Nomegs) for l in range(N_X)]).T
 momentumcut=integ_arr_no_reshape[ind_omegs,ind_path]
 
+
+####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE
 
 plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
@@ -614,14 +603,9 @@ plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
 plt.show()
 
-# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]), s=30)
-# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]))
-# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]), s=30)
-# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]))
 
+####### TRACE AT ZERO FREQUENCY OF THE MOMENTUM CUT
 
-# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
-# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
 plt.plot(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
 plt.scatter(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
 plt.show()
