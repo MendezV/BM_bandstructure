@@ -185,7 +185,7 @@ def eigsystem2(kx, ky, xi, nbands, n1, n2):
 
 s=time.time()
 
-Nsamp=6
+Nsamp=50
 n_1=np.arange(0,Nsamp,1)
 n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
@@ -281,6 +281,26 @@ def FBZ_points(b_1,b_2):
 
 Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(G1,G2)  #FOR RESHAPING THE STORED ARRAY
 Vertices_list_MBZ, Gamma_MBZ, K_MBZ, Kp_MBZ, M_MBZ, Mp_MBZ=FBZ_points(GM1,GM2) #DESCRIBING THE MBZ 
+
+
+
+##HIGH SYMMETRY POINTS FOR THE CONVENTIONAL UNIT CELL
+Gamma_CBZ=[[0,0],G1,G2,G1+G2]
+
+vor = Voronoi(Gamma_CBZ)
+
+K_CBZ=(GM/Nsamp)*np.array(vor.vertices)[1,:]
+Kp_CBZ=(GM/Nsamp)*np.array(vor.vertices)[0,:]
+M_CBZ=(GM/Nsamp)*np.array(Gamma_CBZ)[3,:]/2
+Mp_li=[]
+Mp_li.append(np.array(Gamma_CBZ)[1,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[2,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[2,:]+np.array(Gamma_CBZ)[1,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[1,:]+np.array(Gamma_CBZ)[2,:]/2)
+Mp_CBZ=(GM/Nsamp)*np.array(Mp_li)
+G_CBZ=(GM/Nsamp)*np.array(Gamma_CBZ)
+
+
 
 ##DIFFERENT HEXAGONS USED TO DELIMIT THE REGIONS 
 ## THAT ARE GOING TO BE REARANGED IN THE CONVENTIONAL UNIT CELL
@@ -401,6 +421,77 @@ kpath2=linpam(L,Nt)
 # plt.plot(kpath2[:,0],kpath2[:,1])
 # plt.show()
 
+
+def findpath(Kps,KX,KY):
+
+    path=np.empty((0))
+    path_ij=np.empty((0))
+    pthK=[]
+    
+    
+    l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
+    i=int(l%Nsamp)
+    j=int((l-i)/Nsamp)
+    temp_j=j
+    j=i
+    i=temp_j
+    
+
+    path=np.append(path,int(l))
+    path_ij=np.append(path,np.array([i,j]))
+    pthK.append([KX[i,j],KY[i,j]])
+    
+    
+    amin=GM/Nsamp
+    k1=(GM/Nsamp)*np.array([1,0])
+    k2=(GM/Nsamp)*np.array([1/2,np.sqrt(3)/2])
+    nnlist=[[0,1],[1,0],[0,-1],[-1,0],[1,-1],[-1,1]]
+
+    NHSpoints=np.shape(Kps)[0]
+
+    for indhs in range(NHSpoints-1):
+
+        c=0
+        dist=np.sqrt( (Kps[indhs+1][0]-KX[i,j])**2 + (Kps[indhs+1][1]-KY[i,j])**2)
+        while ( c<Nsamp**2  and dist>1.2*amin):
+            dists=[]
+            KXnn=[]
+            KYnn=[]
+            
+            
+            for nn in range(6):
+                kxnn= KX[i,j]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
+                kynn= KY[i,j]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
+                di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
+                dists.append(di)
+                KXnn.append(kxnn)
+                KYnn.append(kynn)
+            
+            dist=np.min(np.array(dists))
+            ind_min=np.argmin(np.array(dists))
+            
+            l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
+            i=int(l%Nsamp)
+            j=int((l-i)/Nsamp)
+            
+        
+            temp_j=j
+            j=i
+            i=temp_j
+        
+
+            path=np.append(path,int(l))
+            path_ij=np.append(path,np.array([i,j]))
+            pthK.append([KX[i,j],KY[i,j]])
+
+            c=c+1
+        
+    return path,np.array(pthK)
+
+L2=[]
+L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
+
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -434,7 +525,7 @@ def integrand(nx,ny,ek,w,mu,T):
 # plt.show()
 
 
-Nomegs=15
+Nomegs=50
 maxomeg=band_max*2
 minomeg=0
 omegas=np.linspace(0.01,maxomeg,Nomegs)
@@ -442,47 +533,48 @@ integ=[]
 s=time.time()
 for omegas_m_i in omegas:
     sd=[]
+    sp=time.time()
     for l in range(Nsamp*Nsamp):
+        #print(omegas_m_i, l,Nsamp*Nsamp )
         i=int(l%Nsamp)
         j=int((l-i)/Nsamp)
         ek= np.reshape(S,[Nsamp,Nsamp])
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
         sd.append( np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in )
-        #print(omegas_m_i,t_m_i)
+
     integ.append(sd)
-integ_arr=np.reshape(np.array(integ),[15,Nsamp,Nsamp])
+    ep=time.time()
+    print("time per frequency", ep-sp)
+integ_arr_no_reshape=np.array(integ)
+integ_arr=np.reshape(np.array(integ),[Nomegs,Nsamp,Nsamp])
 e=time.time()
 print("Time for bubble",e-s)
 
-print(np.shape(integ_arr))
-
+print("shape of the reshaped array",np.shape(integ_arr))
+print("shape of the reshaped array",np.shape(integ_arr_no_reshape))
 
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
 plt.gca().set_aspect('equal')
 plt.show()
 
-# plt.plot(VV[:,0],VV[:,1])
-# plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[5,:,:]) )
-# plt.gca().set_aspect('equal')
-# plt.show()
-
-# plt.plot(VV[:,0],VV[:,1])
-# plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[10,:,:]) )
-# plt.gca().set_aspect('equal')
-# plt.show()
 
 
+path,kpath=findpath(L2,XsLatt,YsLatt)
 
-"""
 limits_X=1
 limits_Y=maxomeg
-N_X=len(kpath2)
+N_X=np.size(path)
 N_Y=Nomegs
 
 
-plt.imshow(np.imag(integ_arr.T), origin='lower', aspect='auto')
+ind_path=np.array([path for l in range(Nomegs)]).astype('int')
+ind_omegs=np.array([np.arange(Nomegs) for l in range(N_X)]).T
+momentumcut=integ_arr_no_reshape[ind_omegs,ind_path]
+
+
+plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 
 ticks_X=5
@@ -502,14 +594,34 @@ plt.colorbar()
 plt.show()
 
 
-plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]), s=30)
-plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]))
-plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]), s=30)
-plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]))
+
+plt.imshow(np.real(momentumcut), origin='lower', aspect='auto')
+
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+#axhline(N_Y/2 -7, c='r')
+#print(omegas[int(N_Y/2 -7)])
+plt.colorbar()
+plt.show()
+
+# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]), s=30)
+# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.imag(integ_arr[:,0]))
+# plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]), s=30)
+# plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , np.real(integ_arr[:,0]))
 
 
 # plt.scatter(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
 # plt.plot(np.sqrt(kpath2[t,0]**2+kpath2[t,1]**2) , integ_arr[:,-1])
-
+plt.plot(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
+plt.scatter(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
 plt.show()
-"""

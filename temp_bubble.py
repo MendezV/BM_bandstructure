@@ -282,6 +282,31 @@ def FBZ_points(b_1,b_2):
 Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(G1,G2)  #FOR RESHAPING THE STORED ARRAY
 Vertices_list_MBZ, Gamma_MBZ, K_MBZ, Kp_MBZ, M_MBZ, Mp_MBZ=FBZ_points(GM1,GM2) #DESCRIBING THE MBZ 
 
+##FOR THE CONVENTIONAL UNIT CELL
+Gamma_CBZ=[[0,0],G1,G2,G1+G2]
+
+vor = Voronoi(Gamma_CBZ)
+
+K_CBZ=(GM/Nsamp)*np.array(vor.vertices)[1,:]
+Kp_CBZ=(GM/Nsamp)*np.array(vor.vertices)[0,:]
+M_CBZ=(GM/Nsamp)*np.array(Gamma_CBZ)[3,:]/2
+Mp_li=[]
+Mp_li.append(np.array(Gamma_CBZ)[1,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[2,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[2,:]+np.array(Gamma_CBZ)[1,:]/2)
+Mp_li.append(np.array(Gamma_CBZ)[1,:]+np.array(Gamma_CBZ)[2,:]/2)
+Mp_CBZ=(GM/Nsamp)*np.array(Mp_li)
+G_CBZ=(GM/Nsamp)*np.array(Gamma_CBZ)
+
+
+# plt.scatter(K_CBZ[0],K_CBZ[1])
+# plt.scatter(Kp_CBZ[0],Kp_CBZ[1])
+# plt.scatter(M_CBZ[0],M_CBZ[1])
+# plt.scatter(Mp_CBZ[:,0],Mp_CBZ[:,1])
+# plt.scatter(G_CBZ[:,0],G_CBZ[:,1])
+# plt.gca().set_aspect('equal')
+# plt.show()
+
 ##DIFFERENT HEXAGONS USED TO DELIMIT THE REGIONS 
 ## THAT ARE GOING TO BE REARANGED IN THE CONVENTIONAL UNIT CELL
 VL=np.array(Vertices_list)
@@ -393,7 +418,7 @@ Nt=1000
 kpath=linpam(VV,Nt)
 
 L=[]
-L=L+[Gamma_MBZ]+[K_MBZ[1]]+[K_MBZ[2]]+[M_MBZ[0]]
+L=L+[Gamma_MBZ]+[K_MBZ[1]]
 Nt=25
 kpath2=linpam(L,Nt)
 
@@ -475,5 +500,15 @@ plt.scatter(sd[:,0],sd[:,1], c='g',s=100)
 plt.gca().set_aspect('equal')
 plt.show()
 
+L2=[]
+L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 
 
+
+sd=findpath(L2,XsLatt,YsLatt)
+
+
+plt.scatter(XsLatt,YsLatt, s=30, c='r')
+plt.scatter(sd[:,0],sd[:,1], c='g',s=100)
+plt.gca().set_aspect('equal')
+plt.show()

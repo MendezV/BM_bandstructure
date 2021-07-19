@@ -205,8 +205,9 @@ for l in range(Nsamp*Nsamp):
     S=np.append(S,E)
 
 Z1= S.flatten() 
-# plt.scatter(XsLatt,YsLatt, c=Z1)
-# plt.show()
+print(np.shape(XsLatt),np.shape(YsLatt),np.shape(Z1))
+plt.scatter(XsLatt,YsLatt, c=np.reshape(Z1, np.shape(XsLatt)))
+plt.show()
 
 e=time.time()
 print("time for dispersion", e-s)
@@ -343,7 +344,7 @@ VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
 KX_in=(GM/Nsamp)*XsLatt_hex
 KY_in=(GM/Nsamp)*YsLatt_hex
 plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX_in,KY_in, s=30, c=Z1)
+plt.scatter(KX_in,KY_in, s=30, c=np.reshape(Z1, np.shape(KX_in)))
 plt.show()
 
 ####################################################################################
@@ -439,6 +440,26 @@ N_Y=Nomegs
 
 
 plt.imshow(np.imag(integ_arr.T), origin='lower', aspect='auto')
+
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+#axhline(N_Y/2 -7, c='r')
+#print(omegas[int(N_Y/2 -7)])
+plt.colorbar()
+plt.show()
+
+
+plt.imshow(np.real(integ_arr.T), origin='lower', aspect='auto')
 
 
 ticks_X=5
