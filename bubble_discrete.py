@@ -52,7 +52,6 @@ LM2=2*np.pi*np.array([-GM1[1],GM1[0]])/la.det(np.array([GM1,GM2]))
 
 LM=np.sqrt(np.dot(LM1,LM1)) #moire period 2/np.sin(theta/2)
 GM=np.sqrt(np.dot(GM1,GM1)) #reciprocal space period  8*np.pi/np.sqrt(3)*np.sin(theta/2)
-print("Quick check",8*np.pi/np.sqrt(3)*np.sin(theta/2),GM)
 
 ##volume of the MBZ
 zhat=np.array([0,0,1])
