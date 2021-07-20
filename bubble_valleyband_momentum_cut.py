@@ -493,6 +493,7 @@ L3=[]
 L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
 
 path,kpath=findpath(L3,XsLatt,YsLatt)
+Npath=np.size(path)
 # plt.scatter(XsLatt,YsLatt, s=30, c='r' )
 # plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
 # plt.gca().set_aspect('equal')
@@ -539,8 +540,8 @@ s=time.time()
 for omegas_m_i in omegas:
     sd=[]
     sp=time.time()
-    for l in range(Nsamp*Nsamp):
-        #print(omegas_m_i, l,Nsamp*Nsamp )
+    for l in path:  #for calculating only along path in FBZ
+
         i=int(l%Nsamp)
         j=int((l-i)/Nsamp)
         ek=Z[:,:,1]
@@ -552,33 +553,22 @@ for omegas_m_i in omegas:
     ep=time.time()
     print("time per frequency", ep-sp)
 integ_arr_no_reshape=np.array(integ)
-integ_arr=np.reshape(np.array(integ),[Nomegs,Nsamp,Nsamp])
+
+momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
+
+
 e=time.time()
 print("Time for bubble",e-s)
 
-print("shape of the reshaped array",np.shape(integ_arr))
-print("shape of the reshaped array",np.shape(integ_arr_no_reshape))
 
-plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
-plt.gca().set_aspect('equal')
-plt.show()
 
 ####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
 
 
 limits_X=1
 limits_Y=maxomeg
-N_X=np.size(path)
+N_X=Npath
 N_Y=Nomegs
-
-
-ind_path=np.array([path for l in range(Nomegs)]).astype('int')
-ind_omegs=np.array([np.arange(Nomegs) for l in range(N_X)]).T
-momentumcut=integ_arr_no_reshape[ind_omegs,ind_path]
-
-
-
 
 
 
