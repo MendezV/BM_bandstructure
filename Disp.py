@@ -138,13 +138,14 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     Hxi=np.bmat([[H1, (U.conj()).T], [U, H2]]) #Full matrix
     #a= np.linalg.eigvalsh(Hxi) - en_shift
     (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
-    psi=np.zeros(np.shape(n1), nbands)
+    psi=np.zeros([np.shape(n1)[0],np.shape(n1)[1],nbands ,4], dtype=np.cdouble) #4 corresponds to layer and sublattice indices and shape n1 corresponds to the Q processes taken 
+    psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
+    
+    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, psi
 
-    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
-
-
-print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
-
+##########################
+print(eigsystem(-GM,-GM, 1, nbands, n1, n2)[0][0])
+print("form of the eigenvec",np.shape(eigsystem(GM,GM, 1, nbands, n1, n2)[1]))
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -169,14 +170,16 @@ G2=k2*Nsamp
 XsLatt=(GM/Nsamp)*(k1[0]*n_1p+k2[0]*n_2p).T
 YsLatt=(GM/Nsamp)*(k1[1]*n_1p+k2[1]*n_2p).T
 S=np.empty((0))
+wavef=np.empty((0))
 for l in range(Nsamp*Nsamp):
     i=int(l%Nsamp)
     j=int((l-i)/Nsamp)
     #print(XsLatt[i,j],YsLatt[i,j])
-    E=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0][1]
+    E,psi=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
     #print(E)
     S=np.append(S,E)
-
+    wavef=np.append(wavef,psi)
+print(np.shape(wavef),np.prod(np.shape(wavef)))
 Z= S.flatten() 
 #plt.scatter(XsLatt,YsLatt, c=Z)
 #plt.show()
@@ -342,5 +345,5 @@ for l in range(Nsamp*Nsamp):
 
 VV=np.array(Vertices_list+[Vertices_list[0]])
 plt.plot(VV[:,0],VV[:,1])
-plt.scatter(XsLatt_hex,YsLatt_hex, s=30, c=Z)
+plt.scatter(XsLatt_hex,YsLatt_hex, s=30, c=np.reshape(Z,np.shape(XsLatt)))
 plt.show()

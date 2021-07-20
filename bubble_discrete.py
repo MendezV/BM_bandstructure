@@ -156,7 +156,11 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     Hxi=np.bmat([[H1, (U.conj()).T], [U, H2]]) #Full matrix
     #a= np.linalg.eigvalsh(Hxi) - en_shift
     (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
-    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
+    psi=np.zeros([np.shape(n1)[0],np.shape(n1)[1],nbands ,4], dtype=np.cdouble) #4 corresponds to layer and sublattice indices and shape n1 corresponds to the Q processes taken 
+    psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
+    
+    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, psi
+    #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
 
 
 #print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
