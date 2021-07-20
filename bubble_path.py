@@ -487,6 +487,19 @@ L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 
 L3=[]
 L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
+
+####### GETTING A MOMENTUM CUT PATH
+path,kpath=findpath(L3,XsLatt,YsLatt)
+plt.scatter(kpath[:,0],kpath[:,1], s=30) 
+plt.show()
+limits_X=1
+limits_Y=maxomeg
+N_X=np.size(path)
+N_Y=Nomegs
+
+
+ind_path=np.array([path for l in range(Nomegs)]).astype('int')
+ind_omegs=np.array([np.arange(Nomegs) for l in range(N_X)]).T
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -527,7 +540,7 @@ s=time.time()
 for omegas_m_i in omegas:
     sd=[]
     sp=time.time()
-    for l in range(Nsamp*Nsamp):
+    for l in path:
         #print(omegas_m_i, l,Nsamp*Nsamp )
         i=int(l%Nsamp)
         j=int((l-i)/Nsamp)
@@ -552,19 +565,7 @@ plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
 plt.gca().set_aspect('equal')
 
 
-####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
 
-path,kpath=findpath(L3,XsLatt,YsLatt)
-plt.scatter(kpath[:,0],kpath[:,1], s=30) 
-plt.show()
-limits_X=1
-limits_Y=maxomeg
-N_X=np.size(path)
-N_Y=Nomegs
-
-
-ind_path=np.array([path for l in range(Nomegs)]).astype('int')
-ind_omegs=np.array([np.arange(Nomegs) for l in range(N_X)]).T
 momentumcut=integ_arr_no_reshape[ind_omegs,ind_path]
 
 

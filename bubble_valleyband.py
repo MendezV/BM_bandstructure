@@ -101,15 +101,15 @@ tp=1
 T=0.01*tp
 mu=-1.5
 
-def eigsystem2(kx, ky, xi, nbands, n1, n2):
+def eigsystem(kx, ky, xi, nbands, n1, n2):
     ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
-    return [ed,ed],ed
+    return [ed,ed,ed,ed],ed
 
 
 # c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
 # plt.show()
 
-def eigsystem(kx, ky, xi, nbands, n1, n2):
+def eigsystem2(kx, ky, xi, nbands, n1, n2):
     #we diagonalize a matrix made up
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
@@ -188,32 +188,36 @@ G2=k2*Nsamp
 
 XsLatt=(GM/Nsamp)*(k1[0]*n_1p+k2[0]*n_2p).T
 YsLatt=(GM/Nsamp)*(k1[1]*n_1p+k2[1]*n_2p).T
-S=np.empty((0))
+Ene_valley_plus=np.empty((0))
+Ene_valley_min=np.empty((0))
 for l in range(Nsamp*Nsamp):
     i=int(l%Nsamp)
     j=int((l-i)/Nsamp)
     #print(XsLatt[i,j],YsLatt[i,j])
-    E=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0][1]
+    E1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0]
+    E2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)[0]
     #print(E)
-    S=np.append(S,E)
+    Ene_valley_plus=np.append(Ene_valley_plus,E1)
+    Ene_valley_min=np.append(Ene_valley_min,E2)
 
-Z1= S.flatten() 
+
+Z= np.reshape(Ene_valley_plus,[Nsamp,Nsamp,nbands])
 e=time.time()
 print("time for dispersion", e-s)
-# plt.scatter(XsLatt,YsLatt, c=Z1)
+# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
 # plt.show()
-band_max=np.max(Z1)
-band_min=np.min(Z1)
+band_max=np.max(Z)
+band_min=np.min(Z)
 
-Z= np.reshape(S,[Nsamp,Nsamp])
 n_1pp=(n_1p+int(Nsamp/2))%Nsamp
 n_2pp=(n_2p+int(Nsamp/2))%Nsamp
 
-Z2=Z[n_1pp,n_2pp]
 
-# plt.scatter(XsLatt,YsLatt, c=Z2.flatten())
+Z1=Z[:,:,1]
+Z2=Z[n_1pp,n_2pp,1]
+# print(band_max, band_min)
+# plt.scatter(XsLatt,YsLatt, c=Z2)
 # plt.show()
-
 
 
 
@@ -487,6 +491,14 @@ L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 
 L3=[]
 L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
+
+path,kpath=findpath(L3,XsLatt,YsLatt)
+# plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+# plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+# plt.gca().set_aspect('equal')
+# plt.show()
+
+
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -506,7 +518,7 @@ def integrand(nx,ny,ek,w,mu,T):
     edkq=ek[nx,ny]
     nfk= 1/(np.exp(edk/T)+1)
     nfkq= 1/(np.exp(edkq/T)+1)
-    eps=1e-3
+    eps=5e-1
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
     return (fac_p)
@@ -531,7 +543,7 @@ for omegas_m_i in omegas:
         #print(omegas_m_i, l,Nsamp*Nsamp )
         i=int(l%Nsamp)
         j=int((l-i)/Nsamp)
-        ek= np.reshape(S,[Nsamp,Nsamp])
+        ek=Z[:,:,1]
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
         sd.append( np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in )
@@ -550,13 +562,11 @@ print("shape of the reshaped array",np.shape(integ_arr_no_reshape))
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX_in,KY_in, s=30, c=np.abs(integ_arr[0,:,:]) )
 plt.gca().set_aspect('equal')
-
+plt.show()
 
 ####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
 
-path,kpath=findpath(L3,XsLatt,YsLatt)
-plt.scatter(kpath[:,0],kpath[:,1], s=30) 
-plt.show()
+
 limits_X=1
 limits_Y=maxomeg
 N_X=np.size(path)
