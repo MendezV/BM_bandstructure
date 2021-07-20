@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import linalg as la
 import sys
 import scipy
+import time
 np.set_printoptions(threshold=sys.maxsize)
 
 ####################################################################################
@@ -171,14 +172,21 @@ XsLatt=(GM/Nsamp)*(k1[0]*n_1p+k2[0]*n_2p).T
 YsLatt=(GM/Nsamp)*(k1[1]*n_1p+k2[1]*n_2p).T
 S=np.empty((0))
 wavef=np.empty((0))
+wav=[]
 for l in range(Nsamp*Nsamp):
+    st=time.time()
     i=int(l%Nsamp)
     j=int((l-i)/Nsamp)
     #print(XsLatt[i,j],YsLatt[i,j])
+    #E=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0][1]
     E,psi=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
     #print(E)
-    S=np.append(S,E)
-    wavef=np.append(wavef,psi)
+    S=np.append(S,E) ####appending this way scales with the size of the array
+    #wavef=np.append(wavef,psi)
+    wav.append(psi)
+    endt=time.time()
+    print(endt-st, l,Nsamp*Nsamp)
+wavef=np.array(wav)
 print(np.shape(wavef),np.prod(np.shape(wavef)))
 Z= S.flatten() 
 #plt.scatter(XsLatt,YsLatt, c=Z)
@@ -344,6 +352,6 @@ for l in range(Nsamp*Nsamp):
         YsLatt_hex[i,j]=YsLatt_hex[i,j]-G1[1]
 
 VV=np.array(Vertices_list+[Vertices_list[0]])
-plt.plot(VV[:,0],VV[:,1])
-plt.scatter(XsLatt_hex,YsLatt_hex, s=30, c=np.reshape(Z,np.shape(XsLatt)))
-plt.show()
+# plt.plot(VV[:,0],VV[:,1])
+# plt.scatter(XsLatt_hex,YsLatt_hex, s=30, c=np.reshape(Z,np.shape(XsLatt)))
+# plt.show()
