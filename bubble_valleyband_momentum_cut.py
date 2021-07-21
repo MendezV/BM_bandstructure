@@ -101,7 +101,7 @@ tp=1
 T=0.01*tp
 mu=-1.5
 
-def eigsystem(kx, ky, xi, nbands, n1, n2):
+def eigsystem2(kx, ky, xi, nbands, n1, n2):
     ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
     return [ed,ed,ed,ed],ed
 
@@ -109,7 +109,7 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
 # c= plt.contour(X, Y, Z, levels=[0],linewidths=3, cmap='summer');
 # plt.show()
 
-def eigsystem2(kx, ky, xi, nbands, n1, n2):
+def eigsystem(kx, ky, xi, nbands, n1, n2):
     #we diagonalize a matrix made up
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
@@ -177,7 +177,7 @@ def eigsystem2(kx, ky, xi, nbands, n1, n2):
 
 s=time.time()
 
-Nsamp=50
+Nsamp=int(sys.argv[1])
 n_1=np.arange(0,Nsamp,1)
 n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
@@ -188,8 +188,8 @@ G2=k2*Nsamp
 
 XsLatt=(GM/Nsamp)*(k1[0]*n_1p+k2[0]*n_2p).T
 YsLatt=(GM/Nsamp)*(k1[1]*n_1p+k2[1]*n_2p).T
-Ene_valley_plus=np.empty((0))
-Ene_valley_min=np.empty((0))
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_min_a=np.empty((0))
 for l in range(Nsamp*Nsamp):
     i=int(l%Nsamp)
     j=int((l-i)/Nsamp)
@@ -197,18 +197,32 @@ for l in range(Nsamp*Nsamp):
     E1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)[0]
     E2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)[0]
     #print(E)
-    Ene_valley_plus=np.append(Ene_valley_plus,E1)
-    Ene_valley_min=np.append(Ene_valley_min,E2)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
 
-Z= np.reshape(Ene_valley_plus,[Nsamp,Nsamp,nbands])
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
+Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+
 e=time.time()
 print("time for dispersion", e-s)
 # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
 # plt.show()
+
+
+
 band_max=np.max(Z)
 band_min=np.min(Z)
+band_max_FB=np.max(Z[:,:,1:3])
+band_min_FB=np.min(Z[:,:,1:3])
 
+print(np.shape(Ene_valley_plus[:,:,2]))
+eta=np.mean( np.abs( np.diff( Ene_valley_plus[:,:,2].flatten() )  ) )/2
+
+print(band_max, band_min)
+print(band_max_FB, band_min_FB)
+print(eta)
 n_1pp=(n_1p+int(Nsamp/2))%Nsamp
 n_2pp=(n_2p+int(Nsamp/2))%Nsamp
 
@@ -218,7 +232,6 @@ Z2=Z[n_1pp,n_2pp,1]
 # print(band_max, band_min)
 # plt.scatter(XsLatt,YsLatt, c=Z2)
 # plt.show()
-
 
 
 
@@ -374,13 +387,24 @@ for l in range(Nsamp*Nsamp):
 VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
 KX_in=(GM/Nsamp)*XsLatt_hex
 KY_in=(GM/Nsamp)*YsLatt_hex
-# plt.plot(VV[:,0],VV[:,1])
-# plt.scatter(KX_in,KY_in, s=30, c=Z1)
-# plt.show()
 
-# plt.plot(VV[:,0],VV[:,1])
-# plt.scatter(KX_in,KY_in, s=30, c=Z2)
-# plt.show()
+
+for i in range(nbands):
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX_in,KY_in, s=30, c=Ene_valley_plus[:,:,i])
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    #plt.savefig("plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.close()
+for i in range(nbands):
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX_in,KY_in, s=30, c=Ene_valley_min[:,:,i])
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.close()
+
+
 
 ####################################################################################
 ####################################################################################
@@ -433,8 +457,7 @@ def findpath(Kps,KX,KY):
     j=i
     i=temp_j
     
-
-    path=np.append(path,int(l))
+    path=np.append(path,int(l)) 
     path_ij=np.append(path,np.array([i,j]))
     pthK.append([KX[i,j],KY[i,j]])
     
@@ -450,13 +473,13 @@ def findpath(Kps,KX,KY):
 
         c=0
         dist=np.sqrt( (Kps[indhs+1][0]-KX[i,j])**2 + (Kps[indhs+1][1]-KY[i,j])**2)
-        while ( c<Nsamp**2  and dist>1.2*amin):
+        while ( c<Nsamp**2  and dist>0.8*amin):
             dists=[]
             KXnn=[]
             KYnn=[]
             
             
-            for nn in range(6):
+            for nn in range(6): #coordination number is 6
                 kxnn= KX[i,j]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
                 kynn= KY[i,j]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
                 di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
@@ -494,10 +517,10 @@ L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
 
 path,kpath=findpath(L3,XsLatt,YsLatt)
 Npath=np.size(path)
-# plt.scatter(XsLatt,YsLatt, s=30, c='r' )
-# plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
-# plt.gca().set_aspect('equal')
-# plt.show()
+plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+plt.gca().set_aspect('equal')
+plt.show()
 
 
 ####################################################################################
@@ -519,7 +542,7 @@ def integrand(nx,ny,ek,w,mu,T):
     edkq=ek[nx,ny]
     nfk= 1/(np.exp(edk/T)+1)
     nfkq= 1/(np.exp(edkq/T)+1)
-    eps=5e-1
+    eps=eta ##SENSITIVE TO DISPERSION
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
     return (fac_p)
@@ -531,42 +554,60 @@ def integrand(nx,ny,ek,w,mu,T):
 
 ####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
-Nomegs=50
-maxomeg=band_max*2
-minomeg=0
-omegas=np.linspace(0.01,maxomeg,Nomegs)
+Nomegs=100
+# maxomeg=(band_max-band_min)*1.5
+# minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
+maxomeg=(band_max_FB-band_min_FB)*2.5
+minomeg=0.00005
+omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
 s=time.time()
 for omegas_m_i in omegas:
     sd=[]
     sp=time.time()
     for l in path:  #for calculating only along path in FBZ
-
+        bub=0
         i=int(l%Nsamp)
         j=int((l-i)/Nsamp)
-        ek=Z[:,:,1]
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
-        sd.append( np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in )
+
+        #####all bands for the + valley
+        for nband in range(nbands):
+        
+            ek=Ene_valley_plus[:,:,nband]
+            bub=bub+np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in
+
+        #####all bands for the - valley
+        for nband in range(nbands):
+        
+            ek=Ene_valley_min[:,:,nband]
+            bub=bub+np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in
+        
+        sd.append( bub )
 
     integ.append(sd)
     ep=time.time()
-    print("time per frequency", ep-sp)
+    #print("time per frequency", ep-sp)
 integ_arr_no_reshape=np.array(integ)
-
-momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
+Vq_pre=(1/3.03)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
+Vq=np.array([Vq_pre for l in range(Nomegs)])
+print("shape coulomb interacction", np.shape(Vq), Nomegs,Npath)
+#Dielectric function
+momentumcut=np.log10( np.abs( np.imag(-1/(1 + Vq*np.reshape(np.array(integ),[Nomegs,Npath]) )   ) ) +1e-4) #for calculating only along path in FBZ
+#momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
 
 
 e=time.time()
 print("Time for bubble",e-s)
 
 
-
 ####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
 
 
 limits_X=1
-limits_Y=maxomeg
+Wbw=band_max_FB-band_min_FB
+limits_Y=maxomeg*(3.75/Wbw)
 N_X=Npath
 N_Y=Nomegs
 
@@ -574,8 +615,9 @@ N_Y=Nomegs
 
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
 
-plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
+plt.imshow((momentumcut), origin='lower', aspect='auto')
+# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 ticks_X=5
 ticks_Y=5
@@ -589,7 +631,32 @@ plt.yticks(Npl_Y,yl)
 plt.xlabel(r"$q_x$",size=16)
 plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
+plt.savefig("Imchi.png", dpi=300)
 plt.show()
+
+
+########################
+momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
+
+####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
+
+
+plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+plt.colorbar()
+plt.savefig("Imchi.png", dpi=300)
 
 """
 
