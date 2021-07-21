@@ -205,9 +205,11 @@ for l in range(Nsamp*Nsamp):
     psi_plus_a.append(wave1)
     psi_min_a.append(wave2)
 
-psi_plus=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+psi_plus=np.array(psi_plus_a)
 Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
-psi_min=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+psi_min=np.array(psi_min_a)
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
 Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
@@ -543,9 +545,9 @@ plt.show()
 #####INTEGRAND FUNCTION
 dS_in=Vol_rec/(Nsamp*Nsamp)
 xi=1
-def integrand(nx,ny,ek,w,mu,T):
-    edk=ek
-    edkq=ek[nx,ny]
+def integrand(nx,ny,ekn,ekm,w,mu,T):
+    edk=ekn
+    edkq=ekm[nx,ny]
     nfk= 1/(np.exp(edk/T)+1)
     nfkq= 1/(np.exp(edkq/T)+1)
     eps=eta ##SENSITIVE TO DISPERSION
@@ -577,19 +579,31 @@ for omegas_m_i in omegas:
         j=int((l-i)/Nsamp)
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
-
+        integrand_var=0
+        #save one reshape below by reshaping n's
+        
         #####all bands for the + valley
         for nband in range(nbands):
-
-            ek=Ene_valley_plus[:,:,nband]
-            bub=bub+np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in
+            for mband in range(nbands):
+                Lambd_nm_plus=np.reshape( np.diag(np.tensordot(psi_plus[:,:,:,nband,:],np.reshape(psi_plus_r[n_1pp,n_2pp,:,:,mband,:],[Nsamp**2,np.shape(n1)[0],np.shape(n1)[1],4]), axes=([1,2,3],[1,2,3]))) ,[Nsamp,Nsamp])
+                #Lambd_nm_plus=int(nband==mband)
+                ek_n=Ene_valley_plus[:,:,nband]
+                ek_m=Ene_valley_plus[:,:,mband]
+                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*Lambd_nm_plus
+                #print(np.shape(integrand_var))
 
         #####all bands for the - valley
         for nband in range(nbands):
-        
-            ek=Ene_valley_min[:,:,nband]
-            bub=bub+np.sum(integrand(n_1pp,n_2pp,ek,omegas_m_i,mu,T))*dS_in
-        
+            for mband in range(nbands):
+                Lambd_nm_min=np.reshape( np.diag(np.tensordot(psi_min[:,:,:,nband,:],np.reshape(psi_min_r[n_1pp,n_2pp,:,:,mband,:],[Nsamp**2,np.shape(n1)[0],np.shape(n1)[1],4]), axes=([1,2,3],[1,2,3]))) ,[Nsamp,Nsamp])
+                #Lambd_nm_min=int(nband==mband)
+                ek_n=Ene_valley_min[:,:,nband]
+                ek_m=Ene_valley_min[:,:,mband]
+                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*Lambd_nm_min
+                #print(np.shape(integrand_var))
+
+        bub=bub+np.sum(integrand_var)*dS_in
+
         sd.append( bub )
 
     integ.append(sd)
@@ -662,7 +676,7 @@ plt.yticks(Npl_Y,yl)
 plt.xlabel(r"$q_x$",size=16)
 plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
-plt.savefig("Imchi.png", dpi=300)
+plt.savefig("Imchi2.png", dpi=300)
 
 """
 
