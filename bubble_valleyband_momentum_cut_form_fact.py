@@ -402,7 +402,7 @@ for i in range(nbands):
     plt.scatter(KX_in,KY_in, s=30, c=Ene_valley_plus[:,:,i])
     plt.gca().set_aspect('equal', adjustable='box')
     plt.colorbar()
-    #plt.savefig("plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.savefig("plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
     plt.close()
 for i in range(nbands):
     plt.plot(VV[:,0],VV[:,1])
@@ -528,7 +528,8 @@ Npath=np.size(path)
 plt.scatter(XsLatt,YsLatt, s=30, c='r' )
 plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
 plt.gca().set_aspect('equal')
-plt.show()
+plt.savefig("path.png")
+plt.close()
 
 
 ####################################################################################
