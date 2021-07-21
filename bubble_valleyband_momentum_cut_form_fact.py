@@ -114,10 +114,10 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
     vals = np.sqrt(qx_dif**2+qy_dif**2)
-    ind_to_sum = np.where(vals <= 4*GM) #Finding the indices where the difference of  q lies inside threshold
-    n1_val = n1[ind_to_sum]
-    n2_val = n2[ind_to_sum]
-    N = np.shape(ind_to_sum)[1]
+    ind_to_sum = np.where(vals <= 4*GM) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
+    n1_val = n1[ind_to_sum] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
+    n2_val = n2[ind_to_sum] #
+    N = np.shape(ind_to_sum)[1] ##number of indices for which the condition above is satisfied
 
     qx = kx+GM1[0]*n1_val+GM2[0]*n2_val
     qy = ky+GM1[1]*n1_val+GM2[1]*n2_val
@@ -156,10 +156,19 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     Hxi=np.bmat([[H1, (U.conj()).T], [U, H2]]) #Full matrix
     #a= np.linalg.eigvalsh(Hxi) - en_shift
     (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
-    psi=np.zeros([np.shape(n1)[0],np.shape(n1)[1],nbands ,4], dtype=np.cdouble) #4 corresponds to layer and sublattice indices and shape n1 corresponds to the Q processes taken 
-    psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
+    #######HANDLING WITH RESHAPE
+    # psi=np.zeros([np.shape(n1)[0],np.shape(n1)[1],nbands ,4], dtype=np.cdouble) #4 corresponds to layer and sublattice indices and shape n1 corresponds to the Q processes taken 
+    # psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
+    #MANUAL ARRAY CASTING
     
-    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, psi
+    psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],4], dtype=np.cdouble)
+    psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
+
+    for nband in range(nbands):
+        psi_p[ind_to_sum] = np.reshape(np.array(Eigvect[:,2*N-int(nbands/2)+nband]) , [N, 4 ])
+        psi[nband,:]=psi_p.flatten()
+
+    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi
     #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
 
 
@@ -183,6 +192,8 @@ n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
 k2=np.array([1/2,np.sqrt(3)/2])
 n_1p,n_2p=np.meshgrid(n_1,n_2)
+n_1p_flat=n_1p.flatten()
+n_2p_flat=n_2p.flatten()
 G1=k1*Nsamp
 G2=k2*Nsamp
 
@@ -192,6 +203,8 @@ Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
+
+print("starting dispersion ..........")
 for l in range(Nsamp*Nsamp):
     i=int(l%Nsamp)
     j=int((l-i)/Nsamp)
@@ -199,44 +212,62 @@ for l in range(Nsamp*Nsamp):
     
     E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
     E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
-    #print(E)
+
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+
     psi_plus_a.append(wave1)
     psi_min_a.append(wave2)
 
-psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+##relevant wavefunctions and energies for the + valley
 psi_plus=np.array(psi_plus_a)
+psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_plus_conj=np.conj(np.array(psi_plus_a))
 Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
-psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,np.shape(n1)[0],np.shape(n1)[1],nbands,4])
+
+#relevant wavefunctions and energies for the - valley
 psi_min=np.array(psi_min_a)
+psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_min_conj=np.conj(np.array(psi_min_a))
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
+
+ ## for testing different things
 Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
 e=time.time()
-print("time for dispersion", e-s,np.shape(psi_plus))
+print("finished dispersion ..........")
+print("time elapsed for dispersion ..........", e-s)
+print("shape of the wavefunctions...", np.shape(psi_plus))
 # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
 # plt.show()
 
-
+s=time.time()
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
+print( "tensorshape",np.shape(Lambda_Tens_plus) )
+e=time.time()
+print("time elapsed for tensor ..........", e-s)
 
 band_max=np.max(Z)
 band_min=np.min(Z)
 band_max_FB=np.max(Z[:,:,1:3])
 band_min_FB=np.min(Z[:,:,1:3])
 
-print(np.shape(Ene_valley_plus[:,:,2]))
+###infinitesimal to be added to the bubble calculation
 eta=np.mean( np.abs( np.diff( Ene_valley_plus[:,:,2].flatten() )  ) )/2
 
-print(band_max, band_min)
-print(band_max_FB, band_min_FB)
-print(eta)
+print("minimum energy and maximum energy between all the bands considered........",band_min, band_max)
+print("minimum energy and maximum energy for flat bands........",band_min_FB, band_max_FB)
+
+
+##for testing shifts
 n_1pp=(n_1p+int(Nsamp/2))%Nsamp
 n_2pp=(n_2p+int(Nsamp/2))%Nsamp
 
-
 Z1=Z[:,:,1]
 Z2=Z[n_1pp,n_2pp,1]
+#####
 # print(band_max, band_min)
 # plt.scatter(XsLatt,YsLatt, c=Z2)
 # plt.show()
@@ -253,6 +284,8 @@ Z2=Z[n_1pp,n_2pp,1]
 ####################################################################################
 ####################################################################################
 
+
+#######calculating the boundaries and high symmetry points of the FBZ using a voronoi decomposition
 from scipy.spatial import Voronoi, voronoi_plot_2d
 def FBZ_points(b_1,b_2):
     #creating reciprocal lattice
@@ -396,7 +429,7 @@ VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
 KX_in=(GM/Nsamp)*XsLatt_hex
 KY_in=(GM/Nsamp)*YsLatt_hex
 
-
+### saving fermi surfaces of the bands that where considered
 for i in range(nbands):
     plt.plot(VV[:,0],VV[:,1])
     plt.scatter(KX_in,KY_in, s=30, c=Ene_valley_plus[:,:,i])
@@ -459,11 +492,9 @@ def findpath(Kps,KX,KY):
     
     
     l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
-    i=int(l%Nsamp)
-    j=int((l-i)/Nsamp)
-    temp_j=j
-    j=i
-    i=temp_j
+    j=int(l%Nsamp)
+    i=int((l-j)/Nsamp)
+
     
     path=np.append(path,int(l)) 
     path_ij=np.append(path,np.array([i,j]))
@@ -499,14 +530,9 @@ def findpath(Kps,KX,KY):
             ind_min=np.argmin(np.array(dists))
             
             l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
-            i=int(l%Nsamp)
-            j=int((l-i)/Nsamp)
+            j=int(l%Nsamp)
+            i=int((l-j)/Nsamp)
             
-        
-            temp_j=j
-            j=i
-            i=temp_j
-        
 
             path=np.append(path,int(l))
             path_ij=np.append(path,np.array([i,j]))
@@ -528,8 +554,11 @@ Npath=np.size(path)
 plt.scatter(XsLatt,YsLatt, s=30, c='r' )
 plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
 plt.gca().set_aspect('equal')
+# plt.show()
 plt.savefig("path.png")
 plt.close()
+
+print("calculated path accross the FBZ.......")
 
 
 ####################################################################################
@@ -566,61 +595,79 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
 Nomegs=100
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
-maxomeg=(band_max_FB-band_min_FB)*2.5
+maxomeg=(band_max_FB-band_min_FB)*4
 minomeg=0.00005
 omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
-s=time.time()
+sb=time.time()
+
+print("starting bubble.......")
+
 for omegas_m_i in omegas:
     sd=[]
     sp=time.time()
     for l in path:  #for calculating only along path in FBZ
         bub=0
-        i=int(l%Nsamp)
-        j=int((l-i)/Nsamp)
+        j=int(l%Nsamp)
+        i=int((l-j)/Nsamp)
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
+        n_1pp_flat=(n_1p_flat+n_1p_flat[int(l)])%Nsamp
+        n_2pp_flat=(n_2p_flat+n_2p_flat[int(l)])%Nsamp
         integrand_var=0
         #save one reshape below by reshaping n's
-        
-        #####all bands for the + valley
+    
+        # s=time.time()
+        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_plus[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
+        # print(np.shape(Lambda_Tens_plus_kq_k))
+        # e=time.time()
+        # print("time to op: evaluation of kq shift",e-s)
+
+        s=time.time()
+        #####all bands for the + and - valley
         for nband in range(nbands):
             for mband in range(nbands):
-                Lambd_nm_plus=np.reshape( np.diag(np.tensordot(psi_plus[:,:,:,nband,:],np.reshape(psi_plus_r[n_1pp,n_2pp,:,:,mband,:],[Nsamp**2,np.shape(n1)[0],np.shape(n1)[1],4]), axes=([1,2,3],[1,2,3]))) ,[Nsamp,Nsamp])
-                #Lambd_nm_plus=int(nband==mband)
+                
+                #Lambda_Tens_plus_kq_k_nm=int(nband==mband)
                 ek_n=Ene_valley_plus[:,:,nband]
                 ek_m=Ene_valley_plus[:,:,mband]
-                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*Lambd_nm_plus
-                #print(np.shape(integrand_var))
+                Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*np.abs(Lambda_Tens_plus_kq_k_nm)**2
+                
 
-        #####all bands for the - valley
-        for nband in range(nbands):
-            for mband in range(nbands):
-                Lambd_nm_min=np.reshape( np.diag(np.tensordot(psi_min[:,:,:,nband,:],np.reshape(psi_min_r[n_1pp,n_2pp,:,:,mband,:],[Nsamp**2,np.shape(n1)[0],np.shape(n1)[1],4]), axes=([1,2,3],[1,2,3]))) ,[Nsamp,Nsamp])
-                #Lambd_nm_min=int(nband==mband)
+                
+                #Lambda_Tens_min_kq_k_nm=int(nband==mband)
                 ek_n=Ene_valley_min[:,:,nband]
                 ek_m=Ene_valley_min[:,:,mband]
-                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*Lambd_nm_min
-                #print(np.shape(integrand_var))
+                Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*(np.abs(Lambda_Tens_min_kq_k_nm)**2)
+                
 
+        e=time.time()
+       
         bub=bub+np.sum(integrand_var)*dS_in
 
         sd.append( bub )
 
     integ.append(sd)
-    ep=time.time()
-    #print("time per frequency", ep-sp)
+    
 integ_arr_no_reshape=np.array(integ)
-Vq_pre=(1/3.03)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
+
+e=time.time()
+print("finished bubble.......")
+print("Time for bubble",e-sb)
+
+
+
+Vq_pre=(1/0.03)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
 Vq=np.array([Vq_pre for l in range(Nomegs)])
-print("shape coulomb interacction", np.shape(Vq), Nomegs,Npath)
+print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
 #Dielectric function
 momentumcut=np.log10( np.abs( np.imag(-1/(1 + Vq*np.reshape(np.array(integ),[Nomegs,Npath]) )   ) ) +1e-4) #for calculating only along path in FBZ
 #momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
 
 
-e=time.time()
-print("Time for bubble",e-s)
 
 
 ####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
@@ -679,8 +726,8 @@ plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
 plt.savefig("Imchi2.png", dpi=300)
 
-"""
 
+"""
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE REAL
 plt.imshow(np.real(momentumcut), origin='lower', aspect='auto')
 
