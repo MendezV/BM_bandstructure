@@ -98,7 +98,7 @@ n1,n2=np.meshgrid(gridp,gridp) #grid to calculate wavefunct
 ####################################################################################
 ####################################################################################
 tp=1 
-T=0.01*tp
+T=0.0001*tp
 mu=-1.5
 
 def eigsystem2(kx, ky, xi, nbands, n1, n2):
@@ -595,7 +595,7 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
 Nomegs=100
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
-maxomeg=(band_max_FB-band_min_FB)*4
+maxomeg=(band_max_FB-band_min_FB)*14
 minomeg=0.00005
 omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
@@ -629,18 +629,17 @@ for omegas_m_i in omegas:
         for nband in range(nbands):
             for mband in range(nbands):
                 
-                #Lambda_Tens_plus_kq_k_nm=int(nband==mband)
                 ek_n=Ene_valley_plus[:,:,nband]
                 ek_m=Ene_valley_plus[:,:,mband]
-                Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                #Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                 integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*np.abs(Lambda_Tens_plus_kq_k_nm)**2
                 
 
-                
-                #Lambda_Tens_min_kq_k_nm=int(nband==mband)
                 ek_n=Ene_valley_min[:,:,nband]
                 ek_m=Ene_valley_min[:,:,mband]
-                Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                #Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
                 integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*(np.abs(Lambda_Tens_min_kq_k_nm)**2)
                 
 
@@ -660,7 +659,7 @@ print("Time for bubble",e-sb)
 
 
 
-Vq_pre=(1/0.03)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
+Vq_pre=(1/1)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
 Vq=np.array([Vq_pre for l in range(Nomegs)])
 print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
 #Dielectric function
@@ -682,7 +681,6 @@ N_Y=Nomegs
 
 
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
-
 
 plt.imshow((momentumcut), origin='lower', aspect='auto')
 # plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
