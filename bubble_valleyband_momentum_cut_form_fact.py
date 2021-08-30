@@ -700,6 +700,7 @@ for omegas_m_i in omegas:
         #save one reshape below by reshaping n's
     
         # s=time.time()
+        #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
         Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_plus[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
         Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
         # print(np.shape(Lambda_Tens_plus_kq_k))
