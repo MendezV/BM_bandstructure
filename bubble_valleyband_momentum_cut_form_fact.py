@@ -22,15 +22,34 @@ import time
 ##########################################
 hv = 2.1354; # eV
 theta=1.05*np.pi/180  #1.05*np.pi/180 #twist Angle
-mu=0.289/1000 #chemical potential
+
+fillings = np.array([0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
+mu_values = np.array([0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
+
+
+filling_index=int(sys.argv[1]) #0-25
+
+mu=mu_values[filling_index]/1000 #chemical potential in eV
+filling=fillings[filling_index]
+
+print("FILLING FOR THE CALCULATION IS .... ",filling)
+print("CHEMICAL POTENTIAL FOR THAT FILLING IS .... ",mu)
+
 u = 0.0797; # eV
 up = 0.0975; # eV
 w = np.exp(1j*2*np.pi/3); # enters into the hamiltonian
-en0 = 1.6598/1000; # band energy of the flat bands, eV
-en_shift = 10.0/1000; #10/1000; # to sort energies correctly, eV
-art_gap = 0.0/1000; # artificial gap
+en0 = 1.6598/1000; # Sets the zero of energy to the middle of flat bands, ev
 paulix=np.array([[0,1],[1,0]])
 pauliy=np.array([[0,-1j],[1j,0]])
+
+hbarc=0.1973269804*1e-6 #ev*m
+alpha=137.0359895 #fine structure constant
+a_graphene=2.46*(1e-10) #in meters
+ee2=(hbarc/a_graphene)/alpha
+kappa_di=3.03
+T=10/1000 #in ev for finite temp calc
+
+print("COULOMB CONSTANT...",ee2)
 ##########################################
 #lattice vectors
 ##########################################
@@ -98,9 +117,6 @@ n1,n2=np.meshgrid(gridp,gridp) #grid to calculate wavefunct
 ####################################################################################
 ####################################################################################
 tp=1 
-T=0.0001*tp
-mu=-1.5
-
 def eigsystem2(kx, ky, xi, nbands, n1, n2):
     ed=-tp*(np.cos(LM1[0]*kx+LM1[1]*ky)+np.cos(LM2[0]*kx+LM2[1]*ky)+np.cos((LM2[0]-LM1[0])*kx+(LM2[1]-LM1[1])*ky))-mu
     return [ed,ed,ed,ed],ed
@@ -186,7 +202,7 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
 
 s=time.time()
 
-Nsamp=int(sys.argv[1])
+Nsamp=int(sys.argv[2])
 n_1=np.arange(0,Nsamp,1)
 n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
@@ -489,6 +505,9 @@ def findpath(Kps,KX,KY):
     path=np.empty((0))
     path_ij=np.empty((0))
     pthK=[]
+    HSP_index=[]
+    counter_path=0
+    HSP_index.append(counter_path)
     
     
     l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
@@ -508,16 +527,22 @@ def findpath(Kps,KX,KY):
 
     NHSpoints=np.shape(Kps)[0]
 
+    
+
     for indhs in range(NHSpoints-1):
 
         c=0
+        c2=0
+        
+        
         dist=np.sqrt( (Kps[indhs+1][0]-KX[i,j])**2 + (Kps[indhs+1][1]-KY[i,j])**2)
-        while ( c<Nsamp**2  and dist>0.8*amin):
+        while ( c2<1  and  dist>=0.8*amin):
             dists=[]
             KXnn=[]
             KYnn=[]
-            
-            
+
+            dist_pre=dist
+        
             for nn in range(6): #coordination number is 6
                 kxnn= KX[i,j]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
                 kynn= KY[i,j]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
@@ -529,18 +554,27 @@ def findpath(Kps,KX,KY):
             dist=np.min(np.array(dists))
             ind_min=np.argmin(np.array(dists))
             
+            
             l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
             j=int(l%Nsamp)
             i=int((l-j)/Nsamp)
+
+            if dist_pre==dist:
+                c2=c2+1
             
 
             path=np.append(path,int(l))
             path_ij=np.append(path,np.array([i,j]))
             pthK.append([KX[i,j],KY[i,j]])
+            # print([KX[i,j],KY[i,j]],[Kps[indhs+1][0],Kps[indhs+1][1]], dist)
 
             c=c+1
+            counter_path=counter_path+1
+    
+        HSP_index.append(counter_path)
         
-    return path,np.array(pthK)
+        
+    return path,np.array(pthK),HSP_index
 
 L2=[]
 L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
@@ -549,8 +583,13 @@ L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 L3=[]
 L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
 
-path,kpath=findpath(L3,XsLatt,YsLatt)
+L4=[]
+L4=L4+[K_CBZ]+[G_CBZ[3,:]]
+
+path,kpath,HSpoints=findpath(L3,XsLatt,YsLatt)
 Npath=np.size(path)
+# print(Npath,HSpoints)
+# print(Npath,HSpoints, np.shape(kpath),np.shape(path))
 plt.scatter(XsLatt,YsLatt, s=30, c='r' )
 plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
 plt.gca().set_aspect('equal')
@@ -559,6 +598,43 @@ plt.savefig("path.png")
 plt.close()
 
 print("calculated path accross the FBZ.......")
+
+
+L4=[]
+L4=L4+[K_CBZ]+[G_CBZ[3,:]]
+
+path1,kpath1,HSpoints1=findpath(L4,XsLatt,YsLatt)
+Npath1=np.size(path1)
+# print(Npath1,HSpoints1)
+plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+plt.scatter(kpath1[:,0],kpath1[:,1], s=30, c='g' )
+plt.gca().set_aspect('equal')
+
+L4=[]
+L4=L4+[G_CBZ[2,:]]+[M_CBZ]+[Kp_CBZ]
+path2,kpath2,HSpoints2=findpath(L4,XsLatt,YsLatt)
+Npath2=np.size(path2)
+# print(Npath2,HSpoints2)
+#plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+plt.scatter(kpath2[:,0],kpath2[:,1], s=30, c='g' )
+plt.gca().set_aspect('equal')
+# plt.show()
+plt.savefig("path.png")
+plt.close()
+
+path=np.append(path1,path2)
+kpath=np.vstack((kpath1,kpath2))
+HSpoints=np.append(np.array(HSpoints1),np.array(HSpoints2)+Npath1-1)
+Npath=np.size(path)
+print("size of the path in BZ and index of HSP...",Npath,HSpoints)
+# print(kpath)
+plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+plt.gca().set_aspect('equal')
+# plt.show()
+plt.savefig("path.png")
+plt.close()
+
 
 
 ####################################################################################
@@ -573,13 +649,19 @@ print("calculated path accross the FBZ.......")
 
 
 #####INTEGRAND FUNCTION
-dS_in=Vol_rec/(Nsamp*Nsamp)
+dS_in=Vol_rec/((Nsamp-1)*(Nsamp-1)) #some points are repeated in my scheme
 xi=1
 def integrand(nx,ny,ekn,ekm,w,mu,T):
     edk=ekn
     edkq=ekm[nx,ny]
-    nfk= 1/(np.exp(edk/T)+1)
-    nfkq= 1/(np.exp(edkq/T)+1)
+
+    #finite temp
+    #nfk= 1/(np.exp(edk/T)+1)
+    #nfkq= 1/(np.exp(edkq/T)+1)
+
+    #zero temp
+    nfk=np.heaviside(-edk,1.0) # at zero its 1
+    nfkq=np.heaviside(-edkq,1.0) #at zero is 1
     eps=eta ##SENSITIVE TO DISPERSION
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
@@ -592,11 +674,11 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
 
 ####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
-Nomegs=100
+Nomegs=200
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
-maxomeg=(band_max_FB-band_min_FB)*14
-minomeg=0.00005
+maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
+minomeg=1e-14
 omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
 sb=time.time()
@@ -631,15 +713,15 @@ for omegas_m_i in omegas:
                 
                 ek_n=Ene_valley_plus[:,:,nband]
                 ek_m=Ene_valley_plus[:,:,mband]
-                #Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                 integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*np.abs(Lambda_Tens_plus_kq_k_nm)**2
                 
 
                 ek_n=Ene_valley_min[:,:,nband]
                 ek_m=Ene_valley_min[:,:,mband]
-                #Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
+                Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
+                # Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
                 integrand_var=integrand_var+integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)*(np.abs(Lambda_Tens_min_kq_k_nm)**2)
                 
 
@@ -658,12 +740,13 @@ print("finished bubble.......")
 print("Time for bubble",e-sb)
 
 
-
-Vq_pre=(1/1)*2*np.pi/np.sqrt(kpath[:,0]**2+kpath[:,1]**2+1e-50)
+Coul=(1/kappa_di)*2*np.pi*ee2
+# Coul=1
+Vq_pre=Coul/(np.sqrt(kpath[:,0]**2+kpath[:,1]**2))
 Vq=np.array([Vq_pre for l in range(Nomegs)])
 print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
-#Dielectric function
-momentumcut=np.log10( np.abs( np.imag(-1/(1 + Vq*np.reshape(np.array(integ),[Nomegs,Npath]) )   ) ) +1e-4) #for calculating only along path in FBZ
+#Dielectric function ##minus the convention in Cyprians work -- means that we have a + in the denominator
+momentumcut=np.log( np.abs( np.imag(-1/(1 + Vq*np.reshape(np.array(integ),[Nomegs,Npath]) )   ) ) +1e-50) #for calculating only along path in FBZ
 #momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
 
 
@@ -674,7 +757,7 @@ momentumcut=np.log10( np.abs( np.imag(-1/(1 + Vq*np.reshape(np.array(integ),[Nom
 
 limits_X=1
 Wbw=band_max_FB-band_min_FB
-limits_Y=maxomeg*(3.75/Wbw)
+limits_Y=maxomeg*1000 #conversion to mev  #*(3.75/Wbw)
 N_X=Npath
 N_Y=Nomegs
 
@@ -682,7 +765,7 @@ N_Y=Nomegs
 
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
 
-plt.imshow((momentumcut), origin='lower', aspect='auto')
+plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=4)
 # plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 ticks_X=5
@@ -692,12 +775,20 @@ Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
 xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
 yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
 
+##HSP addition
+qarr=np.linspace(0,Npath,Npath)
+
+for i in HSpoints:
+    print(qarr[i])
+    plt.axvline(qarr[i],c='r')
+
+
 plt.xticks(Npl_X,xl)
 plt.yticks(Npl_Y,yl)
 plt.xlabel(r"$q_x$",size=16)
 plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
-plt.savefig("Imchi.png", dpi=300)
+plt.savefig("Imchi_filling"+str(filling)+".png", dpi=300)
 plt.show()
 
 
@@ -722,7 +813,7 @@ plt.yticks(Npl_Y,yl)
 plt.xlabel(r"$q_x$",size=16)
 plt.ylabel(r"$\omega$",size=16)
 plt.colorbar()
-plt.savefig("Imchi2.png", dpi=300)
+plt.savefig("Imchi2_filling"+str(filling)+".png", dpi=300)
 
 
 """
