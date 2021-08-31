@@ -47,7 +47,7 @@ alpha=137.0359895 #fine structure constant
 a_graphene=2.46*(1e-10) #in meters
 ee2=(hbarc/a_graphene)/alpha
 kappa_di=3.03
-T= 0.001/1000 #in ev for finite temp calc
+T=10/1000 #in ev for finite temp calc
 
 print("COULOMB CONSTANT...",ee2)
 ##########################################
@@ -250,7 +250,7 @@ psi_min_a=[]
 # Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
 
 #  ## for testing different things
-# Z= Ene_valley_plus
+# Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
 # e=time.time()
 # print("finished dispersion ..........")
@@ -260,28 +260,56 @@ psi_min_a=[]
 # # plt.show()
 
 # s=time.time()
-# print("calculating tensor that stores the overlaps........")
-# Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
-# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
-# print( "tensorshape",np.shape(Lambda_Tens_plus) )
+# # print("calculating tensor that stores the overlaps........")
+# # Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
+# # Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
+
 # print("calculating tensor that stores the overlaps........")
 # Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
 # Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
-# print( "tensorshape",np.shape(Lambda_Tens_plus) )
+# Lambda_Tens_pm_plus=np.tensordot(psi_plus_r,psi_plus_r_conj, axes=(3,3))
+# Lambda_Tens_pm_min=np.tensordot(psi_min_r,psi_min_r_conj, axes=(3,3))
+# print( "tensorshape",np.shape(Lambda_Tens_p_plus) )
 # e=time.time()
+# print("time elapsed for tensor ..........", e-s)
+
+# print("Saving tensor ..........")
+# with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as file1:
+#     np.save(file1, Ene_valley_plus)
+
+# with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as file1:
+#     np.save(file1, Ene_valley_min)
+
+# # with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
+# #     np.save(file2, Lambda_Tens_plus)
+
+# # with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as file2:
+# #     np.save(file2, Lambda_Tens_min)
+
+# with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_p_plus)
+
+# with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_p_min)
+
+# with open('Overlap_pm_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_pm_plus)
+
+# with open('Overlap_pm_min_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_pm_min)
 
 print("Loading tensor ..........")
 Ene_valley_plus=np.load('Energies_plus_'+str(Nsamp)+'.npy')
-Lambda_Tens_plus=np.load('Overlap_plus_'+str(Nsamp)+'.npy')
 Ene_valley_min=np.load('Energies_min_'+str(Nsamp)+'.npy')
-Lambda_Tens_min=np.load('Overlap_min_'+str(Nsamp)+'.npy')
+# Lambda_Tens_plus=np.load('Overlap_plus_'+str(Nsamp)+'.npy')
+# Lambda_Tens_min=np.load('Overlap_min_'+str(Nsamp)+'.npy')
 Lambda_Tens_p_plus=np.load('Overlap_p_plus_'+str(Nsamp)+'.npy')
 Lambda_Tens_p_min=np.load('Overlap_p_min_'+str(Nsamp)+'.npy')
-
-
-
+Lambda_Tens_pm_plus=np.load('Overlap_pm_plus_'+str(Nsamp)+'.npy')
+Lambda_Tens_pm_min=np.load('Overlap_pm_min_'+str(Nsamp)+'.npy')
 
 Z= Ene_valley_plus
+
 
 band_max=np.max(Z)
 band_min=np.min(Z)
@@ -463,39 +491,25 @@ VV=np.array(Vertices_list_MBZ+[Vertices_list_MBZ[0]])
 KX_in=(GM/Nsamp)*XsLatt_hex
 KY_in=(GM/Nsamp)*YsLatt_hex
 
-KX_rhomb=XsLatt
-KY_rhomb=YsLatt
-
-# c = plt.contour(KX_rhomb, KY_rhomb, Ene_valley_min[:,:,2],[mu])
-# # v = c.collections[0].get_paths()[0].vertices
-# # xs = v[:,0]
-# # ys = v[:,1]
-# #plt.scatter(x,y)
-# plt.show()
-# plt.scatter(xs,ys)
-# plt.show()
-
-
 ### saving fermi surfaces of the bands that where considered
 for i in range(nbands):
-    # plt.plot(VV[:,0],VV[:,1])
-    # plt.scatter(KX_in,KY_in, s=10, c=Ene_valley_plus[:,:,i])
-    plt.scatter(KX_rhomb,KY_rhomb, s=10, c=Ene_valley_plus[:,:,i])
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX_in,KY_in, s=10, c=Ene_valley_plus[:,:,i])
     plt.gca().set_aspect('equal', adjustable='box')
     plt.colorbar()
     plt.savefig("plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
     plt.close()
 for i in range(nbands):
-    # plt.plot(VV[:,0],VV[:,1])
-    # plt.scatter(KX_in,KY_in, s=10, c=Ene_valley_min[:,:,i])
-    plt.scatter(KX_rhomb,KY_rhomb, s=10, c=Ene_valley_min[:,:,i])
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX_in,KY_in, s=10, c=Ene_valley_min[:,:,i])
     plt.gca().set_aspect('equal', adjustable='box')
     plt.colorbar()
     plt.savefig("minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
     plt.close()
 
 
-
+KX_rhomb=XsLatt
+KY_rhomb=YsLatt
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -533,90 +547,91 @@ kpath2=linpam(L,Nt)
 # plt.show()
 
 
-def findpath(Kps,KX,KY):
+# def findpath(Kps,KX,KY):
 
-    path=np.empty((0))
-    path_ij=np.empty((0))
-    pthK=[]
-    HSP_index=[]
-    counter_path=0
-    HSP_index.append(counter_path)
+#     path=np.empty((0))
+#     path_ij=np.empty((0))
+#     pthK=[]
+#     HSP_index=[]
+#     counter_path=0
+#     HSP_index.append(counter_path)
     
     
-    l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
-    j=int(l%Nsamp)
-    i=int((l-j)/Nsamp)
+#     l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
+#     j=int(l%Nsamp)
+#     i=int((l-j)/Nsamp)
 
     
-    path=np.append(path,int(l)) 
-    path_ij=np.append(path,np.array([i,j]))
-    pthK.append([KX[i,j],KY[i,j]])
+#     path=np.append(path,int(l)) 
+#     path_ij=np.append(path,np.array([i,j]))
+#     pthK.append([KX[i,j],KY[i,j]])
     
     
-    amin=GM/Nsamp
-    k1=(GM/Nsamp)*np.array([1,0])
-    k2=(GM/Nsamp)*np.array([1/2,np.sqrt(3)/2])
-    nnlist=[[0,1],[1,0],[0,-1],[-1,0],[1,-1],[-1,1]]
+#     amin=GM/Nsamp
+#     k1=(GM/Nsamp)*np.array([1,0])
+#     k2=(GM/Nsamp)*np.array([1/2,np.sqrt(3)/2])
+#     nnlist=[[0,1],[1,0],[0,-1],[-1,0],[1,-1],[-1,1]]
 
-    NHSpoints=np.shape(Kps)[0]
+#     NHSpoints=np.shape(Kps)[0]
 
     
 
-    for indhs in range(NHSpoints-1):
+#     for indhs in range(NHSpoints-1):
 
-        c=0
-        c2=0
+#         c=0
+#         c2=0
         
         
-        dist=np.sqrt( (Kps[indhs+1][0]-KX[i,j])**2 + (Kps[indhs+1][1]-KY[i,j])**2)
-        while ( c2<1  and  dist>=0.8*amin):
-            dists=[]
-            KXnn=[]
-            KYnn=[]
+#         dist=np.sqrt( (Kps[indhs+1][0]-KX[i,j])**2 + (Kps[indhs+1][1]-KY[i,j])**2)
+#         while ( c2<1  and  dist>=0.8*amin):
+#             dists=[]
+#             KXnn=[]
+#             KYnn=[]
 
-            dist_pre=dist
+#             dist_pre=dist
         
-            for nn in range(6): #coordination number is 6
-                kxnn= KX[i,j]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
-                kynn= KY[i,j]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
-                di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
-                dists.append(di)
-                KXnn.append(kxnn)
-                KYnn.append(kynn)
+#             for nn in range(6): #coordination number is 6
+#                 kxnn= KX[i,j]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
+#                 kynn= KY[i,j]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
+#                 di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
+#                 dists.append(di)
+#                 KXnn.append(kxnn)
+#                 KYnn.append(kynn)
             
-            dist=np.min(np.array(dists))
-            ind_min=np.argmin(np.array(dists))
+#             dist=np.min(np.array(dists))
+#             ind_min=np.argmin(np.array(dists))
             
             
-            l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
-            j=int(l%Nsamp)
-            i=int((l-j)/Nsamp)
+#             l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
+#             j=int(l%Nsamp)
+#             i=int((l-j)/Nsamp)
 
-            if dist_pre==dist:
-                c2=c2+1
+#             if dist_pre==dist:
+#                 c2=c2+1
             
 
-            path=np.append(path,int(l))
-            path_ij=np.append(path,np.array([i,j]))
-            pthK.append([KX[i,j],KY[i,j]])
-            # print([KX[i,j],KY[i,j]],[Kps[indhs+1][0],Kps[indhs+1][1]], dist)
+#             path=np.append(path,int(l))
+#             path_ij=np.append(path,np.array([i,j]))
+#             pthK.append([KX[i,j],KY[i,j]])
+#             # print([KX[i,j],KY[i,j]],[Kps[indhs+1][0],Kps[indhs+1][1]], dist)
 
-            c=c+1
-            counter_path=counter_path+1
+#             c=c+1
+#             counter_path=counter_path+1
     
-        HSP_index.append(counter_path)
+#         HSP_index.append(counter_path)
         
         
-    return path,np.array(pthK),HSP_index
+#     return path,np.array(pthK),HSP_index
 
-L2=[]
-L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
+# L2=[]
+# L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 
 
 # L3=[]
 # L3=L3+[Kp_CBZ]+[G_CBZ[0,:]]+[Mp_CBZ[0,:]]+[Kp_CBZ]
 
-
+# L4=[]
+# L4=L4+[K_CBZ]+[G_CBZ[3,:]]
 
 # path,kpath,HSpoints=findpath(L3,XsLatt,YsLatt)
 # Npath=np.size(path)
@@ -629,59 +644,43 @@ L2=L2+[G_CBZ[0,:]]+[Kp_CBZ]
 # plt.savefig("path.png")
 # plt.close()
 
+# print("calculated path accross the FBZ.......")
 
 
-L4=[]
-L4=L4+[K_CBZ]+[G_CBZ[1,:]]
+# L4=[]
+# L4=L4+[K_CBZ]+[G_CBZ[3,:]]
 
-path1,kpath1,HSpoints1=findpath(L4,XsLatt,YsLatt)
-Npath1=np.size(path1)
-# print(Npath1,HSpoints1)
-plt.scatter(XsLatt,YsLatt, s=30, c='r' )
-plt.scatter(kpath1[:,0],kpath1[:,1], s=30, c='g' )
-plt.gca().set_aspect('equal')
+# path1,kpath1,HSpoints1=findpath(L4,XsLatt,YsLatt)
+# Npath1=np.size(path1)
+# # print(Npath1,HSpoints1)
+# plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+# plt.scatter(kpath1[:,0],kpath1[:,1], s=30, c='g' )
+# plt.gca().set_aspect('equal')
 
-L4=[]
-L4=L4+[G_CBZ[2,:]]+[M_CBZ]+[Kp_CBZ]
-path2,kpath2,HSpoints2=findpath(L4,XsLatt,YsLatt)
-Npath2=np.size(path2)
-# print(Npath2,HSpoints2)
-#plt.scatter(XsLatt,YsLatt, s=30, c='r' )
-plt.scatter(kpath2[:,0],kpath2[:,1], s=30, c='g' )
-plt.gca().set_aspect('equal')
-# plt.show()
-plt.savefig("path.png")
-plt.close()
+# L4=[]
+# L4=L4+[G_CBZ[2,:]]+[M_CBZ]+[Kp_CBZ]
+# path2,kpath2,HSpoints2=findpath(L4,XsLatt,YsLatt)
+# Npath2=np.size(path2)
+# # print(Npath2,HSpoints2)
+# #plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+# plt.scatter(kpath2[:,0],kpath2[:,1], s=30, c='g' )
+# plt.gca().set_aspect('equal')
+# # plt.show()
+# plt.savefig("path.png")
+# plt.close()
 
-path=np.append(path1,path2)
-kpath=np.vstack((kpath1,kpath2))
-HSpoints=np.append(np.array(HSpoints1),np.array(HSpoints2)+Npath1-1)
-Npath=np.size(path)
-print("size of the path in BZ and index of HSP...",Npath,HSpoints)
-# print(kpath)
-plt.scatter(XsLatt,YsLatt, s=30, c='r' )
-plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
-plt.gca().set_aspect('equal')
-# plt.show()
-plt.savefig("path.png")
-plt.close()
-
-
-#folding the momenta to the fbz
-i=np.array((path%Nsamp), dtype=np.int)
-j=np.array(  ((path-i)/Nsamp), dtype=np.int)
-kpath[:,0]=KX_in[i,j]
-kpath[:,1]=KY_in[i,j]
-
-
-plt.scatter(KX_in,KY_in, s=30, c='r' )
-plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
-plt.gca().set_aspect('equal')
-# plt.show()
-plt.savefig("path2.png")
-plt.close()
-
-print("calculated path accross the FBZ.......")
+# path=np.append(path1,path2)
+# kpath=np.vstack((kpath1,kpath2))
+# HSpoints=np.append(np.array(HSpoints1),np.array(HSpoints2)+Npath1-1)
+# Npath=np.size(path)
+# print("size of the path in BZ and index of HSP...",Npath,HSpoints)
+# # print(kpath)
+# plt.scatter(XsLatt,YsLatt, s=30, c='r' )
+# plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+# plt.gca().set_aspect('equal')
+# # plt.show()
+# plt.savefig("path.png")
+# plt.close()
 
 
 
@@ -704,8 +703,8 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
     edkq=ekm[nx,ny]-mu
 
     #finite temp
-    # nfk= 1/(np.exp(edk/T)+1)
-    # nfkq= 1/(np.exp(edkq/T)+1)
+    #nfk= 1/(np.exp(edk/T)+1)
+    #nfkq= 1/(np.exp(edkq/T)+1)
 
     #zero temp
     nfk=np.heaviside(-edk,1.0) # at zero its 1
@@ -713,7 +712,7 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
     eps=eta ##SENSITIVE TO DISPERSION
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-    return fac_p
+    return (fac_p)
 
 
 # plt.scatter(KX_in,KY_in, c=np.log10(abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T) +1e-17)), s=30)
@@ -722,16 +721,18 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
 
 ####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
-Nomegs=100
+
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
-maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
-minomeg=1e-14
-omegas=np.linspace(minomeg,maxomeg,Nomegs)
+# maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
+# minomeg=1e-14
+# omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
 sb=time.time()
 
 print("starting bubble.......")
+omegas=[1e-14]
+path=np.arange(0,Nsamp*Nsamp)
 
 for omegas_m_i in omegas:
     sd=[]
@@ -740,7 +741,7 @@ for omegas_m_i in omegas:
         bub=0
         j=int(l%Nsamp)
         i=int((l-j)/Nsamp)
-        
+
         #for the integrand
         n_1pp=(n_1p+n_1p[i,j])%Nsamp
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
@@ -760,8 +761,8 @@ for omegas_m_i in omegas:
         
         Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
         Lambda_Tens_min_kq_k=np.array([Lambda_Tens_p_min[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
-        # Lambda_Tens_plus_k_kq=np.array([Lambda_Tens_p_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
-        # Lambda_Tens_min_k_kq=np.array([Lambda_Tens_p_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_plus_k_kq=np.array([Lambda_Tens_pm_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_min_k_kq=np.array([Lambda_Tens_pm_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
       
         
         # print(np.shape(Lambda_Tens_plus_kq_k))
@@ -776,19 +777,20 @@ for omegas_m_i in omegas:
                 ek_n=Ene_valley_plus[:,:,nband]
                 ek_m=Ene_valley_plus[:,:,mband]
                 Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                # Lambda_Tens_plus_k_kq_mn=np.reshape(Lambda_Tens_plus_k_kq[:,mband,nband], [Nsamp,Nsamp])
+                Lambda_Tens_plus_k_kq_mn=np.reshape(Lambda_Tens_plus_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
-                # integrand_var=integrand_var+(Lambda_Tens_plus_kq_k_nm*np.conj(Lambda_Tens_plus_k_kq_mn))*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
-                integrand_var=integrand_var+(np.abs(Lambda_Tens_plus_kq_k_nm)**2)*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
-
+                # integrand_var=integrand_var+(np.abs(Lambda_Tens_plus_kq_k_nm)**2 ) *integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+( (Lambda_Tens_plus_k_kq_mn)*Lambda_Tens_plus_kq_k_nm )# *integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                # integrand_var=integrand_var+np.conj(Lambda_Tens_plus_k_kq_mn)-(Lambda_Tens_plus_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                
 
                 ek_n=Ene_valley_min[:,:,nband]
                 ek_m=Ene_valley_min[:,:,mband]
                 Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                # Lambda_Tens_min_k_kq_mn=np.reshape(Lambda_Tens_min_k_kq[:,mband,nband], [Nsamp,Nsamp])
+                Lambda_Tens_min_k_kq_mn=np.reshape(Lambda_Tens_min_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
-                # integrand_var=integrand_var+(Lambda_Tens_min_kq_k_nm*np.conj(Lambda_Tens_min_k_kq_mn))*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
-                integrand_var=integrand_var+(np.abs(Lambda_Tens_min_kq_k_nm)**2)*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+( (Lambda_Tens_min_k_kq_mn)*Lambda_Tens_min_kq_k_nm ) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                # integrand_var=integrand_var+np.conj(Lambda_Tens_min_k_kq_mn)  -(Lambda_Tens_min_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 
 
         e=time.time()
@@ -806,107 +808,25 @@ print("finished bubble.......")
 print("Time for bubble",e-sb)
 
 
-Coul=2*np.pi*ee2/kappa_di
-# Coul=1
-
-Vq_pre=Coul/(np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  ))
-Vq=np.array([Vq_pre for l in range(Nomegs)])
-print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
-#Dielectric function ##minus the convention in Cyprians work -- means that we have a + in the denominator
-momentumcut= np.log( np.abs( np.imag(-1/(1 +Vq* np.reshape(integ_arr_no_reshape,[Nomegs,Npath]) )   ) ) ) #for calculating only along path in FBZ
-#momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
-
-
-
-
-####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
-
-
-limits_X=1
-Wbw=band_max_FB-band_min_FB
-limits_Y=maxomeg*1000 #conversion to mev  #*(3.75/Wbw)
-N_X=Npath
-N_Y=Nomegs
-
-
-
-####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
-
-plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=4)
-# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
-
-ticks_X=5
-ticks_Y=5
-Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
-Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
-xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
-yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
-
-##HSP addition
-qarr=np.linspace(0,Npath,Npath)
-
-for i in HSpoints:
-    print(qarr[i])
-    plt.axvline(qarr[i],c='r')
-
-
-plt.xticks(Npl_X,xl)
-plt.yticks(Npl_Y,yl)
-plt.xlabel(r"$q_x$",size=16)
-plt.ylabel(r"$\omega$",size=16)
+plt.plot(VV[:,0],VV[:,1])
+plt.scatter(KX_in,KY_in, s=10, c=np.log(np.real(integ_arr_no_reshape)))
+plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("Imchi_filling"+str(filling)+".png", dpi=300)
-plt.show()
+plt.savefig("energycuttestreal.png")
+plt.close()
 
 
-########################
-momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
-
-####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
-
-
-plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
-# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
-
-ticks_X=5
-ticks_Y=5
-Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
-Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
-xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
-yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
-
-plt.xticks(Npl_X,xl)
-plt.yticks(Npl_Y,yl)
-plt.xlabel(r"$q_x$",size=16)
-plt.ylabel(r"$\omega$",size=16)
+plt.plot(VV[:,0],VV[:,1])
+plt.scatter(KX_in,KY_in, s=10, c=np.abs(np.imag(integ_arr_no_reshape)))
+plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("Imchi2_filling"+str(filling)+".png", dpi=300)
-
-"""
-####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE REAL
-plt.imshow(np.real(momentumcut), origin='lower', aspect='auto')
+plt.savefig("energycuttestimag.png")
+plt.close()
 
 
-ticks_X=5
-ticks_Y=5
-Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
-Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
-xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
-yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
-
-plt.xticks(Npl_X,xl)
-plt.yticks(Npl_Y,yl)
-plt.xlabel(r"$q_x$",size=16)
-plt.ylabel(r"$\omega$",size=16)
-#axhline(N_Y/2 -7, c='r')
-#print(omegas[int(N_Y/2 -7)])
+plt.scatter(KX_rhomb,KY_rhomb, s=10, c=np.log(np.real(integ_arr_no_reshape)))
+plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.show()
+plt.savefig("energycuttestreal2.png")
+plt.close()
 
-
-####### TRACE AT ZERO FREQUENCY OF THE MOMENTUM CUT
-
-plt.plot(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
-plt.scatter(np.sqrt(np.sum(kpath**2, axis=1 )) ,np.real(momentumcut)[0,:])
-plt.show()
-"""
