@@ -45,7 +45,9 @@ pauliy=np.array([[0,-1j],[1j,0]])
 hbarc=0.1973269804*1e-6 #ev*m
 alpha=137.0359895 #fine structure constant
 a_graphene=2.46*(1e-10) #in meters
+# eSQ_eps0=18.095128022747*1e-9# ev*m 
 ee2=(hbarc/a_graphene)/alpha
+# ee2=eSQ_eps0/a_graphene
 kappa_di=3.03
 T= 0.001/1000 #in ev for finite temp calc
 
@@ -177,12 +179,12 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     # psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
     #MANUAL ARRAY CASTING
     
-    psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],4], dtype=np.cdouble)
+    psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],2,2]) +0*1j
     psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
 
     for nband in range(nbands):
-        psi_p[ind_to_sum] = np.reshape(np.array(Eigvect[:,2*N-int(nbands/2)+nband]) , [N, 4 ])
-        psi[nband,:]=psi_p.flatten()
+        psi_p[ind_to_sum] = np.reshape(        np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
+        psi[nband,:]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
 
     return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi
     #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
@@ -208,8 +210,8 @@ n_2=np.arange(0,Nsamp,1)
 k1=np.array([1,0])
 k2=np.array([1/2,np.sqrt(3)/2])
 n_1p,n_2p=np.meshgrid(n_1,n_2)
-n_1p_flat=n_1p.flatten()
-n_2p_flat=n_2p.flatten()
+n_1p_flat=np.array(n_1p.flatten(),dtype=np.int8)
+n_2p_flat=np.array(n_2p.flatten(),dtype=np.int8)
 G1=k1*(Nsamp)
 G2=k2*(Nsamp)
 
@@ -220,63 +222,85 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
-# print("starting dispersion ..........")
-# for l in range(Nsamp*Nsamp):
-#     i=int(l%Nsamp)
-#     j=int((l-i)/Nsamp)
-#     #print(XsLatt[i,j],YsLatt[i,j])
+print("starting dispersion ..........")
+for l in range(Nsamp*Nsamp):
+    i=int(l%Nsamp)
+    j=int((l-i)/Nsamp)
+    #print(XsLatt[i,j],YsLatt[i,j])
     
-#     E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
-#     E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
+    E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
+    E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
 
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-#     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
-#     psi_plus_a.append(wave1)
-#     psi_min_a.append(wave2)
+    psi_plus_a.append(wave1)
+    psi_min_a.append(wave2)
 
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-# psi_plus_conj=np.conj(np.array(psi_plus_a))
-# psi_plus_r_conj=np.conj(np.array(psi_plus_r))
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+psi_plus_r_conj=np.conj(np.array(psi_plus_r))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
-# #relevant wavefunctions and energies for the - valley
-# psi_min=np.array(psi_min_a)
-# psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-# psi_min_conj=np.conj(np.array(psi_min_a))
-# psi_min_r_conj=np.conj(np.array(psi_min_r))
-# Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
+#relevant wavefunctions and energies for the - valley
+psi_min=np.array(psi_min_a)
+psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_min_conj=np.conj(np.array(psi_min_a))
+psi_min_r_conj=np.conj(np.array(psi_min_r))
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
 
-#  ## for testing different things
-# Z= Ene_valley_plus
+ ## for testing different things
+Z= Ene_valley_plus
 
-# e=time.time()
-# print("finished dispersion ..........")
-# print("time elapsed for dispersion ..........", e-s)
-# print("shape of the wavefunctions...", np.shape(psi_plus))
-# # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# # plt.show()
+e=time.time()
+print("finished dispersion ..........")
+print("time elapsed for dispersion ..........", e-s)
+print("shape of the wavefunctions...", np.shape(psi_plus))
+# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
+# plt.show()
 
-# s=time.time()
-# print("calculating tensor that stores the overlaps........")
-# Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
-# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
-# print( "tensorshape",np.shape(Lambda_Tens_plus) )
-# print("calculating tensor that stores the overlaps........")
-# Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
-# Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
-# print( "tensorshape",np.shape(Lambda_Tens_plus) )
-# e=time.time()
+s=time.time()
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
+print( "tensorshape",np.shape(Lambda_Tens_plus) )
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
+Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
+print( "tensorshape",np.shape(Lambda_Tens_plus) )
+e=time.time()
+
+with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Ene_valley_plus)
+with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Ene_valley_min)
+with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_plus)
+with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_min)
+with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_p_plus)
+with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_p_min)
+
 
 print("Loading tensor ..........")
-Ene_valley_plus=np.load('Energies_plus_'+str(Nsamp)+'.npy')
-Lambda_Tens_plus=np.load('Overlap_plus_'+str(Nsamp)+'.npy')
-Ene_valley_min=np.load('Energies_min_'+str(Nsamp)+'.npy')
-Lambda_Tens_min=np.load('Overlap_min_'+str(Nsamp)+'.npy')
-Lambda_Tens_p_plus=np.load('Overlap_p_plus_'+str(Nsamp)+'.npy')
-Lambda_Tens_p_min=np.load('Overlap_p_min_'+str(Nsamp)+'.npy')
+with open('Energies_plus_'+str(Nsamp)+'.npy', 'rb') as f:
+    Ene_valley_plus=np.load(f)
+with open('Energies_min_'+str(Nsamp)+'.npy', 'rb') as f:
+    Ene_valley_min=np.load(f)
+with open('Overlap_plus_'+str(Nsamp)+'.npy', 'rb') as f:
+    Lambda_Tens_plus=np.load(f)
+with open('Overlap_min_'+str(Nsamp)+'.npy', 'rb') as f:
+    Lambda_Tens_min=np.load(f)
+with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'rb') as f:
+    Lambda_Tens_p_plus=np.load(f)
+with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'rb') as f:
+    Lambda_Tens_p_min=np.load(f)
+
+
 
 
 
@@ -746,8 +770,10 @@ for omegas_m_i in omegas:
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
 
         #for the form factors
-        n_1pp_flat=(n_1p_flat+n_1p_flat[int(l)])%Nsamp
-        n_2pp_flat=(n_2p_flat+n_2p_flat[int(l)])%Nsamp
+        # n_1pp_flat=(n_1p_flat+i)%Nsamp
+        # n_2pp_flat=(n_2p_flat+j)%Nsamp
+        n_1pp_flat=(n_1p_flat+int(n_1p_flat[int(l)]))%Nsamp 
+        n_2pp_flat=(n_2p_flat+int(n_2p_flat[int(l)]))%Nsamp
         integrand_var=0
         #save one reshape below by reshaping n's
     
@@ -758,8 +784,8 @@ for omegas_m_i in omegas:
         # Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
         
         
-        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
-        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_p_min[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_p_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
         # Lambda_Tens_plus_k_kq=np.array([Lambda_Tens_p_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
         # Lambda_Tens_min_k_kq=np.array([Lambda_Tens_p_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
       

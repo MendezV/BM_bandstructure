@@ -177,12 +177,20 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     # psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
     #MANUAL ARRAY CASTING
     
-    psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],4], dtype=np.cdouble)
+    # psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],4], dtype=np.cdouble)
+    # psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
+    # # print(np.shape(Eigvect), "shapeeig")
+    # for nband in range(nbands):
+    #     psi_p[ind_to_sum] = np.reshape(np.array(Eigvect[:,2*N-int(nbands/2)+nband]) , [N, 4 ], order='F')
+    #     psi[nband,:]=psi_p.flatten()
+
+    psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],2,2]) +0*1j
     psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
 
     for nband in range(nbands):
-        psi_p[ind_to_sum] = np.reshape(np.array(Eigvect[:,2*N-int(nbands/2)+nband]) , [N, 4 ])
-        psi[nband,:]=psi_p.flatten()
+        psi_p[ind_to_sum] = np.reshape(        np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
+        psi[nband,:]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
+
 
     return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi
     #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
@@ -220,77 +228,91 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
-# print("starting dispersion ..........")
-# for l in range(Nsamp*Nsamp):
-#     i=int(l%Nsamp)
-#     j=int((l-i)/Nsamp)
-#     #print(XsLatt[i,j],YsLatt[i,j])
+print("starting dispersion ..........")
+for l in range(Nsamp*Nsamp):
+    i=int(l%Nsamp)
+    j=int((l-i)/Nsamp)
+    #print(XsLatt[i,j],YsLatt[i,j])
     
-#     E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
-#     E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
+    E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
+    E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
 
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-#     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
-#     psi_plus_a.append(wave1)
-#     psi_min_a.append(wave2)
+    psi_plus_a.append(wave1)
+    psi_min_a.append(wave2)
 
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-# psi_plus_conj=np.conj(np.array(psi_plus_a))
-# psi_plus_r_conj=np.conj(np.array(psi_plus_r))
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+psi_plus_r_conj=np.conj(np.array(psi_plus_r))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
-# #relevant wavefunctions and energies for the - valley
-# psi_min=np.array(psi_min_a)
-# psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-# psi_min_conj=np.conj(np.array(psi_min_a))
-# psi_min_r_conj=np.conj(np.array(psi_min_r))
-# Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
+#relevant wavefunctions and energies for the - valley
+psi_min=np.array(psi_min_a)
+psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+psi_min_conj=np.conj(np.array(psi_min_a))
+psi_min_r_conj=np.conj(np.array(psi_min_r))
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
 
-#  ## for testing different things
-# Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+ ## for testing different things
+Z= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
-# e=time.time()
-# print("finished dispersion ..........")
-# print("time elapsed for dispersion ..........", e-s)
-# print("shape of the wavefunctions...", np.shape(psi_plus))
-# # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# # plt.show()
+e=time.time()
+print("finished dispersion ..........")
+print("time elapsed for dispersion ..........", e-s)
+print("shape of the wavefunctions...", np.shape(psi_plus))
+# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
+# plt.show()
 
-# s=time.time()
-# # print("calculating tensor that stores the overlaps........")
-# # Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
-# # Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
-
+s=time.time()
 # print("calculating tensor that stores the overlaps........")
-# Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
-# Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
+# Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
+# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
+
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
+Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
 # Lambda_Tens_pm_plus=np.tensordot(psi_plus_r,psi_plus_r_conj, axes=(3,3))
+# Lambda_Tens_pm_plus=np.zeros([Nsamp , Nsamp, nbands,Nsamp, Nsamp, nbands])+0*1j
+# Lambda_Tens_pm_min=np.zeros([Nsamp , Nsamp, nbands,Nsamp, Nsamp, nbands])+0*1j
+
+# for l in range(nbands):
+#     for k in range(nbands):
+#         for s in range(Nsamp):
+#             for r in range(Nsamp):
+#                 for m in range(Nsamp):
+#                     for y in range(Nsamp):
+#                         for j in range(np.shape(n1)[0]*np.shape(n1)[1]*4):
+#                             Lambda_Tens_pm_plus[y,m,k,r,s,l]=Lambda_Tens_pm_plus[y,m,k,r,s,l]+psi_plus_r_conj[y,m,k,j]*psi_plus_r[r,s,l,j]
+#                             Lambda_Tens_pm_min[y,m,k,r,s,l]=Lambda_Tens_pm_min[y,m,k,r,s,l]+psi_min_r_conj[y,m,k,j]*psi_min_r[r,s,l,j]
+
+
 # Lambda_Tens_pm_min=np.tensordot(psi_min_r,psi_min_r_conj, axes=(3,3))
-# print( "tensorshape",np.shape(Lambda_Tens_p_plus) )
-# e=time.time()
-# print("time elapsed for tensor ..........", e-s)
+print( "tensorshape",np.shape(Lambda_Tens_p_plus) )
+e=time.time()
+print("time elapsed for tensor ..........", e-s)
 
-# print("Saving tensor ..........")
-# with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as file1:
-#     np.save(file1, Ene_valley_plus)
+print("Saving tensor ..........")
+with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as file1:
+    np.save(file1, Ene_valley_plus)
 
-# with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as file1:
-#     np.save(file1, Ene_valley_min)
+with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as file1:
+    np.save(file1, Ene_valley_min)
 
-# # with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
-# #     np.save(file2, Lambda_Tens_plus)
+# with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_plus)
 
-# # with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as file2:
-# #     np.save(file2, Lambda_Tens_min)
+# with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as file2:
+#     np.save(file2, Lambda_Tens_min)
 
-# with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
-#     np.save(file2, Lambda_Tens_p_plus)
+with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
+    np.save(file2, Lambda_Tens_p_plus)
 
-# with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as file2:
-#     np.save(file2, Lambda_Tens_p_min)
+with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as file2:
+    np.save(file2, Lambda_Tens_p_min)
 
 # with open('Overlap_pm_plus_'+str(Nsamp)+'.npy', 'wb') as file2:
 #     np.save(file2, Lambda_Tens_pm_plus)
@@ -305,8 +327,8 @@ Ene_valley_min=np.load('Energies_min_'+str(Nsamp)+'.npy')
 # Lambda_Tens_min=np.load('Overlap_min_'+str(Nsamp)+'.npy')
 Lambda_Tens_p_plus=np.load('Overlap_p_plus_'+str(Nsamp)+'.npy')
 Lambda_Tens_p_min=np.load('Overlap_p_min_'+str(Nsamp)+'.npy')
-Lambda_Tens_pm_plus=np.load('Overlap_pm_plus_'+str(Nsamp)+'.npy')
-Lambda_Tens_pm_min=np.load('Overlap_pm_min_'+str(Nsamp)+'.npy')
+# Lambda_Tens_pm_plus=np.load('Overlap_pm_plus_'+str(Nsamp)+'.npy')
+# Lambda_Tens_pm_min=np.load('Overlap_pm_min_'+str(Nsamp)+'.npy')
 
 Z= Ene_valley_plus
 
@@ -696,7 +718,7 @@ kpath2=linpam(L,Nt)
 
 
 #####INTEGRAND FUNCTION
-dS_in=Vol_rec/((Nsamp-1)*(Nsamp-1)) #some points are repeated in my scheme
+dS_in=Vol_rec/((Nsamp)*(Nsamp)) #some points are repeated in my scheme
 xi=1
 def integrand(nx,ny,ekn,ekm,w,mu,T):
     edk=ekn-mu
@@ -715,9 +737,7 @@ def integrand(nx,ny,ekn,ekm,w,mu,T):
     return (fac_p)
 
 
-# plt.scatter(KX_in,KY_in, c=np.log10(abs(integrand(0.01,0.01,KX_in,KY_in,0.0001,mu,T) +1e-17)), s=30)
-# plt.colorbar()
-# plt.show()
+
 
 ####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
@@ -732,8 +752,20 @@ sb=time.time()
 
 print("starting bubble.......")
 omegas=[1e-14]
-path=np.arange(0,Nsamp*Nsamp)
+n_1pp_flat=(n_1p_flat+n_1p_flat[1])%Nsamp
+n_2pp_flat=(n_2p_flat+n_2p_flat[1])%Nsamp
+Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
 
+plt.scatter(KX_rhomb,KY_rhomb,c=np.abs(Lambda_Tens_plus_kq_k[:,1,0])**2)
+plt.colorbar()
+plt.show()
+
+plt.scatter(KX_rhomb,KY_rhomb,c=np.abs(Lambda_Tens_plus_kq_k[:,1,1])**2)
+plt.colorbar()
+plt.show()
+
+
+path=np.arange(0,Nsamp*Nsamp)
 for omegas_m_i in omegas:
     sd=[]
     sp=time.time()
@@ -747,8 +779,9 @@ for omegas_m_i in omegas:
         n_2pp=(n_2p+n_2p[i,j])%Nsamp
 
         #for the form factors
-        n_1pp_flat=(n_1p_flat+n_1p_flat[int(l)])%Nsamp
-        n_2pp_flat=(n_2p_flat+n_2p_flat[int(l)])%Nsamp
+        n_1pp_flat=(n_1p_flat+n_1p_flat[l])%Nsamp
+        n_2pp_flat=(n_2p_flat+n_2p_flat[l])%Nsamp
+
         integrand_var=0
         #save one reshape below by reshaping n's
     
@@ -759,16 +792,14 @@ for omegas_m_i in omegas:
         # Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[ss,:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
         
         
-        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
-        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_p_min[n_1p_flat[ss],n_2p_flat[ss],:,n_1pp_flat[ss],n_2pp_flat[ss],:] for ss in range(Nsamp**2)])
-        Lambda_Tens_plus_k_kq=np.array([Lambda_Tens_pm_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
-        Lambda_Tens_min_k_kq=np.array([Lambda_Tens_pm_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
-      
+        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1p_flat[ss],n_2p_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_p_min[n_1p_flat[ss],n_2p_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        # Lambda_Tens_plus_k_kq=np.array([Lambda_Tens_pm_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
+        # Lambda_Tens_min_k_kq=np.array([Lambda_Tens_pm_min[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
         
         # print(np.shape(Lambda_Tens_plus_kq_k))
-        # e=time.time()
+        e=time.time()
         # print("time to op: evaluation of kq shift",e-s)
-
         s=time.time()
         #####all bands for the + and - valley
         for nband in range(nbands):
@@ -777,31 +808,30 @@ for omegas_m_i in omegas:
                 ek_n=Ene_valley_plus[:,:,nband]
                 ek_m=Ene_valley_plus[:,:,mband]
                 Lambda_Tens_plus_kq_k_nm=np.reshape(Lambda_Tens_plus_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                Lambda_Tens_plus_k_kq_mn=np.reshape(Lambda_Tens_plus_k_kq[:,mband,nband], [Nsamp,Nsamp])
+                # Lambda_Tens_plus_k_kq_mn=np.reshape(Lambda_Tens_plus_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
-                # integrand_var=integrand_var+(np.abs(Lambda_Tens_plus_kq_k_nm)**2 ) *integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
-                integrand_var=integrand_var+( (Lambda_Tens_plus_k_kq_mn)*Lambda_Tens_plus_kq_k_nm )# *integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+np.abs( Lambda_Tens_plus_kq_k_nm )**2 # *integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 # integrand_var=integrand_var+np.conj(Lambda_Tens_plus_k_kq_mn)-(Lambda_Tens_plus_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 
 
                 ek_n=Ene_valley_min[:,:,nband]
                 ek_m=Ene_valley_min[:,:,mband]
                 Lambda_Tens_min_kq_k_nm=np.reshape(Lambda_Tens_min_kq_k[:,nband,mband], [Nsamp,Nsamp])
-                Lambda_Tens_min_k_kq_mn=np.reshape(Lambda_Tens_min_k_kq[:,mband,nband], [Nsamp,Nsamp])
+                # Lambda_Tens_min_k_kq_mn=np.reshape(Lambda_Tens_min_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
-                integrand_var=integrand_var+( (Lambda_Tens_min_k_kq_mn)*Lambda_Tens_min_kq_k_nm ) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+np.abs( Lambda_Tens_min_kq_k_nm )**2 #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 # integrand_var=integrand_var+np.conj(Lambda_Tens_min_k_kq_mn)  -(Lambda_Tens_min_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 
 
         e=time.time()
        
-        bub=bub+np.sum(integrand_var)*dS_in
+        bub=bub+np.sum(np.sum(integrand_var))*dS_in
 
         sd.append( bub )
 
     integ.append(sd)
     
-integ_arr_no_reshape=np.array(integ)
+integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
 
 e=time.time()
 print("finished bubble.......")
@@ -809,7 +839,7 @@ print("Time for bubble",e-sb)
 
 
 plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX_in,KY_in, s=10, c=np.log(np.real(integ_arr_no_reshape)))
+plt.scatter(KX_in,KY_in, s=10, c=np.log10(np.real(integ_arr_no_reshape)))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
 plt.savefig("energycuttestreal.png")
@@ -824,7 +854,7 @@ plt.savefig("energycuttestimag.png")
 plt.close()
 
 
-plt.scatter(KX_rhomb,KY_rhomb, s=10, c=np.log(np.real(integ_arr_no_reshape)))
+plt.scatter(KX_rhomb,KY_rhomb, s=10, c=np.log10(np.real(integ_arr_no_reshape)))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
 plt.savefig("energycuttestreal2.png")
