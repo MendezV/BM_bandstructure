@@ -45,10 +45,19 @@ pauliy=np.array([[0,-1j],[1j,0]])
 hbarc=0.1973269804*1e-6 #ev*m
 alpha=137.0359895 #fine structure constant
 a_graphene=2.46*(1e-10) #in meters
-# eSQ_eps0=18.095128022747*1e-9# ev*m 
-ee2=(hbarc/a_graphene)/alpha
-# ee2=eSQ_eps0/a_graphene
-kappa_di=3.03
+
+
+ham_kappa=0.05
+a0=0.142*1e-9
+ds=(1.0/ham_kappa)*(1*1e-9)/a0        
+
+eSQ_eps0=18.095128022747*1e-9/a0# ev*m 
+ee2=eSQ_eps0/a_graphene
+kappa_di=10.0
+# ee2=(hbarc/a_graphene)/alpha
+# kappa_di=3.03
+
+
 T= 0.001/1000 #in ev for finite temp calc
 
 print("COULOMB CONSTANT...",ee2)
@@ -179,12 +188,22 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     # psi[ind_to_sum]=np.reshape(np.array(Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]) , [N, nbands,4 ])
     #MANUAL ARRAY CASTING
     
+    # psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],2,2]) +0*1j
+    # psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
+
+    # for nband in range(nbands):
+    #     psi_p[ind_to_sum] = np.reshape(        np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
+    #     psi[nband,:]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
+
     psi_p=np.zeros([np.shape(n1)[0],np.shape(n1)[1],2,2]) +0*1j
     psi=np.zeros([nbands,np.shape(n1)[0]*np.shape(n1)[1]*4], dtype=np.cdouble)
 
     for nband in range(nbands):
+        # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
         psi_p[ind_to_sum] = np.reshape(        np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
         psi[nband,:]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
+
+
 
     return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi
     #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
@@ -222,68 +241,68 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
-print("starting dispersion ..........")
-for l in range(Nsamp*Nsamp):
-    i=int(l%Nsamp)
-    j=int((l-i)/Nsamp)
-    #print(XsLatt[i,j],YsLatt[i,j])
+# print("starting dispersion ..........")
+# for l in range(Nsamp*Nsamp):
+#     i=int(l%Nsamp)
+#     j=int((l-i)/Nsamp)
+#     #print(XsLatt[i,j],YsLatt[i,j])
     
-    E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
-    E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
+#     E1,wave1=eigsystem(XsLatt[i,j],YsLatt[i,j], 1, nbands, n1, n2)
+#     E2,wave2=eigsystem(XsLatt[i,j],YsLatt[i,j], -1, nbands, n1, n2)
 
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+#     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
-    psi_plus_a.append(wave1)
-    psi_min_a.append(wave2)
+#     psi_plus_a.append(wave1)
+#     psi_min_a.append(wave2)
 
-##relevant wavefunctions and energies for the + valley
-psi_plus=np.array(psi_plus_a)
-psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-psi_plus_conj=np.conj(np.array(psi_plus_a))
-psi_plus_r_conj=np.conj(np.array(psi_plus_r))
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
+# ##relevant wavefunctions and energies for the + valley
+# psi_plus=np.array(psi_plus_a)
+# psi_plus_r=np.reshape(np.array(psi_plus_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+# psi_plus_conj=np.conj(np.array(psi_plus_a))
+# psi_plus_r_conj=np.conj(np.array(psi_plus_r))
+# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Nsamp,Nsamp,nbands])
 
-#relevant wavefunctions and energies for the - valley
-psi_min=np.array(psi_min_a)
-psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
-psi_min_conj=np.conj(np.array(psi_min_a))
-psi_min_r_conj=np.conj(np.array(psi_min_r))
-Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
+# #relevant wavefunctions and energies for the - valley
+# psi_min=np.array(psi_min_a)
+# psi_min_r=np.reshape(np.array(psi_min_a),[Nsamp,Nsamp,nbands,np.shape(n1)[0]*np.shape(n1)[1]*4])
+# psi_min_conj=np.conj(np.array(psi_min_a))
+# psi_min_r_conj=np.conj(np.array(psi_min_r))
+# Ene_valley_min= np.reshape(Ene_valley_min_a,[Nsamp,Nsamp,nbands])
 
- ## for testing different things
-Z= Ene_valley_plus
+#  ## for testing different things
+# Z= Ene_valley_plus
 
-e=time.time()
-print("finished dispersion ..........")
-print("time elapsed for dispersion ..........", e-s)
-print("shape of the wavefunctions...", np.shape(psi_plus))
-# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# plt.show()
+# e=time.time()
+# print("finished dispersion ..........")
+# print("time elapsed for dispersion ..........", e-s)
+# print("shape of the wavefunctions...", np.shape(psi_plus))
+# # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
+# # plt.show()
 
-s=time.time()
-print("calculating tensor that stores the overlaps........")
-Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
-Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
-print( "tensorshape",np.shape(Lambda_Tens_plus) )
-print("calculating tensor that stores the overlaps........")
-Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
-Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
-print( "tensorshape",np.shape(Lambda_Tens_plus) )
-e=time.time()
+# s=time.time()
+# print("calculating tensor that stores the overlaps........")
+# Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus_r, axes=(2,3))
+# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min_r, axes=(2,3))
+# print( "tensorshape",np.shape(Lambda_Tens_plus) )
+# print("calculating tensor that stores the overlaps........")
+# Lambda_Tens_p_plus=np.tensordot(psi_plus_r_conj,psi_plus_r, axes=(3,3))
+# Lambda_Tens_p_min=np.tensordot(psi_min_r_conj,psi_min_r, axes=(3,3))
+# print( "tensorshape",np.shape(Lambda_Tens_plus) )
+# e=time.time()
 
-with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Ene_valley_plus)
-with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Ene_valley_min)
-with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Lambda_Tens_plus)
-with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Lambda_Tens_min)
-with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Lambda_Tens_p_plus)
-with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as f:
-    np.save(f, Lambda_Tens_p_min)
+# with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Ene_valley_plus)
+# with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Ene_valley_min)
+# with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Lambda_Tens_plus)
+# with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Lambda_Tens_min)
+# with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Lambda_Tens_p_plus)
+# with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Lambda_Tens_p_min)
 
 
 print("Loading tensor ..........")
@@ -291,10 +310,10 @@ with open('Energies_plus_'+str(Nsamp)+'.npy', 'rb') as f:
     Ene_valley_plus=np.load(f)
 with open('Energies_min_'+str(Nsamp)+'.npy', 'rb') as f:
     Ene_valley_min=np.load(f)
-with open('Overlap_plus_'+str(Nsamp)+'.npy', 'rb') as f:
-    Lambda_Tens_plus=np.load(f)
-with open('Overlap_min_'+str(Nsamp)+'.npy', 'rb') as f:
-    Lambda_Tens_min=np.load(f)
+# with open('Overlap_plus_'+str(Nsamp)+'.npy', 'rb') as f:
+#     Lambda_Tens_plus=np.load(f)
+# with open('Overlap_min_'+str(Nsamp)+'.npy', 'rb') as f:
+#     Lambda_Tens_min=np.load(f)
 with open('Overlap_p_plus_'+str(Nsamp)+'.npy', 'rb') as f:
     Lambda_Tens_p_plus=np.load(f)
 with open('Overlap_p_min_'+str(Nsamp)+'.npy', 'rb') as f:
@@ -835,7 +854,12 @@ print("Time for bubble",e-sb)
 Coul=2*np.pi*ee2/kappa_di
 # Coul=1
 
-Vq_pre=Coul/(np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  ))
+#Vq_pre=0.008*Coul/(np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  ))
+qq=np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  )
+V0=5*eSQ_eps0/( np.sqrt(3.0)*LM*LM)
+Vq_pre=V0*np.tanh(qq*ds)/(qq)
+
+print(V0,eSQ_eps0, (np.sqrt(3.0)*LM*LM))
 Vq=np.array([Vq_pre for l in range(Nomegs)])
 print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
 #Dielectric function ##minus the convention in Cyprians work -- means that we have a + in the denominator
