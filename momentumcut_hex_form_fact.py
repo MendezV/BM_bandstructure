@@ -44,12 +44,22 @@ pauliy=np.array([[0,-1j],[1j,0]])
 
 hbarc=0.1973269804*1e-6 #ev*m
 alpha=137.0359895 #fine structure constant
+
+#efective screening only enters the dielectric constatn
 a_graphene=2.46*(1e-10) #in meters
 ee2=(hbarc/a_graphene)/alpha
 kappa_di=3.03
+
+#double screened potential
+ee=1.60217663*1e-19
+K=8.9875517923*1e9
+Jev=1.602176634*1e-19
+Coul=((ee*ee*K/Jev)/a_graphene)/kappa_di
+
+
 T=10/1000 #in ev for finite temp calc
 
-print("COULOMB CONSTANT...",ee2)
+print("COULOMB CONSTANT...",Coul)
 ##########################################
 #lattice vectors
 ##########################################
@@ -71,7 +81,6 @@ LM2=2*np.pi*np.array([-GM1[1],GM1[0]])/la.det(np.array([GM1,GM2]))
 
 LM=np.sqrt(np.dot(LM1,LM1)) #moire period 2/np.sin(theta/2)
 GM=np.sqrt(np.dot(GM1,GM1)) #reciprocal space period  8*np.pi/np.sqrt(3)*np.sin(theta/2)
-
 ##volume of the MBZ
 zhat=np.array([0,0,1])
 b_1=np.array([GM1[0],GM1[1],0])
@@ -435,6 +444,122 @@ for i in range(nbands):
     plt.close()
 
 
+####################################################################################
+####################################################################################
+####################################################################################
+#
+#      PATH IN RECIPROCAL SPACE
+#
+####################################################################################
+####################################################################################
+####################################################################################
+
+
+
+#linear parametrization accross different points in the BZ
+def linpam(Kps,Npoints_q):
+    Npoints=len(Kps)
+    t=np.linspace(0, 1, Npoints_q)
+    linparam=np.zeros([Npoints_q*(Npoints-1),2])
+    for i in range(Npoints-1):
+        linparam[i*Npoints_q:(i+1)*Npoints_q,0]=Kps[i][0]*(1-t)+t*Kps[i+1][0]
+        linparam[i*Npoints_q:(i+1)*Npoints_q,1]=Kps[i][1]*(1-t)+t*Kps[i+1][1]
+
+    return linparam
+
+
+
+
+
+def findpath(Kps,KX,KY):
+
+    path=np.empty((0))
+    path_ij=np.empty((0))
+    pthK=[]
+    HSP_index=[]
+    counter_path=0
+    HSP_index.append(counter_path)
+    
+    
+    l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
+    j=int(l%Nsamp)
+    i=int((l-j)/Nsamp)
+
+    
+    path=np.append(path,int(l)) 
+    pthK.append([KX[l],KY[l]])
+    
+    
+    amin=GM/Nsamp
+    k1=(GM/Nsamp)*np.array([1,0])
+    k2=(GM/Nsamp)*np.array([1/2,np.sqrt(3)/2])
+    nnlist=[[0,1],[1,0],[0,-1],[-1,0],[1,-1],[-1,1]]
+
+    NHSpoints=np.shape(Kps)[0]
+
+    
+
+    for indhs in range(NHSpoints-1):
+
+        c=0
+        c2=0
+        
+        
+        dist=np.sqrt( (Kps[indhs+1][0]-KX[l])**2 + (Kps[indhs+1][1]-KY[l])**2)
+        while ( c2<1  and  dist>=0.8*amin):
+            dists=[]
+            KXnn=[]
+            KYnn=[]
+
+            dist_pre=dist
+        
+            for nn in range(6): #coordination number is 6
+                kxnn= KX[l]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
+                kynn= KY[l]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
+                di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
+                dists.append(di)
+                KXnn.append(kxnn)
+                KYnn.append(kynn)
+            
+            dist=np.min(np.array(dists))
+            ind_min=np.argmin(np.array(dists))
+            
+            
+            l=np.argmin(  (KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 )
+            j=int(l%Nsamp)
+            i=int((l-j)/Nsamp)
+
+            if dist_pre==dist:
+                c2=c2+1
+            
+
+            path=np.append(path,int(l))
+            pthK.append([KX[l],KY[l]])
+            # print([KX[i,j],KY[i,j]],[Kps[indhs+1][0],Kps[indhs+1][1]], dist)
+
+            c=c+1
+            counter_path=counter_path+1
+    
+        HSP_index.append(counter_path)
+        
+        
+    return path,np.array(pthK),HSP_index
+
+Gamma, K, Kp, M
+
+L4=[]
+L4=L4+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
+path,kpath,HSpoints=findpath(L4,KX,KY)
+Npath=np.size(path)
+plt.plot(VV[:,0],VV[:,1])
+plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+plt.gca().set_aspect('equal')
+# plt.show()
+plt.savefig("path2.png")
+plt.close()
+
+print("calculated path accross the FBZ.......")
+
 
 ####################################################################################
 ####################################################################################
@@ -472,33 +597,22 @@ def integrand(nkq,ekn,ekm,w,mu,T):
 ####### COMPUTING BUBBLE FOR ALL MOMENTA AND FREQUENCIES SAMPLED
 
 
+Nomegs=100
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
-# maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
-# minomeg=1e-14
-# omegas=np.linspace(minomeg,maxomeg,Nomegs)
+maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
+minomeg=1e-14
+omegas=np.linspace(minomeg,maxomeg,Nomegs)
 integ=[]
 sb=time.time()
 
 print("starting bubble.......")
-omegas=[1e-14]
-# n_1pp_flat=(n_1p_flat+n_1p_flat[10])%Nsamp
-# n_2pp_flat=(n_2p_flat+n_2p_flat[10])%Nsamp
-# Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_p_plus[n_1pp_flat[ss],n_2pp_flat[ss],:,n_1p_flat[ss],n_2p_flat[ss],:] for ss in range(Nsamp**2)])
-
-# plt.scatter(KX_rhomb,KY_rhomb,c=np.abs(Lambda_Tens_plus_kq_k[:,1,0])**2)
-# plt.gca().set_aspect('equal', adjustable='box')
-# plt.colorbar()
-# plt.show()
-
-# plt.scatter(KX_rhomb,KY_rhomb,c=np.abs(Lambda_Tens_plus_kq_k[:,1,1])**2)
-# plt.gca().set_aspect('equal', adjustable='box')
-# plt.colorbar()
-# plt.show()
 
 
-path=np.arange(0,Npoi)
-kpath=np.array([KX,KY]).T
+
+
+# path=np.arange(0,Npoi)
+# kpath=np.array([KX,KY]).T
 print(np.shape(kpath))
 for omegas_m_i in omegas:
     sd=[]
@@ -506,8 +620,8 @@ for omegas_m_i in omegas:
     for l in path:  #for calculating only along path in FBZ
         bub=0
         
-        qx=kpath[l, 0]
-        qy=kpath[l, 1]
+        qx=KX[np.int(l)]
+        qy=KY[np.int(l)]
         Iq=[]
         for s in range(Npoi):
             kxq,kyq=kwrap_FBZ(KX[s]+qx,KY[s]+qy)
@@ -555,29 +669,90 @@ for omegas_m_i in omegas:
 
     integ.append(sd)
     
-integ_arr_no_reshape=np.array(integ)/(8*Vol_rec) #8= 4bands x 2valleys
+integ_arr_no_reshape=np.array(integ)
 
 e=time.time()
 print("finished bubble.......")
 print("Time for bubble",e-sb)
 
 
-plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX,KY, s=20, c=np.real(integ_arr_no_reshape))
-plt.gca().set_aspect('equal', adjustable='box')
-plt.colorbar()
-plt.savefig("energycuttestreal.png")
-plt.close()
-plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX,KY, s=20, c=np.imag(integ_arr_no_reshape))
-plt.gca().set_aspect('equal', adjustable='box')
-plt.colorbar()
-plt.savefig("energycuttestimag.png")
-plt.close()
-plt.plot(VV[:,0],VV[:,1])
-plt.scatter(KX,KY, s=20, c=np.abs(integ_arr_no_reshape))
-plt.gca().set_aspect('equal', adjustable='box')
-plt.colorbar()
-plt.savefig("energycuttestabs.png")
-plt.close()
 
+
+qq=np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  )
+Vq_pre=2*np.pi*Coul/qq
+
+# V0=eSQ_eps0/( np.sqrt(3.0)*LM*LM)
+# Vq_pre=V0*np.tanh(qq*ds)/(qq)
+
+# print(V0,eSQ_eps0, (np.sqrt(3.0)*LM*LM))
+Vq=np.array([Vq_pre for l in range(Nomegs)])
+print("shape coulomb interaction", np.shape(Vq), Nomegs,Npath)
+#Dielectric function ##minus the convention in Cyprians work -- means that we have a + in the denominator
+momentumcut= np.log( np.abs( np.imag(-1/(1 +Vq* np.reshape(integ_arr_no_reshape,[Nomegs,Npath]) )   ) ) ) #for calculating only along path in FBZ
+#momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
+
+
+
+
+####### GETTING A MOMENTUM CUT OF THE DATA FROM GAMMA TO K AS DEFINED IN THE PREVIOUS CODE SECTION
+
+
+limits_X=1
+Wbw=band_max_FB-band_min_FB
+limits_Y=maxomeg*1000 #conversion to mev  #*(3.75/Wbw)
+N_X=Npath
+N_Y=Nomegs
+
+
+
+####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
+
+plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=4)
+# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+##HSP addition
+qarr=np.linspace(0,Npath,Npath)
+
+for i in HSpoints:
+    print(qarr[i])
+    plt.axvline(qarr[i],c='r')
+
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+plt.colorbar()
+plt.savefig("Imchi_filling"+str(filling)+".png", dpi=300)
+plt.show()
+
+
+########################
+momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only along path in FBZ
+
+####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
+
+
+plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+# plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+
+ticks_X=5
+ticks_Y=5
+Npl_X=np.arange(0,N_X+1,int(N_X/ticks_X))
+Npl_Y=np.arange(0,N_Y+1,int(N_Y/ticks_Y))
+xl=np.round(np.linspace(0,limits_X,ticks_X+1),3)
+yl=np.round(np.linspace(0,limits_Y,ticks_Y+1),3)
+
+plt.xticks(Npl_X,xl)
+plt.yticks(Npl_Y,yl)
+plt.xlabel(r"$q_x$",size=16)
+plt.ylabel(r"$\omega$",size=16)
+plt.colorbar()
+plt.savefig("Imchi2_filling"+str(filling)+".png", dpi=300)
