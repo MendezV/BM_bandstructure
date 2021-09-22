@@ -313,7 +313,7 @@ fact=K[2][1]/np.max(KY)
 KX=KX*fact
 KY=KY*fact
 Npoi=np.size(KX)
-
+print("effective number of points...", Npoi)
 
 #for debugging purposes
 
@@ -386,9 +386,14 @@ Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 psi_min=np.array(psi_min_a)
 psi_min_conj=np.conj(np.array(psi_min_a))
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-print(np.sum(psi_plus-psi_min_conj[::-1,::-1,::-1,:,:,:])/np.prod(np.shape(psi_plus)))
-print(np.sum(psi_plus-psi_plus_conj)/np.prod(np.shape(psi_plus)))
-print(np.sum(psi_plus-psi_min)/np.prod(np.shape(psi_plus)))
+
+
+print(np.mean(psi_plus-psi_min_conj[::-1,::-1,::-1,:,:,:]))
+print(np.mean(psi_plus-psi_min_conj) )
+print(np.mean(psi_plus-psi_min) )
+print(np.mean(psi_plus-psi_min) )
+print(np.mean(psi_min-psi_min_conj) )
+print(np.mean(psi_plus-psi_plus_conj) )
 """
 e=time.time()
 print("finished dispersion ..........")
