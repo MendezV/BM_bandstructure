@@ -41,6 +41,7 @@ w = np.exp(1j*2*np.pi/3); # enters into the hamiltonian
 en0 = 1.6598/1000; # Sets the zero of energy to the middle of flat bands, ev
 paulix=np.array([[0,1],[1,0]])
 pauliy=np.array([[0,-1j],[1j,0]])
+pauliz=np.array([[1,0],[0,-1]])
 
 hbarc=0.1973269804*1e-6 #ev*m
 alpha=137.0359895 #fine structure constant
@@ -95,7 +96,7 @@ Mpointneg=-(Kplus1+Kplus2)/2 #position of the M point in the - valley
 ##########################################
 #definitions of the BZ grid
 ##########################################
-nbands=4 #Number of bands
+nbands=2 #Number of bands
 k_window_sizex = GM2[0]/2 #4*(np.pi/np.sqrt(3))*np.sin(theta/2) (half size of  MBZ from edge to edge)
 k_window_sizey = Ktopplus[1]   #(1/np.sqrt(3))*GM2[0] ( half size of MBZ from k to k' along a diagonal)
 kn_pointsx = 61
@@ -251,14 +252,14 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     #######HANDLING WITH RESHAPE
     #umklp,umklp, layer, sublattice
     psi_p=np.zeros([Numklp,Numklp,2,2]) +0*1j
-    psi=np.zeros([Numklp*Numklp*4,nbands])+0*1j
-    # psi=np.zeros([Numklp, Numklp, 2,2, nbands]) +0*1j
+    # psi=np.zeros([Numklp*Numklp*4,nbands])+0*1j
+    psi=np.zeros([Numklp, Numklp, 2,2, nbands]) +0*1j
 
     for nband in range(nbands):
         # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
         psi_p[ind_to_sum] = np.reshape(  np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
-        # psi[:,:,:,:,nband] = psi_p    
-        psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
+        psi[:,:,:,:,nband] = psi_p    
+        # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
 
 
     return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi
@@ -311,8 +312,33 @@ KY= (2*(2*np.pi*nn_2pp/LP - np.pi*nn_1pp/LP)/np.sqrt(3))/LM
 fact=K[2][1]/np.max(KY)
 KX=KX*fact
 KY=KY*fact
-#print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
 Npoi=np.size(KX)
+
+
+#for debugging purposes
+
+#c2 rotated grid
+th1=np.pi
+Rotth=np.array([[np.cos(th1),-np.sin(th1)],[np.sin(th1),np.cos(th1)]]) #rotation matrix +thet
+KXc2=KX*Rotth[0,0]+KY*Rotth[0,1]
+KYc2=KX*Rotth[1,0]+KY*Rotth[1,1]
+n1c2=np.zeros(Npoi)
+for i in range(Npoi):
+    #this works well because the rotation is a symmetry of the sampling lattice and the sampling lattice is commensurate
+    n1c2[i]=np.argmin( (KX-KXc2[i])**2 +(KY-KYc2[i])**2)
+
+#c3 rotated grid
+th1=2*np.pi/3
+Rotth=np.array([[np.cos(th1),-np.sin(th1)],[np.sin(th1),np.cos(th1)]]) #rotation matrix +thet
+KXc3=KX*Rotth[0,0]+KY*Rotth[0,1]
+KYc3=KX*Rotth[1,0]+KY*Rotth[1,1]
+n1c3=np.zeros(Npoi)
+for i in range(Npoi):
+    #this works well because the rotation is a symmetry of the sampling lattice and the sampling lattice is commensurate
+    n1c3[i]=np.argmin( (KX-KXc3[i])**2 +(KY-KYc3[i])**2)
+
+#print(eigsystem(GM,GM, 1, nbands, n1, n2)[0][0])
+
 e=time.time()
 print("finished sampling in reciprocal space....", np.shape(KY))
 print("time for sampling was...",e-s)
@@ -360,6 +386,47 @@ Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 psi_min=np.array(psi_min_a)
 psi_min_conj=np.conj(np.array(psi_min_a))
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+print(np.sum(psi_plus-psi_min_conj[::-1,::-1,::-1,:,:,:])/np.prod(np.shape(psi_plus)))
+print(np.sum(psi_plus-psi_plus_conj)/np.prod(np.shape(psi_plus)))
+print(np.sum(psi_plus-psi_min)/np.prod(np.shape(psi_plus)))
+"""
+e=time.time()
+print("finished dispersion ..........")
+print("time elapsed for dispersion ..........", e-s)
+print("shape of the wavefunctions...", np.shape(psi_plus))
+# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
+# plt.show()
+s=time.time()
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1)) 
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
+print( "tensorshape",np.shape(Lambda_Tens_plus) )
+
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_min_a=np.empty((0))
+psi_plus_a=[]
+psi_min_a=[]
+print("starting dispersion ..........")
+# for l in range(Nsamp*Nsamp):
+for l in range(Npoi):
+
+    E1,wave1=eigsystem(KXc2[l],KYc2[l], 1, nbands, n1, n2)
+    E2,wave2=eigsystem(KXc2[l],KYc2[l], -1, nbands, n1, n2)
+
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+
+    psi_plus_a.append(wave1)
+    psi_min_a.append(wave2)
+
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+#relevant wavefunctions and energies for the - valley
+psi_min=np.array(psi_min_a)
+psi_min_conj=np.conj(np.array(psi_min_a))
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
 e=time.time()
 print("finished dispersion ..........")
@@ -369,13 +436,31 @@ print("shape of the wavefunctions...", np.shape(psi_plus))
 # plt.show()
 s=time.time()
 print("calculating tensor that stores the overlaps........")
-Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1))
-Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
+Lambda_Tens_plusc2=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1)) 
+Lambda_Tens_minc2=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
 print( "tensorshape",np.shape(Lambda_Tens_plus) )
 
 
+SigLminconjSig=np.zeros(np.shape(Lambda_Tens_minc2)) +1j
+LminconjSig=np.zeros(np.shape(Lambda_Tens_minc2))+1j
+LminconjSig[:,:,:,0]=np.conj(Lambda_Tens_minc2[:,:,:,0])
+LminconjSig[:,:,:,1]=-np.conj(Lambda_Tens_minc2[:,:,:,1])
+SigLminconjSig[:,0,:,:]=LminconjSig[:,0,:,:]
+SigLminconjSig[:,1,:,:]=-LminconjSig[:,1,:,:]
+
+print(np.sum(Lambda_Tens_plusc2[::-1,:,::-1,:]-Lambda_Tens_plus)/np.prod(np.shape(Lambda_Tens_min)))
+print("calculating tensor that stores the overlaps........")
 
 
+
+SigLminconjSig=np.zeros(np.shape(Lambda_Tens_min)) +1j
+LminconjSig=np.zeros(np.shape(Lambda_Tens_min))+1j
+LminconjSig[:,:,:,1]=(Lambda_Tens_min)[:,:,:,0]
+LminconjSig[:,:,:,0]=(Lambda_Tens_min)[:,:,:,1]
+SigLminconjSig[:,1,:,:]=LminconjSig[:,0,:,:]
+SigLminconjSig[:,0,:,:]=LminconjSig[:,1,:,:]
+
+print(np.sum(SigLminconjSig-Lambda_Tens_plus)/np.prod(np.shape(Lambda_Tens_min)))
 print("calculating tensor that stores the overlaps........")
 
 
@@ -581,3 +666,4 @@ plt.colorbar()
 plt.savefig("energycuttestabs.png")
 plt.close()
 
+"""
