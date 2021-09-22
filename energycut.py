@@ -387,14 +387,6 @@ psi_min=np.array(psi_min_a)
 psi_min_conj=np.conj(np.array(psi_min_a))
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
-
-print(np.mean(psi_plus-psi_min_conj[::-1,::-1,::-1,:,:,:]))
-print(np.mean(psi_plus-psi_min_conj) )
-print(np.mean(psi_plus-psi_min) )
-print(np.mean(psi_plus-psi_min) )
-print(np.mean(psi_min-psi_min_conj) )
-print(np.mean(psi_plus-psi_plus_conj) )
-"""
 e=time.time()
 print("finished dispersion ..........")
 print("time elapsed for dispersion ..........", e-s)
@@ -403,8 +395,8 @@ print("shape of the wavefunctions...", np.shape(psi_plus))
 # plt.show()
 s=time.time()
 print("calculating tensor that stores the overlaps........")
-Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1)) 
-Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
+Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=([1,2,3,4],[1,2,3,4]))
 print( "tensorshape",np.shape(Lambda_Tens_plus) )
 
 Ene_valley_plus_a=np.empty((0))
@@ -412,11 +404,12 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 print("starting dispersion ..........")
+
 # for l in range(Nsamp*Nsamp):
 for l in range(Npoi):
 
-    E1,wave1=eigsystem(KXc2[l],KYc2[l], 1, nbands, n1, n2)
-    E2,wave2=eigsystem(KXc2[l],KYc2[l], -1, nbands, n1, n2)
+    E1,wave1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
+    E2,wave2=eigsystem(KXc2[l],KYc2[l], -1, nbands, -n1, -n2)
 
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
@@ -425,13 +418,16 @@ for l in range(Npoi):
     psi_min_a.append(wave2)
 
 ##relevant wavefunctions and energies for the + valley
-psi_plus=np.array(psi_plus_a)
-psi_plus_conj=np.conj(np.array(psi_plus_a))
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+psi_plusc2=np.array(psi_plus_a)
+psi_plus_conjc2=np.conj(np.array(psi_plus_a))
+Ene_valley_plusc2= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 #relevant wavefunctions and energies for the - valley
-psi_min=np.array(psi_min_a)
-psi_min_conj=np.conj(np.array(psi_min_a))
-Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+psi_minc2=np.array(psi_min_a)
+psi_min_conjc2=np.conj(np.array(psi_min_a))
+Ene_valley_minc2= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
+print("testing c2 symmetry wavefunction... ",np.mean(psi_plus_conj- psi_minc2))
+
 
 e=time.time()
 print("finished dispersion ..........")
@@ -441,19 +437,20 @@ print("shape of the wavefunctions...", np.shape(psi_plus))
 # plt.show()
 s=time.time()
 print("calculating tensor that stores the overlaps........")
-Lambda_Tens_plusc2=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1)) 
-Lambda_Tens_minc2=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
-print( "tensorshape",np.shape(Lambda_Tens_plus) )
+Lambda_Tens_plusc2=np.tensordot(psi_plus_conjc2,psi_plusc2, axes=([1,2,3,4],[1,2,3,4])) 
+Lambda_Tens_minc2=np.tensordot(psi_min_conjc2,psi_minc2, axes=([1,2,3,4],[1,2,3,4]))
+print( "tensorshape 2",np.shape(Lambda_Tens_plus) )
 
 
 SigLminconjSig=np.zeros(np.shape(Lambda_Tens_minc2)) +1j
 LminconjSig=np.zeros(np.shape(Lambda_Tens_minc2))+1j
+
 LminconjSig[:,:,:,0]=np.conj(Lambda_Tens_minc2[:,:,:,0])
 LminconjSig[:,:,:,1]=-np.conj(Lambda_Tens_minc2[:,:,:,1])
 SigLminconjSig[:,0,:,:]=LminconjSig[:,0,:,:]
 SigLminconjSig[:,1,:,:]=-LminconjSig[:,1,:,:]
 
-print(np.sum(Lambda_Tens_plusc2[::-1,:,::-1,:]-Lambda_Tens_plus)/np.prod(np.shape(Lambda_Tens_min)))
+print("testing form factors, complex conjugation ", np.mean(np.conj(Lambda_Tens_plus)-Lambda_Tens_minc2) )
 print("calculating tensor that stores the overlaps........")
 
 
@@ -465,8 +462,10 @@ LminconjSig[:,:,:,0]=(Lambda_Tens_min)[:,:,:,1]
 SigLminconjSig[:,1,:,:]=LminconjSig[:,0,:,:]
 SigLminconjSig[:,0,:,:]=LminconjSig[:,1,:,:]
 
-print(np.sum(SigLminconjSig-Lambda_Tens_plus)/np.prod(np.shape(Lambda_Tens_min)))
+
 print("calculating tensor that stores the overlaps........")
+"""
+
 
 
 with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
