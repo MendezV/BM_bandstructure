@@ -51,6 +51,30 @@ kappa_di=3.03
 T=10/1000 #in ev for finite temp calc
 
 print("COULOMB CONSTANT...",ee2)
+
+##########################################
+#electron-phonon
+##########################################
+def f(qx,qy):
+    return np.sqrt(qx**2+qy**2)
+
+def g(qx,qy):
+    return (qx**2-qy**2)/np.sqrt(qx**2+qy**2)
+
+def h(qx,qy):
+    return (2*qx*qy)/np.sqrt(qx**2+qy**2)
+
+c_light=299792458 #m/s
+M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
+hhbar=6.582119569e-13 /1000 #(in eV s)
+sqrt_hbar_M=hhbar*np.sqrt(hhbar/M)*c_light
+alpha_ep=2 # in ev
+beta_ep=4 #in ev
+c_phonon=21400 #m/s
+
+def hbaromega(qx,qy):
+    return hhbar*c_phonon*np.sqrt(qx**2+qy**2)/a_graphene
+
 ##########################################
 #lattice vectors
 ##########################################
@@ -443,75 +467,6 @@ Lambda_Tens_min_muz=np.tensordot(psi_min_conj,muz_psi_min, axes=([1,2,3,4],[1,2,
 Lambda_Tens_min_sgx_muz=np.tensordot(psi_min_conj,sgx_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 Lambda_Tens_min_sgy_muz=np.tensordot(psi_min_conj,sgy_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 print( "tensorshape",np.shape(Lambda_Tens_plus) )
-
-Ene_valley_plus_a=np.empty((0))
-Ene_valley_min_a=np.empty((0))
-psi_plus_a=[]
-psi_min_a=[]
-print("starting dispersion ..........")
-
-# for l in range(Nsamp*Nsamp):
-for l in range(Npoi):
-
-    E1,wave1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
-    E2,wave2=eigsystem(KXc2[l],KYc2[l], -1, nbands, -n1, -n2)
-
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
-
-    psi_plus_a.append(wave1)
-    psi_min_a.append(wave2)
-
-##relevant wavefunctions and energies for the + valley
-psi_plusc2=np.array(psi_plus_a)
-psi_plus_conjc2=np.conj(np.array(psi_plus_a))
-Ene_valley_plusc2= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-#relevant wavefunctions and energies for the - valley
-psi_minc2=np.array(psi_min_a)
-psi_min_conjc2=np.conj(np.array(psi_min_a))
-Ene_valley_minc2= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-
-print("testing complex conjugation wavefunction... ",np.mean(psi_plus_conj- psi_minc2))
-
-
-e=time.time()
-print("finished dispersion ..........")
-print("time elapsed for dispersion ..........", e-s)
-print("shape of the wavefunctions...", np.shape(psi_plus))
-# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# plt.show()
-s=time.time()
-print("calculating tensor that stores the overlaps........")
-Lambda_Tens_plusc2=np.tensordot(psi_plus_conjc2,psi_plusc2, axes=([1,2,3,4],[1,2,3,4])) 
-Lambda_Tens_minc2=np.tensordot(psi_min_conjc2,psi_minc2, axes=([1,2,3,4],[1,2,3,4]))
-print( "tensorshape 2",np.shape(Lambda_Tens_plus) )
-
-print("testing form factors, complex conjugation ", np.mean(np.conj(Lambda_Tens_plus)-Lambda_Tens_minc2) )
-
-
-SigLminconjSig=np.zeros(np.shape(Lambda_Tens_minc2)) +1j
-LminconjSig=np.zeros(np.shape(Lambda_Tens_minc2))+1j
-
-LminconjSig[:,:,:,0]=np.conj(Lambda_Tens_minc2[:,:,:,0])
-LminconjSig[:,:,:,1]=-np.conj(Lambda_Tens_minc2[:,:,:,1])
-SigLminconjSig[:,0,:,:]=LminconjSig[:,0,:,:]
-SigLminconjSig[:,1,:,:]=-LminconjSig[:,1,:,:]
-
-print("calculating tensor that stores the overlaps........")
-
-
-
-SigLminconjSig=np.zeros(np.shape(Lambda_Tens_min)) +1j
-LminconjSig=np.zeros(np.shape(Lambda_Tens_min))+1j
-LminconjSig[:,:,:,1]=(Lambda_Tens_min)[:,:,:,0]
-LminconjSig[:,:,:,0]=(Lambda_Tens_min)[:,:,:,1]
-SigLminconjSig[:,1,:,:]=LminconjSig[:,0,:,:]
-SigLminconjSig[:,0,:,:]=LminconjSig[:,1,:,:]
-
-
-print("calculating tensor that stores the overlaps........")
-
 
 
 with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
