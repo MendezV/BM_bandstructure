@@ -450,6 +450,12 @@ psi_plus_a=[]
 psi_min_a=[]
 print("starting dispersion ..........")
 
+# GM1p=-GM1
+# GM2p=-GM2
+
+# GM1=GM1p
+# GM2=GM2p
+
 # for l in range(Nsamp*Nsamp):
 for l in range(Npoi):
 
@@ -461,7 +467,11 @@ for l in range(Npoi):
 
     psi_plus_a.append(wave1)
     psi_min_a.append(wave2)
+# GM1p=-GM1
+# GM2p=-GM2
 
+# GM1=GM1p
+# GM2=GM2p
 ##relevant wavefunctions and energies for the + valley
 psi_plusc2=np.array(psi_plus_a)
 psi_plus_conjc2=np.conj(np.array(psi_plus_a))

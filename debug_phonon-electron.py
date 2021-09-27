@@ -193,8 +193,13 @@ Vertices_list, Gamma, K, Kp, M, Mp=FBZ_points(GM1,GM2) #DESCRIBING THE MBZ
 print("size of FBZ, maximum momentum trans",np.sqrt(np.sum(np.array(K[0])**2))/GM )
 
 
+MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]]
+MGS=MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]]
 
-MGS=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1],[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]]
+MGS_2=MGS+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]]
+MGS2=MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]]
+
+MGS_3=MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]]
 def kwrap_FBZ(kx,ky):
     dmin=kx**2+ky**2
     G=[0,0]
@@ -367,9 +372,86 @@ e=time.time()
 print("finished sampling in reciprocal space....", np.shape(KY))
 print("time for sampling was...",e-s)
 
+# i=0
+# plt.scatter(KX,KY)
+
+# for mg in MGS_1:
+
+#     plt.scatter(KX+mg[0]*GM1[0]+mg[1]*GM2[0],KY+mg[0]*GM1[1]+mg[1]*GM2[1])
+#     plt.scatter(mg[0]*GM1[0]+mg[1]*GM2[0],mg[0]*GM1[1]+mg[1]*GM2[1], marker="x")
+#     i=i+1
+# plt.show()
 
 
 
+KQ=[]
+for i in range(Npoi):
+    for j in range(Npoi):
+         KQ.append([round(KX[j]+KX[i], 8),round(KY[j]+KY[i], 8)])
+# plt.scatter(KX,KY)
+# plt.show()
+KQarr=np.array(KQ)
+print("Kq non unique grid ",np.shape(KQarr))
+
+#unique_data =np.array( [list(x) for x in set(tuple(x) for x in KQ)])
+unique_data =np.array( [list(i) for i in set(tuple(i) for i in KQ)])
+print("Kq grid unique",np.shape(unique_data))
+print("K grid ",np.shape(KX))
+KQX=unique_data[:,0]
+KQY=unique_data[:,1]
+
+
+Npoi_Q=np.shape(KQY)[0]
+
+Ik=[]
+for j in range(Npoi):
+    indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
+    Ik.append(indmin)
+
+
+# plt.scatter(KQX,KQY)
+# plt.scatter(KX,KY)
+# plt.show()
+
+##Umklapp grid
+
+# K_um=[]
+# for i in range(Npoi):
+#     K_um.append([round(KX[i], 8),round(KY[i], 8)])
+# plt.show()
+# for mg in MGS_1:
+#     for i in range(Npoi):
+#         K_um.append([round(KX[i]+mg[0]*GM1[0]+mg[1]*GM2[0], 8),round(KY[i]+mg[0]*GM1[1]+mg[1]*GM2[1], 8)])
+# plt.show()
+# unique_data =np.array( [list(i) for i in set(tuple(i) for i in K_um)])
+# print("K umkplapp unique grid ",np.shape(unique_data))
+# KumX=unique_data[:,0]
+# KumY=unique_data[:,1]
+# plt.scatter(KumX,KumY)
+# plt.show()
+
+# Npoi_um=np.shape(KumY)[0]
+
+# KumQ=[]
+# for i in range(Npoi_um):
+#     for j in range(Npoi):
+#          KumQ.append([round(KX[j]+KumX[i], 8),round(KY[j]+KumY[i], 8)])  ##momenta within the FBZ with a umklapp vector
+
+# KumQarr=np.array(KumQ)
+# print("Kq umkplapp non unique grid ",np.shape(KumQarr))
+
+# #unique_data =np.array( [list(x) for x in set(tuple(x) for x in KQ)])
+# unique_data =np.array( [list(i) for i in set(tuple(i) for i in KumQ)])
+# print("Kq unique 1g processes", np.shape(unique_data))
+# print(np.shape(KX))
+# KumQX=unique_data[:,0]
+# KumQY=unique_data[:,1]
+
+# plt.scatter(KumQX,KumQY)
+# plt.scatter(KumX,KumY, marker="x")
+# plt.show()
+
+# Npoi_um_Q=np.shape(KumQY)[0]
 ####################################################################################
 ####################################################################################
 ####################################################################################
@@ -389,12 +471,13 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
+
 print("starting dispersion ..........")
 # for l in range(Nsamp*Nsamp):
-for l in range(Npoi):
+for l in range(Npoi_Q):
 
-    E1,wave1=eigsystem(KX[l],KY[l], 1, nbands, n1, n2)
-    E2,wave2=eigsystem(KX[l],KY[l], -1, nbands, n1, n2)
+    E1,wave1=eigsystem(KQX[l],KQY[l], 1, nbands, n1, n2)
+    E2,wave2=eigsystem(KQX[l],KQY[l], -1, nbands, n1, n2)
 
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
@@ -405,7 +488,7 @@ for l in range(Npoi):
 ##relevant wavefunctions and energies for the + valley
 psi_plus=np.array(psi_plus_a)
 psi_plus_conj=np.conj(np.array(psi_plus_a))
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi_Q,nbands])
 
 #modified wavefunctions
 # muz_sgx_psi_plus=np.zeros(np.shape(psi_plus)) +1j
@@ -431,7 +514,7 @@ sgy_muz_psi_plus[:,:,:,:,1,:]=1j*muz_psi_plus[:,:,:,:,0,:]
 #relevant wavefunctions and energies for the - valley
 psi_min=np.array(psi_min_a)
 psi_min_conj=np.conj(np.array(psi_min_a))
-Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi_Q,nbands])
 
 
 #modified wavefunction
@@ -548,9 +631,10 @@ VV=np.array(Vertices_list+[Vertices_list[0]])
 #####INTEGRAND FUNCTION
 dS_in=Vol_rec/((Nsamp)*(Nsamp)) #some points are repeated in my scheme
 xi=1
-def integrand(nkq,ekn,ekm,w,mu,T):
-    edk=ekn-mu
-    edkq=ekm[nkq]-mu
+def integrand(nkq,nk,ekn,ekm,w,mu,T):
+   
+    edkq=ekn[nkq]-mu
+    edk=ekm[nk]-mu
 
     #finite temp
     #nfk= 1/(np.exp(edk/T)+1)
@@ -606,11 +690,11 @@ for omegas_m_i in omegas:
         
         qx=kpath[l, 0]
         qy=kpath[l, 1]
-        Iq=[]
+        Ikq=[]
         for s in range(Npoi):
-            kxq,kyq=kwrap_FBZ(KX[s]+qx,KY[s]+qy)
-            indmin=np.argmin(np.sqrt((KX-kxq)**2+(KY-kyq)**2))
-            Iq.append(indmin)
+            kxq,kyq=KX[s]+qx,KY[s]+qy
+            indmin=np.argmin(np.sqrt((KQX-kxq)**2+(KQY-kyq)**2))
+            Ikq.append(indmin)
 
 
         integrand_var=0
@@ -619,8 +703,8 @@ for omegas_m_i in omegas:
         # s=time.time()
        
         #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_plus[Iq[ss],:,ss,:] for ss in range(Npoi)])
-        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[Iq[ss],:,ss,:] for ss in range(Npoi)])
+        Lambda_Tens_plus_kq_k=np.array([Lambda_Tens_plus[Ikq[ss],:,Ik[ss],:] for ss in range(Npoi)])
+        Lambda_Tens_min_kq_k=np.array([Lambda_Tens_min[Ikq[ss],:,Ik[ss],:] for ss in range(Npoi)])
         
         
         #####all bands for the + and - valley
@@ -632,7 +716,7 @@ for omegas_m_i in omegas:
                 Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
                 # Lambda_Tens_plus_k_kq_mn=np.reshape(Lambda_Tens_plus_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
-                integrand_var=integrand_var+(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*integrand(Iq,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
                 # integrand_var=integrand_var+np.conj(Lambda_Tens_plus_k_kq_mn)-(Lambda_Tens_plus_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 
 
@@ -641,7 +725,7 @@ for omegas_m_i in omegas:
                 Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
                 # Lambda_Tens_min_k_kq_mn=np.reshape(Lambda_Tens_min_k_kq[:,mband,nband], [Nsamp,Nsamp])
                 # Lambda_Tens_min_kq_k_nm=int(nband==mband)   #TO SWITCH OFF THE FORM FACTORS
-                integrand_var=integrand_var+(np.abs( Lambda_Tens_min_kq_k_nm )**2)*integrand(Iq,ek_n,ek_m,omegas_m_i,mu,T)
+                integrand_var=integrand_var+(np.abs( Lambda_Tens_min_kq_k_nm )**2)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
                 # integrand_var=integrand_var+np.conj(Lambda_Tens_min_k_kq_mn)  -(Lambda_Tens_min_kq_k_nm) #*integrand(n_1pp,n_2pp,ek_n,ek_m,omegas_m_i,mu,T)
                 
 
@@ -664,18 +748,18 @@ plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.real(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestreal_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+plt.savefig("KQenergycuttestreal_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.imag(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestimag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+plt.savefig("KQenergycuttestimag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.abs(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestabs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+plt.savefig("KQenergycuttestabs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
 

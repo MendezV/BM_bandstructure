@@ -374,7 +374,23 @@ Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
 print( "tensorshape",np.shape(Lambda_Tens_plus) )
 
 
+c = plt.contour(KX, KY, Ene_valley_plus, [mu])
+v = c.collections[0].get_paths()[0].vertices
+xs = v[:,0]
+ys = v[:,1]
+#plt.scatter(x,y)
+plt.show()
+plt.scatter(xs,ys)
+plt.show()
 
+c = plt.contour(KX, KY, Ene_valley_min, [mu])
+v = c.collections[0].get_paths()[0].vertices
+xs = v[:,0]
+ys = v[:,1]
+#plt.scatter(x,y)
+plt.show()
+plt.scatter(xs,ys)
+plt.show()
 
 print("calculating tensor that stores the overlaps........")
 
