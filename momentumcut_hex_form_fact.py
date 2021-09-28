@@ -584,8 +584,8 @@ def integrand(nkq,ekn,ekm,w,mu,T):
     #nfkq= 1/(np.exp(edkq/T)+1)
 
     #zero temp
-    nfk=np.heaviside(-edk,1.0) # at zero its 1
-    nfkq=np.heaviside(-edkq,1.0) #at zero is 1
+    nfk=np.heaviside(-edk,0.0) # at zero its 1
+    nfkq=np.heaviside(-edkq,0.0) #at zero is 1
     eps=eta ##SENSITIVE TO DISPERSION
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)

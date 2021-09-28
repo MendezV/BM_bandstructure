@@ -385,9 +385,9 @@ Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 
 #modified wavefunctions
 # muz_sgx_psi_plus=np.zeros(np.shape(psi_plus)) +1j
-muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j
-sgx_muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j
-sgy_muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j
+muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j*1e-30
+sgx_muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j*1e-30
+sgy_muz_psi_plus=np.zeros(np.shape(psi_plus)) +1j*1e-30
 
 muz_psi_plus[:,:,:,0,:,:]=psi_plus[:,:,:,0,:,:]
 muz_psi_plus[:,:,:,1,:,:]=-psi_plus[:,:,:,1,:,:]
@@ -411,9 +411,9 @@ Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
 
 #modified wavefunction
-muz_psi_min=np.zeros(np.shape(psi_min)) +1j
-sgx_muz_psi_min=np.zeros(np.shape(psi_min)) +1j
-sgy_muz_psi_min=np.zeros(np.shape(psi_min)) +1j
+muz_psi_min=np.zeros(np.shape(psi_min)) +1j*1e-30
+sgx_muz_psi_min=np.zeros(np.shape(psi_min)) +1j*1e-30
+sgy_muz_psi_min=np.zeros(np.shape(psi_min)) +1j*1e-30
 
 muz_psi_min[:,:,:,0,:,:]=psi_min[:,:,:,0,:,:]
 muz_psi_min[:,:,:,1,:,:]=-psi_min[:,:,:,1,:,:]
@@ -438,7 +438,7 @@ Lambda_Tens_plus_muz=np.tensordot(psi_plus_conj,muz_psi_plus, axes=([1,2,3,4],[1
 Lambda_Tens_plus_sgx_muz=np.tensordot(psi_plus_conj,sgx_muz_psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
 Lambda_Tens_plus_sgy_muz=np.tensordot(psi_plus_conj,sgy_muz_psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
 
-Lambda_Tens_min=np.tensordot(psi_min_conj,psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 Lambda_Tens_min_muz=np.tensordot(psi_min_conj,muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 Lambda_Tens_min_sgx_muz=np.tensordot(psi_min_conj,sgx_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 Lambda_Tens_min_sgy_muz=np.tensordot(psi_min_conj,sgy_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
@@ -482,7 +482,14 @@ psi_minc2=np.array(psi_min_a)
 psi_min_conjc2=np.conj(np.array(psi_min_a))
 Ene_valley_minc2= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
-print("testing complex conjugation wavefunction... ",np.mean(psi_plus_conj- psi_minc2))
+print("testing complex conjugation wavefunction, total plus... ",np.mean(psi_plus_conj- psi_minc2))
+print("testing complex conjugation wavefunction, total minus... ",np.mean(psi_min_conj- psi_plusc2))
+
+print("testing complex conjugation wavefunction, index one plus... ",np.mean(psi_plus_conj[:,:,:,:,:,1]- psi_minc2[:,:,:,:,:,1]))
+print("testing complex conjugation wavefunction, index one minus... ",np.mean(psi_min_conj[:,:,:,:,:,1]+ psi_plusc2[:,:,:,:,:,1]))
+
+print("testing complex conjugation wavefunction, index two plus... ",np.mean(psi_plus_conj[:,:,:,:,:,2]- psi_minc2[:,:,:,:,:,2]))
+print("testing complex conjugation wavefunction, index two minus... ",np.mean(psi_min_conj[:,:,:,:,:,2]+ psi_plusc2[:,:,:,:,:,2]))
 
 
 e=time.time()
@@ -500,8 +507,8 @@ print( "tensorshape 2",np.shape(Lambda_Tens_plus) )
 print("testing form factors, complex conjugation ", np.mean(np.conj(Lambda_Tens_plus)-Lambda_Tens_minc2) )
 
 
-SigLminconjSig=np.zeros(np.shape(Lambda_Tens_minc2)) +1j
-LminconjSig=np.zeros(np.shape(Lambda_Tens_minc2))+1j
+SigLminconjSig=np.zeros(np.shape(Lambda_Tens_minc2)) +1j*1e-30
+LminconjSig=np.zeros(np.shape(Lambda_Tens_minc2))+1j*1e-30
 
 LminconjSig[:,:,:,0]=np.conj(Lambda_Tens_minc2[:,:,:,0])
 LminconjSig[:,:,:,1]=-np.conj(Lambda_Tens_minc2[:,:,:,1])
@@ -512,8 +519,8 @@ print("calculating tensor that stores the overlaps........")
 
 
 
-SigLminconjSig=np.zeros(np.shape(Lambda_Tens_min)) +1j
-LminconjSig=np.zeros(np.shape(Lambda_Tens_min))+1j
+SigLminconjSig=np.zeros(np.shape(Lambda_Tens_min)) +1j*1e-30
+LminconjSig=np.zeros(np.shape(Lambda_Tens_min))+1j*1e-30
 LminconjSig[:,:,:,1]=(Lambda_Tens_min)[:,:,:,0]
 LminconjSig[:,:,:,0]=(Lambda_Tens_min)[:,:,:,1]
 SigLminconjSig[:,1,:,:]=LminconjSig[:,0,:,:]
@@ -693,6 +700,8 @@ for omegas_m_i in omegas:
                 
 
         e=time.time()
+        if qx==0 and qy==0:
+            print("en el origen:",np.sum(integrand_var)*dS_in/(8*Vol_rec) )
        
         bub=bub+np.sum(integrand_var)*dS_in
 
@@ -700,29 +709,35 @@ for omegas_m_i in omegas:
 
     integ.append(sd)
     
-integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
+integ_arr_no_reshape=np.array(integ)/(8*Vol_rec) #8= 4bands x 2valleys
 
 e=time.time()
 print("finished bubble.......")
 print("Time for bubble",e-sb)
 
 
+
+
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.real(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestreal.png")
+plt.savefig("energycuttestreal_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
+print("the minimum real part is ...", np.min(np.real(integ_arr_no_reshape)))
+
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.imag(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestimag.png")
+plt.savefig("energycuttestimag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
+print("the maximum imaginary part is ...", np.max(np.imag(integ_arr_no_reshape)))
+
 plt.plot(VV[:,0],VV[:,1])
 plt.scatter(KX,KY, s=20, c=np.abs(integ_arr_no_reshape))
 plt.gca().set_aspect('equal', adjustable='box')
 plt.colorbar()
-plt.savefig("energycuttestabs.png")
+plt.savefig("energycuttestabs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
 plt.close()
 

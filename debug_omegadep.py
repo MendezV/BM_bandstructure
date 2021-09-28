@@ -57,6 +57,7 @@ ee2=(hbarc/a_graphene)/alpha
 kappa_di=3.03
 
 #double screened potential
+dd=5*1e-9/a_graphene
 ee=1.60217663*1e-19
 K=8.9875517923*1e9
 Jev=1.602176634*1e-19
@@ -300,8 +301,17 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
 
     for nband in range(nbands):
         # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
-        psi_p[ind_to_sum] = np.reshape(  np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
-        psi[:,:,:,:,nband] = psi_p    
+        psi_p[ind_to_sum] =  np.reshape(  np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] ) 
+
+        ##GAUGE FIXING by making the 30 30 1 1 component real
+        # phas=np.angle(psi_p[30,30,1,1])
+        # phas=0 ## not fixing the phase
+        maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
+        phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+        
+        psi[:,:,:,:,nband] = psi_p*np.exp(-1j*phas)    
+        
+        # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
         # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
 
 
@@ -319,7 +329,7 @@ k_window_sizex = K[1][0]
 Radius_inscribed_hex=1.0000005*k_window_sizey
 def hexagon(pos):
     y,x = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
-    return y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
+    return y <= np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
 
 
 
@@ -565,7 +575,7 @@ psi_min_a=[]
 # Lambda_Tens_plus_sgx_muz=np.tensordot(psi_plus_conj,sgx_muz_psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
 # Lambda_Tens_plus_sgy_muz=np.tensordot(psi_plus_conj,sgy_muz_psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
 
-# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
+# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 # Lambda_Tens_min_muz=np.tensordot(psi_min_conj,muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 # Lambda_Tens_min_sgx_muz=np.tensordot(psi_min_conj,sgx_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
 # Lambda_Tens_min_sgy_muz=np.tensordot(psi_min_conj,sgy_muz_psi_min, axes=([1,2,3,4],[1,2,3,4])) 
@@ -765,7 +775,7 @@ print("calculated path accross the FBZ.......")
 
 
 #####INTEGRAND FUNCTION
-dS_in=Vol_rec/((Nsamp)*(Nsamp)) #some points are repeated in my scheme
+dS_in=Vol_rec/(Npoi) #some points are repeated in my scheme
 xi=1
 def integrand(nkq,nk,ekn,ekm,w,mu,T):
    
@@ -777,8 +787,8 @@ def integrand(nkq,nk,ekn,ekm,w,mu,T):
     #nfkq= 1/(np.exp(edkq/T)+1)
 
     #zero temp
-    nfk=np.heaviside(-edk,1.0) # at zero its 1
     nfkq=np.heaviside(-edkq,1.0) #at zero is 1
+    nfk=np.heaviside(-edk,1.0) # at zero its 1
     eps=eta ##SENSITIVE TO DISPERSION
 
     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
@@ -800,7 +810,7 @@ sb=time.time()
 
 print("starting bubble.......")
 
-Nomegs=100
+Nomegs=50
 # maxomeg=(band_max-band_min)*1.5
 # minomeg=band_min*(np.sign(band_min)*(-2))*0+0.00005
 maxomeg=10/1000#(band_max_FB-band_min_FB)*2.5
@@ -893,7 +903,7 @@ print("Time for bubble",e-sb)
 
 
 qq=np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  ) #*LM
-Vq_pre=2*np.pi*Coul/qq
+Vq_pre=0.01*2*np.pi*Coul*np.tanh(qq*dd)/qq
 
 # V0=eSQ_eps0/( np.sqrt(3.0)*LM*LM)
 # Vq_pre=V0*np.tanh(qq*ds)/(qq)
@@ -918,10 +928,14 @@ N_X=Npath
 N_Y=Nomegs
 
 
-
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
 
-plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=4)
+plt.plot(omegas,np.exp(momentumcut)[:, 5])
+plt.plot(omegas,np.exp(momentumcut)[:, 10])
+plt.plot(omegas,np.exp(momentumcut)[:, 15])
+plt.plot(omegas,np.exp(momentumcut)[:, 20])
+plt.show()
+plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=2, cmap='jet')
 # plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 ticks_X=5
@@ -954,7 +968,7 @@ momentumcut=np.reshape(np.array(integ),[Nomegs,Npath]) #for calculating only alo
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
 
 
-plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
+plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto', cmap='jet')
 # plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 ticks_X=5
