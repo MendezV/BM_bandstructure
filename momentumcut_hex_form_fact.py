@@ -42,8 +42,14 @@ en0 = 1.6598/1000; # Sets the zero of energy to the middle of flat bands, ev
 paulix=np.array([[0,1],[1,0]])
 pauliy=np.array([[0,-1j],[1j,0]])
 
+
 hbarc=0.1973269804*1e-6 #ev*m
 alpha=137.0359895 #fine structure constant
+a_graphene=2.46*(1e-10) #in meters
+ee2=(hbarc/a_graphene)/alpha
+kappa_di=3.03
+T=10/1000 #in ev for finite temp calc
+
 
 #efective screening only enters the dielectric constatn
 a_graphene=2.46*(1e-10) #in meters
@@ -51,15 +57,16 @@ ee2=(hbarc/a_graphene)/alpha
 kappa_di=3.03
 
 #double screened potential
+dd=5*1e-9/a_graphene
 ee=1.60217663*1e-19
 K=8.9875517923*1e9
 Jev=1.602176634*1e-19
-Coul=((ee*ee*K/Jev)/a_graphene)/kappa_di
+bare_coul=(ee*ee*K/Jev) # in ev *m
+Coul=bare_coul/(a_graphene*kappa_di)
 
 
-T=10/1000 #in ev for finite temp calc
-
-print("COULOMB CONSTANT...",Coul)
+print("bare coul in ev*angstom",(ee*ee*K/Jev)*1e10)
+print("COULOMB CONSTANT in ev...",Coul)
 ##########################################
 #lattice vectors
 ##########################################
@@ -348,54 +355,54 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
-# print("starting dispersion ..........")
-# # for l in range(Nsamp*Nsamp):
-# for l in range(Npoi):
+print("starting dispersion ..........")
+# for l in range(Nsamp*Nsamp):
+for l in range(Npoi):
 
-#     E1,wave1=eigsystem(KX[l],KY[l], 1, nbands, n1, n2)
-#     E2,wave2=eigsystem(KX[l],KY[l], -1, nbands, n1, n2)
+    E1,wave1=eigsystem(KX[l],KY[l], 1, nbands, n1, n2)
+    E2,wave2=eigsystem(KX[l],KY[l], -1, nbands, n1, n2)
 
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-#     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
-#     psi_plus_a.append(wave1)
-#     psi_min_a.append(wave2)
+    psi_plus_a.append(wave1)
+    psi_min_a.append(wave2)
 
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# psi_plus_conj=np.conj(np.array(psi_plus_a))
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-# #relevant wavefunctions and energies for the - valley
-# psi_min=np.array(psi_min_a)
-# psi_min_conj=np.conj(np.array(psi_min_a))
-# Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+#relevant wavefunctions and energies for the - valley
+psi_min=np.array(psi_min_a)
+psi_min_conj=np.conj(np.array(psi_min_a))
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
-# e=time.time()
-# print("finished dispersion ..........")
-# print("time elapsed for dispersion ..........", e-s)
-# print("shape of the wavefunctions...", np.shape(psi_plus))
-# # plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# # plt.show()
-# s=time.time()
-# print("calculating tensor that stores the overlaps........")
-# Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1))
-# Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
-# print( "tensorshape",np.shape(Lambda_Tens_plus) )
-
-
+e=time.time()
+print("finished dispersion ..........")
+print("time elapsed for dispersion ..........", e-s)
+print("shape of the wavefunctions...", np.shape(psi_plus))
+# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
+# plt.show()
+s=time.time()
+print("calculating tensor that stores the overlaps........")
+Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=(1,1))
+Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=(1,1))
+print( "tensorshape",np.shape(Lambda_Tens_plus) )
 
 
-# print("calculating tensor that stores the overlaps........")
 
 
-# with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Ene_valley_plus)
-# with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Ene_valley_min)
-# with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Lambda_Tens_plus)
-# with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Lambda_Tens_min)
+print("calculating tensor that stores the overlaps........")
+
+
+with open('Energies_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Ene_valley_plus)
+with open('Energies_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Ene_valley_min)
+with open('Overlap_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_plus)
+with open('Overlap_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Lambda_Tens_min)
 
 
 
@@ -576,8 +583,8 @@ print("calculated path accross the FBZ.......")
 dS_in=Vol_rec/((Nsamp)*(Nsamp)) #some points are repeated in my scheme
 xi=1
 def integrand(nkq,ekn,ekm,w,mu,T):
-    edk=ekn-mu
-    edkq=ekm[nkq]-mu
+    edk=ekm-mu
+    edkq=ekn[nkq]-mu
 
     #finite temp
     #nfk= 1/(np.exp(edk/T)+1)
@@ -678,8 +685,9 @@ print("Time for bubble",e-sb)
 
 
 
-qq=np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  )
-Vq_pre=2*np.pi*Coul/qq
+
+qq=np.sqrt(  kpath[:,0]**2+kpath[:,1]**2  ) +1e-17 #*LM
+Vq_pre=((2*np.pi*Coul)/qq)/((2*np.pi)**2)#*np.tanh(qq*dd)
 
 # V0=eSQ_eps0/( np.sqrt(3.0)*LM*LM)
 # Vq_pre=V0*np.tanh(qq*ds)/(qq)
@@ -707,7 +715,7 @@ N_Y=Nomegs
 
 ####### PLOTS OF THE MOMENTUM CUT OF THE POLARIZATION BUBBLE IM 
 
-plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=4)
+plt.imshow((momentumcut), origin='lower', aspect='auto',vmin=-8, vmax=2, cmap='viridis')
 # plt.imshow(np.imag(momentumcut), origin='lower', aspect='auto')
 
 ticks_X=5

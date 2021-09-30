@@ -10,7 +10,7 @@ np.set_printoptions(threshold=sys.maxsize)
 fillings = np.array([0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
 mu_values = np.array([0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 filling_index=int(sys.argv[1]) #0-25
-Nsamp=int(sys.argv[2]) #0-25
+Nsamp=int(sys.argv[2]) 
 ##########################################
 #parameters energy calculation
 ##########################################
@@ -198,7 +198,7 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
     qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
     vals = np.sqrt(qx_dif**2+qy_dif**2)
-    ind_to_sum = np.where(vals <= 4*GM) #Finding the indices where the difference of  q lies inside threshold
+    ind_to_sum = np.where(vals <= 2.5*GM) #Finding the indices where the difference of  q lies inside threshold
     n1_val = n1[ind_to_sum]
     n2_val = n2[ind_to_sum]
     N = np.shape(ind_to_sum)[1]
@@ -244,32 +244,32 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
 
     #return a[2*N-int(nbands/2):2*N+int(nbands/2)] + en_shift - en0
 
-# spect=[]
-# funcs=[]
-# spect_min=[]
-# funcs_min=[]
-# for kkk in k_points_all:
-#     cois=eigsystem(kkk[0], kkk[1], 1, nbands, n1, n2)
-#     spect.append(np.real(cois[0]))
-#     funcs.append(cois[1])
+spect=[]
+funcs=[]
+spect_min=[]
+funcs_min=[]
+for kkk in k_points_all:
+    cois=eigsystem(kkk[0], kkk[1], 1, nbands, n1, n2)
+    spect.append(np.real(cois[0]))
+    funcs.append(cois[1])
 
-#     cois_min=eigsystem(kkk[0], kkk[1], -1, nbands, n1, n2)
-#     spect_min.append(np.real(cois_min[0]))
-#     funcs_min.append(cois_min[1])
+    cois_min=eigsystem(kkk[0], kkk[1], -1, nbands, n1, n2)
+    spect_min.append(np.real(cois_min[0]))
+    funcs_min.append(cois_min[1])
 
 
-# Edisp=np.array(spect)
-# Psis=np.array(funcs)
-# Edisp_min=np.array(spect_min)
-# Psis_min=np.array(funcs_min) 
-# with open('Edisp_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Edisp)
-# # with open('Psis_plus_'+str(Nsamp)+'.npy', 'wb') as f:
-# #     np.save(f, Psis)
-# with open('Edisp_min_'+str(Nsamp)+'.npy', 'wb') as f:
-#     np.save(f, Edisp_min)
-# # with open('Psis_min_'+str(Nsamp)+'.npy', 'wb') as f:
-# #     np.save(f, Psis_min)
+Edisp=np.array(spect)
+Psis=np.array(funcs)
+Edisp_min=np.array(spect_min)
+Psis_min=np.array(funcs_min) 
+with open('Edisp_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Edisp)
+# with open('Psis_plus_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Psis)
+with open('Edisp_min_'+str(Nsamp)+'.npy', 'wb') as f:
+    np.save(f, Edisp_min)
+# with open('Psis_min_'+str(Nsamp)+'.npy', 'wb') as f:
+#     np.save(f, Psis_min)
 
 
 
