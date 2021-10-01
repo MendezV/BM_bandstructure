@@ -6,6 +6,7 @@ import sys
 import scipy
 np.set_printoptions(threshold=sys.maxsize)
 import time
+from numpy import linalg as LA
 
 ####################################################################################
 ####################################################################################
@@ -44,9 +45,14 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 ##########################################
 #parameters energy calculation
 ##########################################
+a_graphene=2.46*(1e-10) #in meters
+hbvf=0.003*0.1973269804*1e-6 /a_graphene #ev*m
+
 hv = 2.1354; # eV
+print("vels", hv, hbvf)
 theta=1.05*np.pi/180  #1.05*np.pi/180 #twist Angle
 nbands=8 #Number of bands
+
 
 fillings = np.array([0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
 mu_values = np.array([0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
@@ -86,12 +92,14 @@ print("COULOMB CONSTANT...",ee2)
 ##########################################
 # Useful predefined matrices 
 ##########################################
+pauli0=np.eye(2,2)
 paulix=np.array([[0,1],[1,0]])
 pauliy=np.array([[0,-1j],[1j,0]])
 pauliz=np.array([[1,0],[0,-1]])
 
-Rotth1=np.array([[np.cos(theta/2),-np.sin(theta/2)],[np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix +thet
-Rotth2=np.array([[np.cos(theta/2),np.sin(theta/2)],[-np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix -thet
+Rotth1=np.array([[np.cos(theta/2),np.sin(theta/2)],[-np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix -thet
+Rotth2=np.array([[np.cos(theta/2),-np.sin(theta/2)],[np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix +thet
+
 #C2
 th1=np.pi
 C2=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation matrix +thet
@@ -99,7 +107,9 @@ C2=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation ma
 th1=2*np.pi/3
 C3=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation matrix +thet
 
-
+T11=pauli0+paulix
+T12=pauli0+paulix*np.cos(2*np.pi/3)+pauliy*np.sin(2*np.pi/3)
+T13=pauli0+paulix*np.cos(2*np.pi/3)-pauliy*np.sin(2*np.pi/3)
 
 ##########################################
 # Constructing lattice vectors 
@@ -118,6 +128,8 @@ GM1=astar1[0,:]-astar2[0,:] #see Koshino-liang fu paper for further illustration
 GM2=astar1[1,:]-astar2[1,:] #see Koshino-liang fu paper for further illustration (Going horizontal towards middle of the edge of the MBZ)
 LM1=2*np.pi*np.array([GM2[1],-GM2[0]])/la.det(np.array([GM1,GM2]))
 LM2=2*np.pi*np.array([-GM1[1],GM1[0]])/la.det(np.array([GM1,GM2]))
+print(LM1,LM2)
+
 
 LM=np.sqrt(LM1@LM1) #moire period 2/np.sin(theta/2)
 GM=np.sqrt(GM1@GM1) #reciprocal space period  8*np.pi/np.sqrt(3)*np.sin(theta/2)
@@ -133,33 +145,16 @@ Vol_rec=np.cross(b_1,b_2)@zhat
 #Valley locations
 ##########################################
 #1,2 label layer and  + - labels valley from the  original graphene dispersion, see liang fu-koshino
-Kplus1=-(2*astar1[0,:]+astar1[1,:])/3
-Kplus2=-(2*astar2[0,:]+astar2[1,:])/3
-Kmin1=+(2*astar1[0,:]+astar1[1,:])/3
-Kmin2=+(2*astar2[0,:]+astar2[1,:])/3
+Kplus1=+(2*astar1[0,:]+astar1[1,:])/3
+Kplus2=+(2*astar2[0,:]+astar2[1,:])/3
 
-#K points for the MBZ
-Ktopplus=Kplus2-GM1 
-Kbottommin=Kmin2+GM1
+print(Vol_rec)
 
 q1=Kplus1-Kplus2
 q2=C3@q1
 q3=C3@q2
 
-#M points for the MBZ's
-Mpoint=(Kplus1+Kplus2)/2 #position of the M point in the + valley
-Mpointneg=-(Kplus1+Kplus2)/2 #position of the M point in the - valley
-
-##########################################
-#definitions of the BZ grid
-##########################################
-
-
-Numklpx=30
-Numklpy=100
-gridpx=np.arange(-int(Numklpx/2),int(Numklpx/2),1) #grid to calculate wavefunct
-gridpy=np.arange(-int(Numklpy/2),int(Numklpy/2),1) #grid to calculate wavefunct
-n1,n2=np.meshgrid(gridpx,gridpy) #grid to calculate wavefunct
+print(q1)
 
 
 ####################################################################################
@@ -335,94 +330,8 @@ print("time for sampling was...",e-s)
 ####################################################################################
 ####################################################################################
 
-def eigsystem(kx, ky, xi, nbands, n1, n2):
-    #we diagonalize a matrix made up
-    qx_dif = kx+GM1[0]*n1+GM2[0]*n2-xi*Mpoint[0]
-    qy_dif = ky+GM1[1]*n1+GM2[1]*n2-xi*Mpoint[1]
-    vals = np.sqrt(qx_dif**2+qy_dif**2)
-    ind_to_sum = np.where(vals <= 5*GM) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
-    n1_val = n1[ind_to_sum] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
-    n2_val = n2[ind_to_sum] #
-    # print(kx,ky)
-    # plt.scatter(n1,n2)
-    # plt.scatter(n1_val,n2_val)
-    # plt.show()
-    N = np.shape(ind_to_sum)[1] ##number of indices for which the condition above is satisfied
 
-    qx = kx+GM1[0]*n1_val+GM2[0]*n2_val
-    qy = ky+GM1[1]*n1_val+GM2[1]*n2_val
-
-    if xi<0:
-        qx_1= (+(qx-Kmin1[0])*np.cos(theta/2) - (qy-Kmin1[1])*np.sin(theta/2) ) #rotated momenta
-        qy_1= (+(qx-Kmin1[0])*np.sin(theta/2) + (qy-Kmin1[1])*np.cos(theta/2) ) #rotated momenta
-        qx_2= (+(qx-Kmin2[0])*np.cos(theta/2) + (qy-Kmin2[1])*np.sin(theta/2) ) #rotated momenta
-        qy_2= (-(qx-Kmin2[0])*np.sin(theta/2) + (qy-Kmin2[1])*np.cos(theta/2) ) #rotated momenta
-    else:
-        qx_1= (+(qx-Kplus1[0])*np.cos(theta/2) - (qy-Kplus1[1])*np.sin(theta/2) ) #rotated momenta
-        qy_1= (+(qx-Kplus1[0])*np.sin(theta/2) + (qy-Kplus1[1])*np.cos(theta/2) ) #rotated momenta
-        qx_2= (+(qx-Kplus2[0])*np.cos(theta/2) + (qy-Kplus2[1])*np.sin(theta/2) ) #rotated momenta
-        qy_2= (-(qx-Kplus2[0])*np.sin(theta/2) + (qy-Kplus2[1])*np.cos(theta/2) ) #rotated moment
-
-    #the following block generates the momentum space rep of the interlayer coupling matrix
-    matG2=np.zeros([N,N])
-    matG4=np.zeros([N,N])
-    for i in range(N):
-        indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]))
-        if np.size(indi1)>0:
-            matG2[i,indi1]=1
-        indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]-xi))
-        if np.size(indi1)>0:
-            matG4[i,indi1]=1
-
-    #Matrices that  appeared as coefficients of the real space ops
-    #full product is the kronecker product of both matrices
-    matu1=np.array([[u,up],[up,u]])
-    matu2=np.array([[u,up*(w**(-xi))],[up*(w**(xi)),u]])
-
-    #assembling the matrix to be diagonalized
-    U=(np.kron(matu1,np.eye(N,N))+np.kron(matu2,matG2)+np.kron(matu2.T,matG4)) #interlayer coupling
-    Udag=(U.conj()).T
-    H1=-hv*(np.kron(xi*paulix,np.diag(qx_1))+np.kron(pauliy,np.diag(qy_1)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-    H2=-hv*(np.kron(xi*paulix,np.diag(qx_2))+np.kron(pauliy,np.diag(qy_2)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-    Hxi=np.bmat([[H1, Udag], [U, H2]]) #Full matrix
-    #a= np.linalg.eigvalsh(Hxi) - en_shift
-    (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
-
-    #######HANDLING WITH RESHAPE
-    #umklp,umklp, layer, sublattice
-    psi_p=np.zeros([Numklpy,Numklpx,2,2]) +0*1j
-    # psi=np.zeros([Numklp*Numklp*4,nbands])+0*1j
-    psi=np.zeros([Numklpy, Numklpx, 2,2, nbands]) +0*1j
-
-    for nband in range(nbands):
-        # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
-        psi_p[ind_to_sum] = np.reshape(  np.array(np.reshape(Eigvect[:,2*N-int(nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
-
-        ##GAUGE FIXING by making the 30 30 1 1 component real
-        # phas=np.angle(psi_p[50-int(xi*25),15,0,0])
-        # phas=0 ## not fixing the phase
-        maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
-        phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
-        psi[:,:,:,:,nband] = psi_p*np.exp(-1j*phas)  
-        # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
-
-
-    return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0,psi, ind_to_sum
-    #  return Eigvals[2*N-int(nbands/2):2*N+int(nbands/2)]-en0, Eigvect[:,2*N-int(nbands/2):2*N+int(nbands/2)]
-
-
-#fixing the arbitrary shift in the spectrum so that zero energy is at dirac point
-KP=(-2*GM1 -GM2)/3 #dirac point
-
-en03,ww, iss=eigsystem(KP[0], KP[1], 1, nbands, n1, n2)
-en0=(en03[int(nbands/2)-1]+en03[int(nbands/2)])/2
-print("reference energy as the energy at the dirac point",en0)
-
-# en0=0
-
-
-
-def eigsystem2(kx, ky, xi, nbands, n1arg, n2arg):
+def eigsystem(kx, ky, xi, nbands, n1arg, n2arg):
     #we diagonalize a matrix made up
     Numklpyw=np.shape(n1arg)[0]
     Numklpxw=np.shape(n1arg)[1]
@@ -463,58 +372,29 @@ def eigsystem2(kx, ky, xi, nbands, n1arg, n2arg):
     tres=(1e-5)*np.sqrt(q1[0]**2 +q1[1]**2)
     for i in range(N):
         indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + xi*q1[0])**2+(Qplusy-Qminy[i] + xi*q1[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qminx[i] - xi*q1[0])**2+(Qplusy-Qminy[i] - xi*q1[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qplusx[i] + xi*q1[0])**2+(Qplusy-Qplusy[i] + xi*q1[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qminx-Qminx[i] + xi*q1[0])**2+(Qminy-Qminy[i] + xi*q1[1])**2  )<tres)
         if np.size(indi1)>0:
             matGq1[indi1,i]=1
-        # if np.size(indi2)>0:
-        #     matGq1[indi2,i]=1
-        #     print("u")
+
         indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + xi*q2[0])**2+(Qplusy-Qminy[i] + xi*q2[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qminx[i] - xi*q2[0])**2+(Qplusy-Qminy[i] - xi*q2[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qplusx[i] + xi*q2[0])**2+(Qplusy-Qplusy[i] + xi*q2[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qminx-Qminx[i] + xi*q2[0])**2+(Qminy-Qminy[i] + xi*q2[1])**2  )<tres)
         if np.size(indi1)>0:
             matGq2[indi1,i]=1 #indi1+1=i
-        # if np.size(indi2)>0:
-        #     matGq2[indi2,i]=1
-        #     print("u")
+ 
             
         indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + xi*q3[0])**2+(Qplusy-Qminy[i] + xi*q3[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qminx[i] - xi*q3[0])**2+(Qplusy-Qminy[i] - xi*q3[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qplusx-Qplusx[i] + xi*q3[0])**2+(Qplusy-Qplusy[i] + xi*q3[1])**2  )<tres)
-        # indi2=np.where(np.sqrt(  (Qminx-Qminx[i] + xi*q3[0])**2+(Qminy-Qminy[i] + xi*q3[1])**2  )<tres)
         if np.size(indi1)>0:
             matGq3[indi1,i]=1
-        # if np.size(indi2)>0:
-        #     matGq3[indi2,i]=1
-        #     print("u")
 
-    # matG2=np.zeros([N,N])
-    # matG4=np.zeros([N,N])
-    # for i in range(N):
-    #     indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]))
-    #     if np.size(indi1)>0:
-    #         matG2[i,indi1]=1
-    #     indi1=np.where((n1_val==n1_val[i]-xi)*(n2_val==n2_val[i]-xi))
-    #     if np.size(indi1)>0:
-    #         matG4[i,indi1]=1
-    # print(np.mean(matG2-matGq2), np.mean(matG4-matGq3),np.mean(matG2-matGq3))
-        
 
     #Matrices that  appeared as coefficients of the real space ops
     #full product is the kronecker product of both matrices
-    matu1=np.array([[u,up],[up,u]])
-    matu2=np.array([[u,up*(w**(-xi))],[up*(w**(xi)),u]])
-    matu3=matu2.T
+    
 
     Mdelt1=matGq1
     Mdelt2=matGq2
     Mdelt3=matGq3
 
     #assembling the matrix to be diagonalized
-    U=0*(np.kron(matu1,Mdelt1)+np.kron(matu2,Mdelt2)+np.kron(matu3,Mdelt3)) #interlayer coupling
+    U=alpha*(np.kron(T11,Mdelt1)+np.kron(T12,Mdelt2)+np.kron(T13,Mdelt3)) #interlayer coupling
     Udag=(U.conj()).T
     H1=hv*(np.kron(xi*paulix,np.diag(qx_1))+np.kron(pauliy,np.diag(qy_1)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
     H2=hv*(np.kron(xi*paulix,np.diag(qx_2))+np.kron(pauliy,np.diag(qy_2)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
@@ -556,209 +436,13 @@ def eigsystem2(kx, ky, xi, nbands, n1arg, n2arg):
 ####################################################################################
 ####################################################################################
 
-s=time.time()
-
 Nsamp=int(sys.argv[2])
 
-Ene_valley_plus_a=np.empty((0))
-Ene_valley_min_a=np.empty((0))
-psi_plus_a=[]
-psi_min_a=[]
-
-print("starting dispersion ..........")
-# for l in range(Nsamp*Nsamp):
-for l in range(Npoi):
-
-    # E1,wave1,ind_to_sum1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
-    # E2,wave2, ind_to_sum2=eigsystem(KX[l],KY[l], -1, nbands, n1, n2)
-    E1,wave1,ind_to_sum1=eigsystem(KX[l],KY[l], 1, nbands, n1, n2)
-    E2,wave2, ind_to_sum2=eigsystem(KX[l],KY[l], -1, nbands, n1, n2)
-
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
-
-    psi_plus_a.append(wave1)
-    psi_min_a.append(wave2)
-    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag1:', suffix = 'Complete', length = 50)
-
-##relevant wavefunctions and energies for the + valley
-psi_plus=np.array(psi_plus_a)
-psi_plus_conj=np.conj(np.array(psi_plus_a))
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-
-#relevant wavefunctions and energies for the - valley
-psi_min=np.array(psi_min_a)
-psi_min_conj=np.conj(np.array(psi_min_a))
-Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-print(np.shape(ind_to_sum1))
-print(ind_to_sum1)
-# plt.scatter(n1,n2)
-# plt.scatter(n1[ind_to_sum1],n2[ind_to_sum1])
-# plt.scatter(n1[ind_to_sum2],n2[ind_to_sum2])
-# plt.show()
-
-psi_minp=np.sum(np.sum(np.sum(psi_min,axis=5),axis=4),axis=3)
-psi_plsp=np.sum(np.sum(np.sum(psi_plus,axis=5),axis=4),axis=3)
-# subs=np.sum(np.sum(np.sum(psi_plus-psi_min,axis=5),axis=4),axis=3)
-subs=np.sum(np.sum(np.sum(psi_plus_conj*psi_min,axis=5),axis=4),axis=3)
-ids=np.where(np.abs(psi_minp[5,:,:])>0)
-print("sizeids1,",np.shape(ids))
-ids2=np.where(np.abs(psi_plsp[5,:,:])>0)
-print("sizeids2,",np.shape(ids2))
-idsbs=np.where(np.abs(subs[5,:,:])>0)
-print("sizeidssub,",np.shape(idsbs))
-# plt.scatter(n1,n2)
-# plt.scatter(n1[ids],n2[ids])
-# plt.scatter(n1[ids2],n2[ids2])
-# plt.show()
-# plt.scatter(n1,n2)
-# plt.scatter(n1[idsbs],n2[idsbs])
-# plt.show()
-
-psipre1=psi_min
-psipre2=psi_plus_conj[:, :,:,:,:,:]
-psi_minp=np.sum(np.sum(np.sum(psipre1,axis=5),axis=4),axis=3)
-psi_plsp=np.sum(np.sum(np.sum(psipre2,axis=5),axis=4),axis=3)
-# subs=np.sum(np.sum(np.sum(psi_plus-psi_min,axis=5),axis=4),axis=3)
-subs=np.sum(np.sum(np.sum(psipre1*psipre2,axis=5),axis=4),axis=3)
-ids=np.where(np.abs(psi_minp[5,:,:])>0)
-print("sizeids1,",np.shape(ids))
-ids2=np.where(np.abs(psi_plsp[5,:,:])>0)
-print("sizeids2,",np.shape(ids2))
-idsbs=np.where(np.abs(subs[5,:,:])>0)
-print("sizeidssub,",np.shape(idsbs))
-# plt.scatter(n1,n2)
-# plt.scatter(n1[ids],n2[ids])
-# plt.scatter(n1[ids2],n2[ids2])
-# plt.show()
-# plt.scatter(n1,n2)
-# plt.scatter(n1[ids],n2[ids])
-# plt.scatter(n1[ids2],n2[ids2])
-# plt.scatter(n1[idsbs],n2[idsbs])
-# plt.show()
-
-
-testover1=np.tensordot(np.conj(psipre2) , psipre1,  axes=([1,2,3,4],[1,2,3,4]))
-for i in range(4):  
-    print("testing complex conjugation wavefunction, index one plus... ",np.mean(np.diag(np.abs(testover1[:,i,:,i])**2))  )
-# print("ASDFASDFA... ", np.mean( np.abs(psi_plus)**2  ))
-# print("ASDFASDFA... ", np.mean( np.abs(psi_min)**2   ))
-# print("ASDFASDFA... ", np.mean( np.abs(psi_plus)**2 + np.abs(psi_min)**2 ))
-# print("ASDFASDFA... ", np.mean( np.abs(psi_plus)**2 - np.abs(psi_min)**2 ))
-
-
-e=time.time()
-print("finished dispersion ..........")
-print("time elapsed for dispersion ..........", e-s)
-print("shape of the wavefunctions...", np.shape(psi_plus))
-# plt.scatter(XsLatt,YsLatt, c=Z[:,:,1])
-# plt.show()
-s=time.time()
-print("calculating tensor that stores the overlaps........")
-#for the plus valley
-Lambda_Tens_plus=np.tensordot(psi_plus_conj,psi_plus, axes=([1,2,3,4],[1,2,3,4])) 
-Lambda_Tens_min=np.tensordot(psi_min_conj,psi_min, axes=([1,2,3,4],[1,2,3,4])) 
-
-print("normalization ",  np.abs(Lambda_Tens_plus[0,0,0,0])**2  )
-print("normalization ",  np.mean(np.diag(np.abs(Lambda_Tens_plus[:,1,:,1])**2)) )
-print("normalization ",  np.mean(np.diag(np.abs(Lambda_Tens_plus[:,2,:,2])**2)) )
-
-print("normalization ",  np.mean(np.diag(np.abs(Lambda_Tens_plus[:,1,:,1])**2)) )
-print("normalization ",  np.mean(np.diag(np.abs(Lambda_Tens_plus[:,2,:,2])**2)) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_plus[:,0,:,0])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_plus[:,1,:,1])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_plus[:,2,:,2])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_plus[:,1,:,2])**2) )
-# plt.show()
-# plt.plot( np.diag(np.abs(Lambda_Tens_min[:,0,:,0])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_min[:,1,:,1])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_min[:,2,:,2])**2) )
-# plt.plot( np.diag(np.abs(Lambda_Tens_min[:,1,:,2])**2) )
-# plt.show()
-print( "tensorshape",np.shape(Lambda_Tens_plus) )
-
-
-
-print("fffenergy",np.mean(Ene_valley_plus[Indc2,:]-Ene_valley_min[:,:]))
-
-VV=np.array(Vertices_list+[Vertices_list[0]])
-bds1=[]
-for i in range(nbands):
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
-    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("1plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
-    plt.close()
-print("minimum bw_plus was:",np.min(np.array(bds1)))
-bds2=[]
-for i in range(nbands):
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=30, c=Ene_valley_min[:,i])
-    print("bandwidth min,",int(i),np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]) )
-    bds2.append( np.max(Ene_valley_min[:,i]) - np.min(Ene_valley_min[:,i]) )
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("1minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
-    plt.close()
-print("minimum bw_plus was:",np.min(np.array(bds2)))
 
 Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
-
-
-# print("starting dispersion ..........")
-# # for l in range(Nsamp*Nsamp):
-# for l in range(Npoi):
-
-#     E1,wave1,ind_to_sum1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
-#     E2,wave2,ind_to_sum2=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
-
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-#     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
-
-#     psi_plus_a.append(wave1)
-#     psi_min_a.append(wave2)
-
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# psi_plus_conj=np.conj(np.array(psi_plus_a))
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-
-# #relevant wavefunctions and energies for the - valley
-# psi_min=np.array(psi_min_a)
-# psi_min_conj=np.conj(np.array(psi_min_a))
-# Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-# print(np.shape(ind_to_sum1))
-# print(ind_to_sum1)
-# # plt.scatter(n1,n2)
-# # plt.scatter(n1[ind_to_sum1],n2[ind_to_sum1])
-# # plt.scatter(n1[ind_to_sum2],n2[ind_to_sum2])
-# # plt.show()
-
-# psi_minp=np.sum(np.sum(np.sum(psi_min,axis=5),axis=4),axis=3)
-# psi_plsp=np.sum(np.sum(np.sum(psi_plus,axis=5),axis=4),axis=3)
-# # subs=np.sum(np.sum(np.sum(psi_plus-psi_min,axis=5),axis=4),axis=3)
-# subs=np.sum(np.sum(np.sum(psi_plus_conj*psi_min,axis=5),axis=4),axis=3)
-# ids=np.where(np.abs(psi_minp[5,:,:])>0)
-# print("sizeids1,",np.shape(ids))
-# ids2=np.where(np.abs(psi_plsp[5,:,:])>0)
-# print("sizeids2,",np.shape(ids2))
-# idsbs=np.where(np.abs(subs[5,:,:])>0)
-# print("sizeidssub,",np.shape(idsbs))
-# # plt.scatter(n1,n2)
-# # plt.scatter(n1[ids],n2[ids])
-# # plt.scatter(n1[ids2],n2[ids2])
-# # plt.show()
-# # plt.scatter(n1,n2)
-# # plt.scatter(n1[idsbs],n2[idsbs])
-# # plt.show()
 
 Numklpxw=30
 Numklpyw=30
@@ -768,7 +452,7 @@ n1w,n2w=np.meshgrid(gridpxw,gridpyw) #grid to calculate wavefunct
 
 en0=0
 KP=(-2*GM1 -GM2)/3 #dirac point
-en03,ww, iss=eigsystem2(KP[0], KP[1], 1, nbands, n1w, n2w)
+en03,ww, iss=eigsystem(KP[0], KP[1], 1, nbands, n1w, n2w)
 en0=(en03[int(nbands/2)-1]+en03[int(nbands/2)])/2
 print("reference energy as the energy at the dirac point",en0)
 
@@ -777,8 +461,8 @@ print("starting dispersion ..........")
 # for l in range(Nsamp*Nsamp):
 for l in range(Npoi):
 
-    E1,wave1,ind_to_sum1=eigsystem2(KX[l],KY[l], 1, nbands,n1w, n2w)
-    E2,wave2,ind_to_sum2=eigsystem2(KX[l],KY[l], -1, nbands, n1w,n2w)
+    E1,wave1,ind_to_sum1=eigsystem(KX[l],KY[l], 1, nbands,n1w, n2w)
+    E2,wave2,ind_to_sum2=eigsystem(KX[l],KY[l], -1, nbands, n1w,n2w)
 
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
@@ -822,6 +506,7 @@ print("sizeidssub,",np.shape(idsbs))
 # plt.scatter(n1w[idsbs],n2w[idsbs])
 # plt.show()
 
+VV=np.array(Vertices_list+[Vertices_list[0]])
 bds1=[]
 for i in range(nbands):
     plt.plot(VV[:,0],VV[:,1])
