@@ -9,6 +9,28 @@ import numpy.linalg as la
 fillings = np.array([0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
 mu_values = np.array([0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
+# Print iterations progress
+def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
+    # Print New Line on Complete
+    if iteration == total: 
+        print()
+
 
 filling_index=int(sys.argv[1]) #0-25
 ##########################################
@@ -31,7 +53,7 @@ lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2)
 [KX,KY]=lq.Generate_lattice()
 plt.scatter(KX,KY)
 plt.show()
-
+Npoi=np.size(KX)
 [q1,q1,q3]=l.q
 q=la.norm(q1)
 
@@ -62,6 +84,36 @@ n1,n2=np.meshgrid(gridpx,gridpy) #grid to calculate wavefunct
 #will use alpha andrei, if it fails, use alphacorrected, maybe their mistake was only in the plot
 print(alpha_andrei,alpha_andrei_corrected, alpha)
 alpha=w/hvkd
-h=Hamiltonian.Ham(hvkd, alpha, xi, 0, 0,n1,n2, l)
+h=Hamiltonian.Ham(hvkd, alpha, xi, 0, 0,n1,n2, l, nbands)
 print(h)
 
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_min_a=np.empty((0))
+psi_plus_a=[]
+psi_min_a=[]
+print("starting dispersion ..........")
+# for l in range(Nsamp*Nsamp):
+for l in range(Npoi):
+
+    h=Hamiltonian.Ham(hvkd, alpha, 1, KX[l],KY[l],n1,n2, lq,nbands)
+    E1,wave1=h.eigens()
+
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+
+    psi_plus_a.append(wave1)
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+bds1=[]
+for i in range(nbands):
+    plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
+    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.close()
+print("minimum bw_plus was:",np.min(np.array(bds1)))

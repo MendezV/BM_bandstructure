@@ -19,9 +19,7 @@ class Ham():
         self.Numklpx=np.shape(n1)[1]
 
         self.latt=latt
-
-        
-        
+        self.nbands=nbands
 
     def __repr__(self):
         return "Hamiltonian at {kx} {ky} with alpha parameter {alpha} and scale {hvkd}".format(kx=self.kx, ky=self.ky, alpha =self.alpha,hvkd=self.hvkd)
@@ -118,7 +116,7 @@ class Ham():
         T13=pauli0+paulix*np.cos(2*np.pi/3)-pauliy*np.sin(2*np.pi/3)
         U=self.alpha*(np.kron(T11,Mdelt1)+np.kron(T12,Mdelt2)+np.kron(T13,Mdelt3)) #interlayer coupling
 
-        return U
+        return U*0
     
     def eigens(self):
 

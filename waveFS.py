@@ -380,7 +380,7 @@ def eigsystem(kx, ky, xi, nbands, n1, n2):
     matu2=np.array([[u,up*(w**(-xi))],[up*(w**(xi)),u]])
 
     #assembling the matrix to be diagonalized
-    U=(np.kron(matu1,np.eye(N,N))+np.kron(matu2,matG2)+np.kron(matu2.T,matG4)) #interlayer coupling
+    U=0*(np.kron(matu1,np.eye(N,N))+np.kron(matu2,matG2)+np.kron(matu2.T,matG4)) #interlayer coupling
     Udag=(U.conj()).T
     H1=-hv*(np.kron(xi*paulix,np.diag(qx_1))+np.kron(pauliy,np.diag(qy_1)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
     H2=-hv*(np.kron(xi*paulix,np.diag(qx_2))+np.kron(pauliy,np.diag(qy_2)))#+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
@@ -706,24 +706,86 @@ for i in range(nbands):
     plt.close()
 print("minimum bw_plus was:",np.min(np.array(bds2)))
 
-Ene_valley_plus_a=np.empty((0))
-Ene_valley_min_a=np.empty((0))
-psi_plus_a=[]
-psi_min_a=[]
+# Ene_valley_plus_a=np.empty((0))
+# Ene_valley_min_a=np.empty((0))
+# psi_plus_a=[]
+# psi_min_a=[]
+
+
+# # print("starting dispersion ..........")
+# # # for l in range(Nsamp*Nsamp):
+# # for l in range(Npoi):
+
+# #     E1,wave1,ind_to_sum1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
+# #     E2,wave2,ind_to_sum2=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
+
+# #     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+# #     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
+
+# #     psi_plus_a.append(wave1)
+# #     psi_min_a.append(wave2)
+
+# # ##relevant wavefunctions and energies for the + valley
+# # psi_plus=np.array(psi_plus_a)
+# # psi_plus_conj=np.conj(np.array(psi_plus_a))
+# # Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+
+# # #relevant wavefunctions and energies for the - valley
+# # psi_min=np.array(psi_min_a)
+# # psi_min_conj=np.conj(np.array(psi_min_a))
+# # Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+# # print(np.shape(ind_to_sum1))
+# # print(ind_to_sum1)
+# # # plt.scatter(n1,n2)
+# # # plt.scatter(n1[ind_to_sum1],n2[ind_to_sum1])
+# # # plt.scatter(n1[ind_to_sum2],n2[ind_to_sum2])
+# # # plt.show()
+
+# # psi_minp=np.sum(np.sum(np.sum(psi_min,axis=5),axis=4),axis=3)
+# # psi_plsp=np.sum(np.sum(np.sum(psi_plus,axis=5),axis=4),axis=3)
+# # # subs=np.sum(np.sum(np.sum(psi_plus-psi_min,axis=5),axis=4),axis=3)
+# # subs=np.sum(np.sum(np.sum(psi_plus_conj*psi_min,axis=5),axis=4),axis=3)
+# # ids=np.where(np.abs(psi_minp[5,:,:])>0)
+# # print("sizeids1,",np.shape(ids))
+# # ids2=np.where(np.abs(psi_plsp[5,:,:])>0)
+# # print("sizeids2,",np.shape(ids2))
+# # idsbs=np.where(np.abs(subs[5,:,:])>0)
+# # print("sizeidssub,",np.shape(idsbs))
+# # # plt.scatter(n1,n2)
+# # # plt.scatter(n1[ids],n2[ids])
+# # # plt.scatter(n1[ids2],n2[ids2])
+# # # plt.show()
+# # # plt.scatter(n1,n2)
+# # # plt.scatter(n1[idsbs],n2[idsbs])
+# # # plt.show()
+
+# Numklpxw=30
+# Numklpyw=30
+# gridpxw=np.arange(-int(Numklpxw/2),int(Numklpxw/2),1) #grid to calculate wavefunct
+# gridpyw=np.arange(-int(Numklpyw/2),int(Numklpyw/2),1) #grid to calculate wavefunct
+# n1w,n2w=np.meshgrid(gridpxw,gridpyw) #grid to calculate wavefunct
+
+# en0=0
+# KP=(-2*GM1 -GM2)/3 #dirac point
+# en03,ww, iss=eigsystem2(KP[0], KP[1], 1, nbands, n1w, n2w)
+# en0=(en03[int(nbands/2)-1]+en03[int(nbands/2)])/2
+# print("reference energy as the energy at the dirac point",en0)
 
 
 # print("starting dispersion ..........")
 # # for l in range(Nsamp*Nsamp):
 # for l in range(Npoi):
 
-#     E1,wave1,ind_to_sum1=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
-#     E2,wave2,ind_to_sum2=eigsystem(KXc2[l],KYc2[l], 1, nbands, -n1, -n2)
+#     E1,wave1,ind_to_sum1=eigsystem2(KX[l],KY[l], 1, nbands,n1w, n2w)
+#     E2,wave2,ind_to_sum2=eigsystem2(KX[l],KY[l], -1, nbands, n1w,n2w)
 
 #     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
 #     Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
 
 #     psi_plus_a.append(wave1)
 #     psi_min_a.append(wave2)
+#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
 # ##relevant wavefunctions and energies for the + valley
 # psi_plus=np.array(psi_plus_a)
@@ -752,95 +814,33 @@ psi_min_a=[]
 # print("sizeids2,",np.shape(ids2))
 # idsbs=np.where(np.abs(subs[5,:,:])>0)
 # print("sizeidssub,",np.shape(idsbs))
-# # plt.scatter(n1,n2)
-# # plt.scatter(n1[ids],n2[ids])
-# # plt.scatter(n1[ids2],n2[ids2])
+# # plt.scatter(n1w,n2w)
+# # plt.scatter(n1w[ids],n2w[ids])
+# # plt.scatter(n1w[ids2],n2w[ids2])
 # # plt.show()
-# # plt.scatter(n1,n2)
-# # plt.scatter(n1[idsbs],n2[idsbs])
+# # plt.scatter(n1w,n2w)
+# # plt.scatter(n1w[idsbs],n2w[idsbs])
 # # plt.show()
 
-Numklpxw=30
-Numklpyw=30
-gridpxw=np.arange(-int(Numklpxw/2),int(Numklpxw/2),1) #grid to calculate wavefunct
-gridpyw=np.arange(-int(Numklpyw/2),int(Numklpyw/2),1) #grid to calculate wavefunct
-n1w,n2w=np.meshgrid(gridpxw,gridpyw) #grid to calculate wavefunct
-
-en0=0
-KP=(-2*GM1 -GM2)/3 #dirac point
-en03,ww, iss=eigsystem2(KP[0], KP[1], 1, nbands, n1w, n2w)
-en0=(en03[int(nbands/2)-1]+en03[int(nbands/2)])/2
-print("reference energy as the energy at the dirac point",en0)
-
-
-print("starting dispersion ..........")
-# for l in range(Nsamp*Nsamp):
-for l in range(Npoi):
-
-    E1,wave1,ind_to_sum1=eigsystem2(KX[l],KY[l], 1, nbands,n1w, n2w)
-    E2,wave2,ind_to_sum2=eigsystem2(KX[l],KY[l], -1, nbands, n1w,n2w)
-
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-    Ene_valley_min_a=np.append(Ene_valley_min_a,E2)
-
-    psi_plus_a.append(wave1)
-    psi_min_a.append(wave2)
-    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-##relevant wavefunctions and energies for the + valley
-psi_plus=np.array(psi_plus_a)
-psi_plus_conj=np.conj(np.array(psi_plus_a))
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-
-#relevant wavefunctions and energies for the - valley
-psi_min=np.array(psi_min_a)
-psi_min_conj=np.conj(np.array(psi_min_a))
-Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-print(np.shape(ind_to_sum1))
-print(ind_to_sum1)
-# plt.scatter(n1,n2)
-# plt.scatter(n1[ind_to_sum1],n2[ind_to_sum1])
-# plt.scatter(n1[ind_to_sum2],n2[ind_to_sum2])
-# plt.show()
-
-psi_minp=np.sum(np.sum(np.sum(psi_min,axis=5),axis=4),axis=3)
-psi_plsp=np.sum(np.sum(np.sum(psi_plus,axis=5),axis=4),axis=3)
-# subs=np.sum(np.sum(np.sum(psi_plus-psi_min,axis=5),axis=4),axis=3)
-subs=np.sum(np.sum(np.sum(psi_plus_conj*psi_min,axis=5),axis=4),axis=3)
-ids=np.where(np.abs(psi_minp[5,:,:])>0)
-print("sizeids1,",np.shape(ids))
-ids2=np.where(np.abs(psi_plsp[5,:,:])>0)
-print("sizeids2,",np.shape(ids2))
-idsbs=np.where(np.abs(subs[5,:,:])>0)
-print("sizeidssub,",np.shape(idsbs))
-# plt.scatter(n1w,n2w)
-# plt.scatter(n1w[ids],n2w[ids])
-# plt.scatter(n1w[ids2],n2w[ids2])
-# plt.show()
-# plt.scatter(n1w,n2w)
-# plt.scatter(n1w[idsbs],n2w[idsbs])
-# plt.show()
-
-bds1=[]
-for i in range(nbands):
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
-    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
-    plt.close()
-print("minimum bw_plus was:",np.min(np.array(bds1)))
-bds2=[]
-for i in range(nbands):
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=30, c=Ene_valley_min[:,i])
-    print("bandwidth min,",int(i),np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]) )
-    bds2.append( np.max(Ene_valley_min[:,i]) - np.min(Ene_valley_min[:,i]) )
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("2minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
-    plt.close()
-print("minimum bw_plus was:",np.min(np.array(bds2)))
+# bds1=[]
+# for i in range(nbands):
+#     plt.plot(VV[:,0],VV[:,1])
+#     plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
+#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+#     print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+#     plt.gca().set_aspect('equal', adjustable='box')
+#     plt.colorbar()
+#     plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+#     plt.close()
+# print("minimum bw_plus was:",np.min(np.array(bds1)))
+# bds2=[]
+# for i in range(nbands):
+#     plt.plot(VV[:,0],VV[:,1])
+#     plt.scatter(KX,KY, s=30, c=Ene_valley_min[:,i])
+#     print("bandwidth min,",int(i),np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]) )
+#     bds2.append( np.max(Ene_valley_min[:,i]) - np.min(Ene_valley_min[:,i]) )
+#     plt.gca().set_aspect('equal', adjustable='box')
+#     plt.colorbar()
+#     plt.savefig("2minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+#     plt.close()
+# print("minimum bw_plus was:",np.min(np.array(bds2)))
