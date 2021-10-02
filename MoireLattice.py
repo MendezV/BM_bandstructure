@@ -5,7 +5,7 @@ from scipy import linalg as la
 import time
 class MoireTriangLattice:
 
-    def __init__(self, Npoints, theta):
+    def __init__(self, Npoints, theta, normed):
 
         self.Npoints = Npoints
         self.theta = theta
@@ -13,6 +13,7 @@ class MoireTriangLattice:
         self.b =(2*np.pi)*np.array([[1,-1/np.sqrt(3)],[0,2/np.sqrt(3)]]) # original graphene reciprocal lattice vectors : rows are basis vectors
         self.rot_min =np.array([[np.cos(theta/2),np.sin(theta/2)],[-np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix -thet/2
         self.rot_plus =np.array([[np.cos(theta/2),-np.sin(theta/2)],[np.sin(theta/2),np.cos(theta/2)]]) #rotation matrix +thet/2
+        self.normed=normed
 
         #some symmetries:
         #C2z
@@ -24,9 +25,31 @@ class MoireTriangLattice:
         #C2x inv
         self.C2x=np.array([[1,0],[0,-1]]) #rotation matrix 
 
-        [self.KX, self.KY]=self.Generate_lattice()
-        [self.KXn, self.KYn]=self.Generate_Normalized_lattice()
-        [self.KXog, self.KYog]=self.Generate_lattice_og()
+        if normed==0:
+            self.GMvec=self.GM_vec()
+            self.VolMBZ=self.Vol_MBZ()
+            self.q=self.qvect()
+            self.GMs=self.GM()
+
+        elif normed==1:
+            [GM1,GM2]=self.GM_vec()
+            [q1,q2,q3]=self.qvect()
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+            self.GMvec=[GM1/Gnorm,GM2/Gnorm]
+            self.GMs=self.GM()/Gnorm
+            self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
+            self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
+
+        else:
+            [GM1,GM2]=self.GM_vec()
+            [q1,q2,q3]=self.qvect()
+            Gnorm=self.qnor() #normalized to the q1 vector
+            print(Gnorm)
+            self.GMvec=[GM1/Gnorm,GM2/Gnorm]
+            self.GMs=self.GM()/Gnorm
+            self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
+            self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
+
 
     def __repr__(self):
         return "lattice( LX={w}, twist_angle={c})".format(h=self.Npoints, c=self.theta)
@@ -68,18 +91,6 @@ class MoireTriangLattice:
         Vol_rec=np.cross(b_1,b_2)@zhat
         return Vol_rec
 
-    #normalized reciprocal lattice vectors
-    def GM_vec_norm(self):
-        [GM1,GM2]=self.GM_vec()
-        GM=self.GM()
-        return [GM1/GM,GM2/GM]
-
-    # Volume of the FBZ when normalizing by GM
-    def Vol_MBZ_Norm(self):
-        GM=self.GM()
-        Vol_rec=self.Vol_MBZ()
-        return Vol_rec/(GM**2)
-
     #lowest order q vectors that contribute to the moire potential (plus valley)
     def qvect(self):
 
@@ -92,6 +103,10 @@ class MoireTriangLattice:
         q3=self.C3z@q2
 
         return [q1,q2,q3]
+
+    def qnor(self):
+        [q1,q2,q3]=self.qvect()
+        return la.norm(q1)
 
     #hexagon where the pointy side is up
     def hexagon1(self,pos,Radius_inscribed_hex):
@@ -193,16 +208,18 @@ class MoireTriangLattice:
         fact=K[2][1]/np.max(KY)
         KX=KX*fact
         KY=KY*fact
-       
-        return [KX,KY]
-    
-    #normalized coordinates to Moire Reciprocal lattice
-    def Generate_Normalized_lattice(self):
-        GM=self.GM()
-        return [self.KX/GM, self.KY/GM]
 
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+        return [KX/Gnorm,KY/Gnorm]
+    
     #same as Generate lattice but for the original graphene (FBZ of triangular lattice)
     def Generate_lattice_og(self):
+
         
         Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(self.b[0,:],self.b[1,:])
 
