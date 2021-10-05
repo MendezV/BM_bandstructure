@@ -44,7 +44,7 @@ class MoireTriangLattice:
             [GM1,GM2]=self.GM_vec()
             [q1,q2,q3]=self.qvect()
             Gnorm=self.qnor() #normalized to the q1 vector
-            print(Gnorm)
+            # print(Gnorm)
             self.GMvec=[GM1/Gnorm,GM2/Gnorm]
             self.GMs=self.GM()/Gnorm
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
@@ -265,3 +265,50 @@ class MoireTriangLattice:
         KY=KY*fact
         
         return [KX,KY]
+
+    #normal linear interpolation to generate samples accross High symmetry points
+    def linpam(self,Kps,Npoints_q):
+        Npoints=len(Kps)
+        t=np.linspace(0, 1, Npoints_q)
+        linparam=np.zeros([Npoints_q*(Npoints-1),2])
+        for i in range(Npoints-1):
+            linparam[i*Npoints_q:(i+1)*Npoints_q,0]=Kps[i][0]*(1-t)+t*Kps[i+1][0]
+            linparam[i*Npoints_q:(i+1)*Npoints_q,1]=Kps[i][1]*(1-t)+t*Kps[i+1][1]
+
+        return linparam
+    def High_symmetry_path(self):
+        [GM1,GM2]=self.GM_vec()
+        VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        VV=VV+[VV[0]] #verices
+
+        L=[]
+        # L=L+[K[0]]+[Gamma]+[M[0]]+[Kp[-1]] ##path in reciprocal space
+        L=L+[K[0]]+[Gamma]+[M[0]]+[K[0]] ##path in reciprocal space Andrei paper
+
+        Nt_points=200
+        kp_path=self.linpam(L,Nt_points)
+
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+
+        return kp_path/Gnorm
+
+    def boundary(self):
+        [GM1,GM2]=self.GM_vec()
+        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+
+        return np.array(Vertices_list+[Vertices_list[0]])/Gnorm
+
+        
+#TODO update save and read lattice update path in reciprocal space for Delafossite
