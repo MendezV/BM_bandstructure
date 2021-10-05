@@ -87,44 +87,65 @@ alpha=w/hvkd
 h=Hamiltonian.Ham(hvkd, alpha, xi, 0, 0,n1,n2, l, nbands)
 print(h)
 
+# h=Hamiltonian.Ham(1, alpha_andrei, -1, 0,0,n1,n2, lq,nbands)
+# h.umklapp_lattice()
+
 h=Hamiltonian.Ham(hvkd, alpha_andrei, 1, KX[5],KY[5],n1,n2, lq,nbands)
-# [G0x, G0y , ind_to_sum, N]=h.umklapp_lattice()
-# print(h.InterlayerU(G0x, G0y , ind_to_sum , N))
 
-# Ene_valley_plus_a=np.empty((0))
-# Ene_valley_min_a=np.empty((0))
-# psi_plus_a=[]
-# psi_min_a=[]
-# print( KX[0],KY[0]  )
-# E1,wave1=h.eigens()
 
-# # print("starting dispersion ..........")
-# # # for l in range(Nsamp*Nsamp):
-# for l in range(Npoi):
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_min_a=np.empty((0))
+psi_plus_a=[]
+psi_min_a=[]
+print( KX[0],KY[0]  )
+E1,wave1=h.eigens()
 
-#     h=Hamiltonian.Ham(hvkd, alpha, 1, KX[l],KY[l],n1,n2, lq,nbands)
-#     # h.umklapp_lattice()
-#     E1,wave1=h.eigens()
+# print("starting dispersion ..........")
+# # for l in range(Nsamp*Nsamp):
+for l in range(Npoi):
 
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    h=Hamiltonian.Ham(hvkd, alpha, 1, KX[l],KY[l],n1,n2, lq,nbands)
+    E1,wave1=h.eigens()
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    psi_plus_a.append(wave1)
 
-#     psi_plus_a.append(wave1)
-#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+    h=Hamiltonian.Ham(hvkd, alpha, -1, KX[l],KY[l],n1,n2, lq,nbands)
+    E1,wave1=h.eigens()
+    Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+    psi_min_a.append(wave1)
 
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# psi_plus_conj=np.conj(np.array(psi_plus_a))
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-# bds1=[]
-# for i in range(nbands):
-#     plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
-#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-#     print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-#     plt.gca().set_aspect('equal', adjustable='box')
-#     plt.colorbar()
-#     plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
-#     plt.close()
+    
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+psi_plus_conj=np.conj(np.array(psi_plus_a))
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+psi_min=np.array(psi_min_a)
+psi_min_conj=np.conj(np.array(psi_min_a))
+Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
+bds1=[]
+for i in range(nbands):
+    plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
+    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.close()
+print("minimum bw_plus was:",np.min(np.array(bds1)))
+bds1=[]
+for i in range(nbands):
+    plt.scatter(KX,KY, s=30, c=Ene_valley_min[:,i])
+    bds1.append(np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]))
+    print("bandwidth plus,",int(i),np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("2minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+    plt.close()
+print("minimum bw_min was:",np.min(np.array(bds1)))
 
 Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
@@ -138,32 +159,33 @@ kpath=lq.High_symmetry_path()
 # plt.show()
 Npoi=np.shape(kpath)[0]
 
+h=Hamiltonian.Ham(1, 10*alpha, 1, 0,0,n1,n2, lq,nbands)
+E1,wave1=h.eigens()
 for l in range(Npoi):
     
 
-    h=Hamiltonian.Ham(1, 0.1, 1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands)
-    h.umklapp_lattice()
-    break
-#     E1,wave1=h.eigens()
+    h=Hamiltonian.Ham(1, alpha_andrei, 1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands)
+    # h.umklapp_lattice()
+    # break
+    E1,wave1=h.eigens()
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
 
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    psi_plus_a.append(wave1)
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
-#     psi_plus_a.append(wave1)
-#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-# print(np.shape(Ene_valley_plus_a))
-# qa=np.linspace(0,1,Npoi)
-# for i in range(nbands):
-#     plt.plot(qa,Ene_valley_plus[:,i] , c='b')
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+print(np.shape(Ene_valley_plus_a))
+qa=np.linspace(0,1,Npoi)
+for i in range(nbands):
+    plt.plot(qa,Ene_valley_plus[:,i] , c='b')
 
 # plt.ylim([-0.08,0.08])
-# plt.show()
+plt.show()
 
-# bds1=[]
-# for i in range(nbands):
-#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-#     print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+bds1=[]
+for i in range(nbands):
+    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
 
 
-# print("minimum bw_plus was:",np.min(np.array(bds1)))
+print("minimum bw_plus was:",np.min(np.array(bds1)))
