@@ -3,6 +3,7 @@ import scipy
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy import linalg as la
 import time
+
 class MoireTriangLattice:
 
     def __init__(self, Npoints, theta, normed):
@@ -285,7 +286,7 @@ class MoireTriangLattice:
         # L=L+[K[0]]+[Gamma]+[M[0]]+[Kp[-1]] ##path in reciprocal space
         L=L+[K[0]]+[Gamma]+[M[0]]+[K[0]] ##path in reciprocal space Andrei paper
 
-        Nt_points=20
+        Nt_points=80
         kp_path=self.linpam(L,Nt_points)
 
         if self.normed==0:

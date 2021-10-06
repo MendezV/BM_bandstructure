@@ -1,8 +1,12 @@
 import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
+
+
+#TODO: make momentum lattice an attribute of the class and make the solver a function of kx and ky
+
 class Ham():
-    def __init__(self, hvkd, alpha, xi, kx, ky, n1, n2, latt, nbands):
+    def __init__(self, hvkd, alpha, xi, kx, ky, n1, n2, latt, nbands, kappa, PH):
 
         self.hvkd = hvkd
         self.alpha=alpha
@@ -20,7 +24,8 @@ class Ham():
 
         self.latt=latt
         self.nbands=nbands
-
+        self.kappa=kappa
+        self.PH=PH #particle hole symmetry
     def __repr__(self):
         return "Hamiltonian at {kx} {ky} with alpha parameter {alpha} and scale {hvkd}".format(kx=self.kx, ky=self.ky, alpha =self.alpha,hvkd=self.hvkd)
 
@@ -31,8 +36,8 @@ class Ham():
         GM=self.latt.GMs
         # qx_dift = -self.kx*0 + GM1[0]*self.n1 + GM2[0]*self.n2 + self.xi*q1[0]-q1[0]
         # qy_dift = -self.ky*0 + GM1[1]*self.n1 + GM2[1]*self.n2 + self.xi*q1[1]-q1[1]
-        qx_difb = + GM1[0]*self.n1 + GM2[0]*self.n2 - self.xi*q1[0]-self.xi*q1[0]
-        qy_difb = + GM1[1]*self.n1 + GM2[1]*self.n2 - self.xi*q1[1]-self.xi*q1[1]
+        qx_difb = + GM1[0]*self.n1 + GM2[0]*self.n2 + 2*self.xi*q1[0]
+        qy_difb = + GM1[1]*self.n1 + GM2[1]*self.n2 + 2*self.xi*q1[1]
         # plt.scatter(qx_dift,qy_dift, c='k',s=2)
         # plt.scatter(qx_difb,qy_difb, c='r',s=2)
         # plt.gca().set_aspect('equal', adjustable='box')
@@ -80,7 +85,7 @@ class Ham():
         # plt.xlim([-1.5*cutoff,1.5*cutoff])
         # plt.ylim([-1.5*cutoff,1.5*cutoff])
         # plt.show()
-        # # print(Nb*2)
+        # print(Nb*2)
         # # return [G0xt, G0yt , ind_to_sum_b, Nb,G0xb, G0yb , ind_to_sum_b, Nb,qx_t,qy_t,qx_b,qy_b]
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
 
@@ -93,23 +98,28 @@ class Ham():
         Qminx = qx_b
         Qminy = qy_b
 
-        # #top layer
-        # qx_1 = self.kx - Qplusx
-        # qy_1 = self.ky - Qplusy
-        ROTtop=self.latt.rot_min
-        kkx_1 = self.kx - Qplusx
-        kky_1 = self.ky - Qplusy
-        qx_1 = ROTtop[0,0]*kkx_1+ROTtop[0,1]*kky_1
-        qy_1 = ROTtop[1,0]*kkx_1+ROTtop[1,1]*kky_1
+        ###checking if particle hole symmetric model is chosen
+        if(self.PH):
+            # #top layer
+            qx_1 = self.kx - Qplusx
+            qy_1 = self.ky - Qplusy
 
-        # #bottom layer
-        # qx_2 = self.kx -Qminx
-        # qy_2 = self.ky -Qminy
-        ROTbot=self.latt.rot_plus
-        kkx_2 = self.kx -Qminx
-        kky_2 = self.ky -Qminy
-        qx_2 = ROTbot[0,0]*kkx_2+ROTbot[0,1]*kky_2
-        qy_2 = ROTbot[1,0]*kkx_2+ROTbot[1,1]*kky_2
+            # #bottom layer
+            qx_2 = self.kx -Qminx
+            qy_2 = self.ky -Qminy
+        else:
+            # #top layer
+            ROTtop=self.latt.rot_min
+            kkx_1 = self.kx - Qplusx
+            kky_1 = self.ky - Qplusy
+            qx_1 = ROTtop[0,0]*kkx_1+ROTtop[0,1]*kky_1
+            qy_1 = ROTtop[1,0]*kkx_1+ROTtop[1,1]*kky_1
+            # #bottom layer
+            ROTbot=self.latt.rot_plus
+            kkx_2 = self.kx -Qminx
+            kky_2 = self.ky -Qminy
+            qx_2 = ROTbot[0,0]*kkx_2+ROTbot[0,1]*kky_2
+            qy_2 = ROTbot[1,0]*kkx_2+ROTbot[1,1]*kky_2
 
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
@@ -123,7 +133,7 @@ class Ham():
 
     def InterlayerU(self,qx_t,qy_t,qx_b,qy_b, Nb):
 
-        tau=-self.xi
+        tau=self.xi
         [q1,q2,q3]=self.latt.q
         
 
@@ -137,45 +147,17 @@ class Ham():
         matGq3=np.zeros([Nb,Nb])
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
-        # for i in range(Nb):
-
-        #     indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q1[0])**2+(Qplusy-Qminy[i] + tau*q1[1])**2  )<tres)
-        #     if np.size(indi1)>0:
-        #         matGq1[i,indi1]=1
-
-        #     indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q2[0])**2+(Qplusy-Qminy[i] + tau*q2[1])**2  )<tres)
-        #     if np.size(indi1)>0:
-        #         matGq2[i,indi1]=1 #indi1+1=i
- 
-        #     indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q3[0])**2+(Qplusy-Qminy[i] + tau*q3[1])**2  )<tres)
-        #     if np.size(indi1)>0:
-        #         matGq3[i,indi1]=1
-        # for i in range(Nb):
-        #     for j in range(Nb):
-
-        #         if (np.sqrt(  (Qplusx[i]-Qminx[j] + tau*q1[0])**2+(Qplusy[i]-Qminy[j] + tau*q1[1])**2  )<tres):
-        #             matGq1[i,j]=1
-
-        #         if (np.sqrt(  (Qplusx[i]-Qminx[j] + tau*q2[0])**2+(Qplusy[i]-Qminy[j] + tau*q2[1])**2  )<tres):
-        #             matGq2[i,j]=1 #indi1+1=i
-    
-        #         if (np.sqrt(  (Qplusx[i]-Qminx[j] + tau*q3[0])**2+(Qplusy[i]-Qminy[j] + tau*q3[1])**2  )<tres):
-        #             matGq3[i,j]=1
-        
-        # matGq12=np.zeros([Nb,Nb])
-        # matGq22=np.zeros([Nb,Nb])
-        # matGq32=np.zeros([Nb,Nb])
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q1[0])**2+(Qplusy-Qminy[i] + tau*q1[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q1[0])**2+(Qplusy[i]-Qminy + tau*q1[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq1[i,indi1]=1
 
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q2[0])**2+(Qplusy-Qminy[i] + tau*q2[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q2[0])**2+(Qplusy[i]-Qminy+ tau*q2[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq2[i,indi1]=1 #indi1+1=i
     
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q3[0])**2+(Qplusy-Qminy[i] + tau*q3[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q3[0])**2+(Qplusy[i]-Qminy + tau*q3[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq3[i,indi1]=1
 
@@ -188,17 +170,34 @@ class Ham():
         Mdelt3=matGq3
 
 
+
         pauli0=np.eye(2,2)
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
 
        
         # print(Mdelt1+Mdelt2+Mdelt3)
-        T11=pauli0+paulix
-        T12=pauli0+paulix*np.cos(2*np.pi/3)+tau*pauliy*np.sin(2*np.pi/3)
-        T13=pauli0+paulix*np.cos(2*np.pi/3)-tau*pauliy*np.sin(2*np.pi/3)
+        # T11=pauli0+paulix
+        # T12=pauli0+paulix*np.cos(2*np.pi/3)+tau*pauliy*np.sin(2*np.pi/3)
+        # T13=pauli0+paulix*np.cos(2*np.pi/3)-tau*pauliy*np.sin(2*np.pi/3)
+
+        w0=self.kappa
+        w1=1
+        phi = 2*np.pi/3    
+        z = np.exp(1j*phi*(-self.xi))
+        zs = np.exp(-1j*phi*(-self.xi))
+        
+        T1 = np.array([[w0,w1],[w1,w0]])
+        T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
+        T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
+
+        # T1 = np.array([[w0,w1],[w1,w0]])
+        # T2 = np.array([[w0,w1*zs],[w1*z,w0]])
+        # T3 = np.array([[w0,w1*z],[w1*zs,w0]])
+
+
         # U=self.hvkd*self.alpha*(np.kron(T11,Mdelt1)+np.kron(T12,Mdelt2)+np.kron(T13,Mdelt3)) #interlayer coupling
-        U=self.hvkd*self.alpha*(np.kron(Mdelt1,T11)+np.kron(Mdelt2,T12)+np.kron(Mdelt3,T13)) #interlayer coupling
+        U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
 
         
 
