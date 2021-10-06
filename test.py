@@ -70,7 +70,7 @@ print(q , 2*K*np.sin(theta/2))
 #Various alpha values
 hvfK_andrei=19.81
 #andreis params
-
+w=0.110 #in ev
 hvfkd_andrei=hvfK_andrei*np.sin(theta/2) #wrong missing 1/sqrt3
 alpha_andrei=w/hvfkd_andrei
 alpha=w/hvkd
@@ -96,13 +96,13 @@ alpha=up/hvkd
 alph=alpha
 
 #JY params 
-hbvf = 2.7; # eV
-hvkd=hbvf*q
-kappa=0.75
-up = 0.105; # eV
-u = kappa*up; # eV
-alpha=up/hvkd
-alph=alpha
+# hbvf = 2.7; # eV
+# hvkd=hbvf*q
+# kappa=0.75
+# up = 0.105; # eV
+# u = kappa*up; # eV
+# alpha=up/hvkd
+# alph=alpha
 
 
 PH=False

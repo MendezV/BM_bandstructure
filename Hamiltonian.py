@@ -31,62 +31,27 @@ class Ham():
 
     def umklapp_lattice(self):
         [q1,q2,q3]=self.latt.q
-        #we diagonalize a matrix made up
+        #getting the momentum lattice to be diagonalized
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         GM=self.latt.GMs
-        # qx_dift = -self.kx*0 + GM1[0]*self.n1 + GM2[0]*self.n2 + self.xi*q1[0]-q1[0]
-        # qy_dift = -self.ky*0 + GM1[1]*self.n1 + GM2[1]*self.n2 + self.xi*q1[1]-q1[1]
         qx_difb = + GM1[0]*self.n1 + GM2[0]*self.n2 + 2*self.xi*q1[0]
         qy_difb = + GM1[1]*self.n1 + GM2[1]*self.n2 + 2*self.xi*q1[1]
-        # plt.scatter(qx_dift,qy_dift, c='k',s=2)
-        # plt.scatter(qx_difb,qy_difb, c='r',s=2)
-        # plt.gca().set_aspect('equal', adjustable='box')
-        # plt.show()
-        # valst = np.sqrt(qx_dift**2+qy_dift**2)
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
         cutoff=7.*GM*0.7
-        # ind_to_sum_t = np.where(valst <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
-        # n1_val_t = self.n1[ind_to_sum_t] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
-        # n2_val_t = self.n2[ind_to_sum_t] #
         n1_val_b = self.n1[ind_to_sum_b] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
         n2_val_b = self.n2[ind_to_sum_b] #
 
-
-        # Nt = np.shape(ind_to_sum_t)[1] ##number of indices for which the condition above is satisfied
         Nb = np.shape(ind_to_sum_b)[1] ##number of indices for which the condition above is satisfied
-        # print(Nb, "lattice size")
-        # print(Nb*2, "lattice size")
-        # if(Nt!=Nb):
-        #     print("error with momentum cutoff")
-        # G0xt= GM1[0]*n1_val_t+GM2[0]*n2_val_t
-        # G0yt= GM1[1]*n1_val_t+GM2[1]*n2_val_t
+
 
         G0xb= GM1[0]*n1_val_b+GM2[0]*n2_val_b
         G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b
 
-        qx_t = -qx_difb[ind_to_sum_b]#+2*q1[0]
-        qy_t = -qy_difb[ind_to_sum_b]#+2*q1[1]
+        qx_t = -qx_difb[ind_to_sum_b]
+        qy_t = -qy_difb[ind_to_sum_b]
         qx_b = qx_difb[ind_to_sum_b]
         qy_b = qy_difb[ind_to_sum_b]
-        # qx_t = qx_dift[ind_to_sum_t]
-        # qy_t = qy_dift[ind_to_sum_t]
-        # qx_b = qx_difb[ind_to_sum_b]
-        # qy_b = qy_difb[ind_to_sum_b]
-
-        # theta=np.linspace(0,2*np.pi, 100)
-        # plt.scatter(qx_t,qy_t, c='k',s=2)
-        # plt.scatter(qx_b,qy_b, c='r',s=2)
-        # plt.scatter(self.kx,self.ky,s=1)
-        # plt.scatter(0,0,s=1)
-        # # plt.plot(cutoff*np.cos(theta)+self.kx,cutoff*np.sin(theta)+self.ky)
-        # # plt.plot(cutoff*np.cos(theta),cutoff*np.sin(theta))
-        # plt.gca().set_aspect('equal', adjustable='box')
-        # plt.xlim([-1.5*cutoff,1.5*cutoff])
-        # plt.ylim([-1.5*cutoff,1.5*cutoff])
-        # plt.show()
-        # print(Nb*2)
-        # # return [G0xt, G0yt , ind_to_sum_b, Nb,G0xb, G0yb , ind_to_sum_b, Nb,qx_t,qy_t,qx_b,qy_b]
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
 
     def diracH(self,qx_t,qy_t,qx_b,qy_b):
@@ -124,8 +89,6 @@ class Ham():
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         
-        # H1=hvkd*(np.kron(tau*paulix,np.diag(qx_1))+np.kron(pauliy,np.diag(qy_1))) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-        # H2=hvkd*(np.kron(tau*paulix,np.diag(qx_2))+np.kron(pauliy,np.diag(qy_2))) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
         H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
         H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
         return [H1,H2]
@@ -162,69 +125,46 @@ class Ham():
                 matGq3[i,indi1]=1
 
 
-    #Matrices that  appeared as coefficients of the real space ops
-    #full product is the kronecker product of both matrices
+        #Matrices that  appeared as coefficients of the real space ops
+        #full product is the kronecker product of both matrices
 
         Mdelt1=matGq1
         Mdelt2=matGq2
         Mdelt3=matGq3
-
-
-
-        pauli0=np.eye(2,2)
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-
        
-        # print(Mdelt1+Mdelt2+Mdelt3)
-        # T11=pauli0+paulix
-        # T12=pauli0+paulix*np.cos(2*np.pi/3)+tau*pauliy*np.sin(2*np.pi/3)
-        # T13=pauli0+paulix*np.cos(2*np.pi/3)-tau*pauliy*np.sin(2*np.pi/3)
 
         w0=self.kappa
         w1=1
         phi = 2*np.pi/3    
-        z = np.exp(1j*phi*(-self.xi))
-        zs = np.exp(-1j*phi*(-self.xi))
+        z = np.exp(-1j*phi*tau)
+        zs = np.exp(1j*phi*tau)
         
         T1 = np.array([[w0,w1],[w1,w0]])
         T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
         T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
 
+
+        #different basis
         # T1 = np.array([[w0,w1],[w1,w0]])
         # T2 = np.array([[w0,w1*zs],[w1*z,w0]])
         # T3 = np.array([[w0,w1*z],[w1*zs,w0]])
 
-
-        # U=self.hvkd*self.alpha*(np.kron(T11,Mdelt1)+np.kron(T12,Mdelt2)+np.kron(T13,Mdelt3)) #interlayer coupling
         U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
-
-        
 
         return U
         
     def eigens(self):
         [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
-        # [G0x, G0y , ind_to_sum, N]=self.umklapp_lattice()
-        # U=self.InterlayerU(G0x, G0y , ind_to_sum, N)
         U=np.matrix(self.InterlayerU(qx_t,qy_t,qx_b,qy_b, Nb))
         Udag=U.H
-        
-        # [H1,H2]=self.diracH(G0x, G0y , inds_to_sum, N)
-        # [H1,H2]=self.diracH(G0xt, G0yt , ind_to_sum_t, Nt)
         [H1,H2]=self.diracH(qx_t,qy_t,qx_b,qy_b)
         
         Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
-
-        # plt.imshow(np.abs(Hxi))
-        # plt.show()
-        #a= np.linalg.eigvalsh(Hxi) - en_shift
         (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
         #######HANDLING WITH RESHAPE
         #umklp,umklp, layer, sublattice
         psi_p=np.zeros([self.Numklpy,self.Numklpx,2,2]) +0*1j
-        # psi=np.zeros([Numklp*Numklp*4,nbands])+0*1j
         psi=np.zeros([self.Numklpy, self.Numklpx, 2,2, self.nbands]) +0*1j
 
         # for nband in range(self.nbands):
