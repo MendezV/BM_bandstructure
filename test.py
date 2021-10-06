@@ -120,12 +120,12 @@ n1,n2=np.meshgrid(gridpx,gridpy) #grid to calculate wavefunct
 #will use alpha andrei, if it fails, use alphacorrected, maybe their mistake was only in the plot
 print(alpha_andrei,alpha_andrei_corrected, alpha)
 alpha=w/hvkd
-h=Hamiltonian.Ham(hvkd, alph, xi, 0, 0,n1,n2, l, nbands,kappa,PH)
-print(h)
+# h=Hamiltonian.Ham(hvkd, alph, xi, 0, 0,n1,n2, l, nbands,kappa,PH)
+# print(h)
 
-h=Hamiltonian.Ham(hvkd, alph, 1, 0,0,n1,n2, lq,nbands,kappa,PH)
-h.umklapp_lattice()
-h.eigens()
+# h=Hamiltonian.Ham(hvkd, alph, 1, 0,0,n1,n2, lq,nbands,kappa,PH)
+# h.umklapp_lattice()
+# h.eigens()
 # h=Hamiltonian.Ham(hvkd, alph, 1, KX[5],KY[5],n1,n2, lq,nbands,kappa,PH)
 
 
@@ -186,6 +186,57 @@ h.eigens()
 #     plt.close()
 # print("minimum bw_min was:",np.min(np.array(bds1)))
 
+# Ene_valley_plus_a=np.empty((0))
+# Ene_valley_min_a=np.empty((0))
+# psi_plus_a=[]
+# psi_min_a=[]
+
+
+# nbands=14 #Number of bands 
+# kpath=lq.High_symmetry_path()
+# # plt.scatter(kpath[:,0],kpath[:,1])
+# # VV=lq.boundary()
+# # plt.plot(VV[:,0], VV[:,1])
+# # plt.show()
+# Npoi=np.shape(kpath)[0]
+
+# for l in range(Npoi):
+
+#     h=Hamiltonian.Ham(hvkd, alph, 1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands,kappa,PH)
+#     # h.umklapp_lattice()
+#     # break
+#     E1,wave1=h.eigens()
+#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+#     psi_plus_a.append(wave1)
+
+
+#     h=Hamiltonian.Ham(hvkd, alph, -1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands,kappa,PH)
+#     E1,wave1=h.eigens()
+#     Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+# Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
+# print(np.shape(Ene_valley_plus_a))
+# qa=np.linspace(0,1,Npoi)
+# for i in range(nbands):
+#     plt.plot(qa,Ene_valley_plus[:,i] , c='b')
+#     plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+# plt.xlim([0,1])
+# plt.ylim([-0.08,0.08])
+# plt.show()
+
+# bds1=[]
+# for i in range(nbands):
+#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+#     print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+
+
+# print("minimum bw_plus was:",np.min(np.array(bds1)))
+
+
+
 Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
@@ -199,19 +250,17 @@ kpath=lq.High_symmetry_path()
 # plt.plot(VV[:,0], VV[:,1])
 # plt.show()
 Npoi=np.shape(kpath)[0]
-
+hpl=Hamiltonian.Ham(hvkd, alph, 1, lq,kappa,PH)
+hmin=Hamiltonian.Ham(hvkd, alph, -1, lq,kappa,PH)
 for l in range(Npoi):
-
-    h=Hamiltonian.Ham(hvkd, alph, 1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands,kappa,PH)
     # h.umklapp_lattice()
     # break
-    E1,wave1=h.eigens()
+    E1,wave1=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
     psi_plus_a.append(wave1)
 
 
-    h=Hamiltonian.Ham(hvkd, alph, -1, kpath[l,0],kpath[l,1],n1,n2, lq,nbands,kappa,PH)
-    E1,wave1=h.eigens()
+    E1,wave1=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 

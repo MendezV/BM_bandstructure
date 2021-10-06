@@ -6,55 +6,62 @@ import matplotlib.pyplot as plt
 #TODO: make momentum lattice an attribute of the class and make the solver a function of kx and ky
 
 class Ham():
-    def __init__(self, hvkd, alpha, xi, kx, ky, n1, n2, latt, nbands, kappa, PH):
+    def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
 
         self.hvkd = hvkd
-        self.alpha=alpha
-
-        self.kx = kx
-        self.ky = ky
-
+        self.alpha= alpha
         self.xi = xi
-
-        self.n1=n1
-        self.n2=n2
-
-        self.Numklpy=np.shape(n1)[0]
-        self.Numklpx=np.shape(n1)[1]
-
+        
+        
         self.latt=latt
-        self.nbands=nbands
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
+        
+        #precomputed momentum lattice and interlayer coupling
+        self.cuttoff_momentum_lat=self.umklapp_lattice()
+        self.U=np.matrix(self.InterlayerU())
+        
     def __repr__(self):
         return "Hamiltonian at {kx} {ky} with alpha parameter {alpha} and scale {hvkd}".format(kx=self.kx, ky=self.ky, alpha =self.alpha,hvkd=self.hvkd)
 
     def umklapp_lattice(self):
+
+        #large lattice that will be cuttoff
+        Numklpx=30
+        Numklpy=30
+        gridpx=np.arange(-int(Numklpx/2),int(Numklpx/2),1) #grid to calculate wavefunct
+        gridpy=np.arange(-int(Numklpy/2),int(Numklpy/2),1) #grid to calculate wavefunct
+        n1,n2=np.meshgrid(gridpx,gridpy) #grid to calculate wavefunct
+
+        #q vectors defined as the difference of the K point positions in the two layers
+        # and 2pi/3 rotations of that.
         [q1,q2,q3]=self.latt.q
         #getting the momentum lattice to be diagonalized
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         GM=self.latt.GMs
-        qx_difb = + GM1[0]*self.n1 + GM2[0]*self.n2 + 2*self.xi*q1[0]
-        qy_difb = + GM1[1]*self.n1 + GM2[1]*self.n2 + 2*self.xi*q1[1]
+        qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
+        qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
         cutoff=7.*GM*0.7
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
-        n1_val_b = self.n1[ind_to_sum_b] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
-        n2_val_b = self.n2[ind_to_sum_b] #
 
+        #cutoff lattice
+        n1_val_b = n1[ind_to_sum_b] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
+        n2_val_b = n2[ind_to_sum_b] #
         Nb = np.shape(ind_to_sum_b)[1] ##number of indices for which the condition above is satisfied
+        G0xb= GM1[0]*n1_val_b+GM2[0]*n2_val_b #umklapp vectors within the cutoff
+        G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b #umklapp vectors within the cutoff
 
-
-        G0xb= GM1[0]*n1_val_b+GM2[0]*n2_val_b
-        G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b
-
+        #reciprocal lattices for both layers
         qx_t = -qx_difb[ind_to_sum_b]
         qy_t = -qy_difb[ind_to_sum_b]
         qx_b = qx_difb[ind_to_sum_b]
         qy_b = qy_difb[ind_to_sum_b]
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
 
-    def diracH(self,qx_t,qy_t,qx_b,qy_b):
+    def diracH(self, kx, ky):
+
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
         tau=self.xi
         hvkd=self.hvkd
 
@@ -66,23 +73,23 @@ class Ham():
         ###checking if particle hole symmetric model is chosen
         if(self.PH):
             # #top layer
-            qx_1 = self.kx - Qplusx
-            qy_1 = self.ky - Qplusy
+            qx_1 = kx - Qplusx
+            qy_1 = ky - Qplusy
 
             # #bottom layer
-            qx_2 = self.kx -Qminx
-            qy_2 = self.ky -Qminy
+            qx_2 = kx -Qminx
+            qy_2 = ky -Qminy
         else:
             # #top layer
             ROTtop=self.latt.rot_min
-            kkx_1 = self.kx - Qplusx
-            kky_1 = self.ky - Qplusy
+            kkx_1 = kx - Qplusx
+            kky_1 = ky - Qplusy
             qx_1 = ROTtop[0,0]*kkx_1+ROTtop[0,1]*kky_1
             qy_1 = ROTtop[1,0]*kkx_1+ROTtop[1,1]*kky_1
             # #bottom layer
             ROTbot=self.latt.rot_plus
-            kkx_2 = self.kx -Qminx
-            kky_2 = self.ky -Qminy
+            kkx_2 = kx -Qminx
+            kky_2 = ky -Qminy
             qx_2 = ROTbot[0,0]*kkx_2+ROTbot[0,1]*kky_2
             qy_2 = ROTbot[1,0]*kkx_2+ROTbot[1,1]*kky_2
 
@@ -94,8 +101,8 @@ class Ham():
         return [H1,H2]
 
 
-    def InterlayerU(self,qx_t,qy_t,qx_b,qy_b, Nb):
-
+    def InterlayerU(self):
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
         tau=self.xi
         [q1,q2,q3]=self.latt.q
         
@@ -153,19 +160,22 @@ class Ham():
 
         return U
         
-    def eigens(self):
-        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
-        U=np.matrix(self.InterlayerU(qx_t,qy_t,qx_b,qy_b, Nb))
+    def eigens(self, kx,ky, nbands):
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+
+        
+        U=self.U
         Udag=U.H
-        [H1,H2]=self.diracH(qx_t,qy_t,qx_b,qy_b)
+        [H1,H2]=self.diracH( kx, ky)
+        N =np.shape(U)[0]
         
         Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
-        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+        (Eigvals,psi)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
         #######HANDLING WITH RESHAPE
         #umklp,umklp, layer, sublattice
-        psi_p=np.zeros([self.Numklpy,self.Numklpx,2,2]) +0*1j
-        psi=np.zeros([self.Numklpy, self.Numklpx, 2,2, self.nbands]) +0*1j
+        # psi_p=np.zeros([self.Numklpy,self.Numklpx,2,2]) +0*1j
+        # psi=np.zeros([self.Numklpy, self.Numklpx, 2,2, self.nbands]) +0*1j
 
         # for nband in range(self.nbands):
         #     # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
@@ -180,6 +190,6 @@ class Ham():
         #     # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
 
 
-        return Eigvals[2*Nb-int(self.nbands/2):2*Nb+int(self.nbands/2)], psi
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)], psi
 
         
