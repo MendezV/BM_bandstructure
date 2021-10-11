@@ -311,5 +311,41 @@ class MoireTriangLattice:
 
         return np.array(Vertices_list+[Vertices_list[0]])/Gnorm
 
-        
+    ### SYMMETRY OPERATIONS ON THE LATTICE
+    def C2zLatt(self,KX,KY):
+        ##KX and KY are one dimensional arrays
+        Npoi = np.size(KX)
+        KXc2z=KX*self.C2z[0,0]+KY*self.C2z[0,1]
+        KYc2z=KX*self.C2z[1,0]+KY*self.C2z[1,1]
+        Indc2z=np.zeros(Npoi) # indices of the initial lattice in the rotated lattice
+        for i in range(Npoi):
+            #this works well because the rotation is a symmetry of the sampling lattice and the sampling lattice is commensurate
+            Indc2z[i]=np.argmin( (KX-KXc2z[i])**2 +(KY-KYc2z[i])**2)
+
+        return [KXc2z,KYc2z, Indc2z]
+
+    def C2xLatt(self,KX,KY):
+        ##KX and KY are one dimensional arrays
+        Npoi = np.size(KX)
+        KXc2x=KX*self.C2x[0,0]+KY*self.C2x[0,1]
+        KYc2x=KX*self.C2x[1,0]+KY*self.C2x[1,1]
+        Indc2x=np.zeros(Npoi) # indices of the initial lattice in the rotated lattice
+        for i in range(Npoi):
+            #this works well because the rotation is a symmetry of the sampling lattice and the sampling lattice is commensurate
+            Indc2x[i]=np.argmin( (KX-KXc2x[i])**2 +(KY-KYc2x[i])**2)
+
+        return [KXc2x,KYc2x, Indc2x]
+
+    def C3zLatt(self,KX,KY):
+        ##KX and KY are one dimensional arrays
+        Npoi = np.size(KX)
+        KXc3z=KX*self.C3z[0,0]+KY*self.C3z[0,1]
+        KYc3z=KX*self.C3z[1,0]+KY*self.C3z[1,1]
+        Indc3z=np.zeros(Npoi) # indices of the initial lattice in the rotated lattice
+        for i in range(Npoi):
+            #this works well because the rotation is a symmetry of the sampling lattice and the sampling lattice is commensurate
+            Indc3z[i]=np.argmin( (KX-KXc3z[i])**2 +(KY-KYc3z[i])**2)
+
+        return [KXc3z,KYc3z, Indc3z]
+
 #TODO update save and read lattice update path in reciprocal space for Delafossite

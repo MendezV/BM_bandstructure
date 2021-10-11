@@ -1,11 +1,12 @@
 import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
+from scipy import interpolate
 
 
-#TODO: make momentum lattice an attribute of the class and make the solver a function of kx and ky
+#TODO: implement density of states calculation.
 
-class Ham():
+class Ham_BM():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
 
         self.hvkd = hvkd
@@ -18,11 +19,24 @@ class Ham():
         self.PH=PH #particle hole symmetry
         
         #precomputed momentum lattice and interlayer coupling
+       
         self.cuttoff_momentum_lat=self.umklapp_lattice()
+
+
         self.U=np.matrix(self.InterlayerU())
+
+        #constant shift for the dispersion
+        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+        Vertices_list, Gamma, K, Kp, M, Mp=self.latt.FBZ_points(GM1,GM2)
+        self.e0=0
+        E,psi=self.eigens( K[2][0],K[2][1], 2)
+        self.e0=(E[0]+E[1])/2  #offset to set dirac points at zero energy. If there is a gap the dispersion is just centered at zero
         
     def __repr__(self):
-        return "Hamiltonian at {kx} {ky} with alpha parameter {alpha} and scale {hvkd}".format(kx=self.kx, ky=self.ky, alpha =self.alpha,hvkd=self.hvkd)
+        return "Hamiltonian with alpha parameter {alpha} and scale {hvkd}".format( alpha =self.alpha,hvkd=self.hvkd)
+
+
+    # METHODS FOR CALCULATING THE DISPERSION 
 
     def umklapp_lattice(self):
 
@@ -58,6 +72,16 @@ class Ham():
         qx_b = qx_difb[ind_to_sum_b]
         qy_b = qy_difb[ind_to_sum_b]
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
+
+    def umklapp_lattice_rot(self, rot):
+        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
+        G0xb_p= rot[0,0]*G0xb + rot[0,1]*G0yb
+        G0yb_p= rot[1,0]*G0xb + rot[1,1]*G0yb
+        qx_t_p= rot[0,0]*qx_t + rot[0,1]*qy_t
+        qy_t_p= rot[1,0]*qx_t + rot[1,1]*qy_t
+        qx_b_p= rot[0,0]*qx_b + rot[0,1]*qy_b
+        qy_b_p= rot[1,0]*qx_b + rot[1,1]*qy_b
+        return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
 
     def diracH(self, kx, ky):
 
@@ -161,8 +185,6 @@ class Ham():
         return U
         
     def eigens(self, kx,ky, nbands):
-        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
-
         
         U=self.U
         Udag=U.H
@@ -170,26 +192,190 @@ class Ham():
         N =np.shape(U)[0]
         
         Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
-        (Eigvals,psi)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
-        #######HANDLING WITH RESHAPE
-        #umklp,umklp, layer, sublattice
-        # psi_p=np.zeros([self.Numklpy,self.Numklpx,2,2]) +0*1j
-        # psi=np.zeros([self.Numklpy, self.Numklpx, 2,2, self.nbands]) +0*1j
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
 
-        # for nband in range(self.nbands):
-        #     # print(np.shape(ind_to_sum), np.shape(psi_p), np.shape(psi_p[ind_to_sum]))
-        #     psi_p[ind_to_sum] = np.reshape(  np.array( np.reshape(Eigvect[:,2*N-int(self.nbands/2)+nband] , [4, N])  ).T, [N, 2, 2] )    
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
 
-        #     ##GAUGE FIXING by making the 30 30 1 1 component real
-        #     # phas=np.angle(psi_p[50-int(xi*25),15,0,0])
-        #     # phas=0 ## not fixing the phase
-        #     maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
-        #     phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
-        #     psi[:,:,:,:,nband] = psi_p*np.exp(-1j*phas)
-        #     # psi[:,nband]=np.reshape(psi_p,[np.shape(n1)[0]*np.shape(n1)[1]*4]).flatten()
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
 
 
-        return Eigvals[N-int(nbands/2):N+int(nbands/2)], psi
 
+    ### FERMI SURFACE ANALYSIS
+
+    #creates a square grid, interpolates and finds contours at fixed mu
+    def FSinterp(self, save_d, read_d, mu):
+
+        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+        GM=self.latt.GMs
+
+        Nsamp = 40
+        nbands= 4
+
+        Vertices_list, Gamma, K, Kp, M, Mp=self.latt.FBZ_points(GM1,GM2)
+        VV=np.array(Vertices_list+[Vertices_list[0]])
+        k_window_sizex = K[1][0]*1.1 #4*(np.pi/np.sqrt(3))*np.sin(theta/2) (half size of  MBZ from edge to edge)
+        k_window_sizey = K[2][1]
+        Radius_inscribed_hex=1.0000005*k_window_sizey
+        kx_rangex = np.linspace(-k_window_sizex,k_window_sizex,Nsamp) #normalization q
+        ky_rangey = np.linspace(-k_window_sizey,k_window_sizey,Nsamp) #normalization q
+        bz = np.zeros([Nsamp,Nsamp])
+        ##########################################
+        #Setting up kpoint arrays
+        ##########################################
+        #Number of relevant kpoints
+        for x in range(Nsamp ):
+            for y in range(Nsamp ):
+                if self.latt.hexagon1((kx_rangex[x],ky_rangey[y]),Radius_inscribed_hex):
+                    bz[x,y]=1
+        num_kpoints=int(np.sum(bz))
+        tot_kpoints=Nsamp*Nsamp
+
+
+        #kpoint arrays
+        k_points = np.zeros([num_kpoints,2]) #matrix of brillion zone points (inside hexagon)
+        k_points_all = np.zeros([tot_kpoints,2]) #positions of all  the kpoints
+
+        #filling kpoint arrays
+        count1=0 #counting kpoints in the Hexagon
+        count2=0 #counting kpoints in the original grid
+        for x in range(Nsamp):
+            for y in range(Nsamp):
+                pos=[kx_rangex[x],ky_rangey[y]] #position of the kpoint
+                k_points_all[count2,:]=pos #saving the position to the larger grid
+                if self.latt.hexagon1((kx_rangex[x],ky_rangey[y]),Radius_inscribed_hex):
+                    k_points[count1,:]=pos #saving the kpoint in the hexagon only
+                    count1=count1+1
+                count2=count2+1
         
+        spect=[]
+
+        for kkk in k_points_all:
+            E1,wave1=self.eigens(kkk[0], kkk[1],nbands)
+            cois=[E1,wave1]
+            spect.append(np.real(cois[0]))
+
+        Edisp=np.array(spect)
+        if save_d:
+            with open('Edisp_'+str(Nsamp)+'.npy', 'wb') as f:
+                np.save(f, Edisp)
+
+        if read_d:
+            print("Loading  ..........")
+            with open('Edisp_'+str(Nsamp)+'.npy', 'rb') as f:
+                Edisp=np.load(f)
+
+
+        energy_cut = np.zeros([Nsamp, Nsamp]);
+        for k_x_i in range(Nsamp):
+            for k_y_i in range(Nsamp):
+                ind = np.where(((k_points_all[:,0] == (kx_rangex[k_x_i]))*(k_points_all[:,1] == (ky_rangey[k_y_i]) ))>0);
+                energy_cut[k_x_i,k_y_i] =Edisp[ind,2];
+
+        # print(np.max(energy_cut), np.min(energy_cut))
+        # plt.imshow(energy_cut.T) #transpose since x and y coordinates dont match the i j indices displayed in imshow
+        # plt.colorbar()
+        # plt.show()
+
+
+        k1,k2= np.meshgrid(kx_rangex,ky_rangey) #grid to calculate wavefunct
+        kx_rangexp = np.linspace(-k_window_sizex,k_window_sizex,Nsamp)
+        ky_rangeyp = np.linspace(-k_window_sizey,k_window_sizey,Nsamp)
+        k1p,k2p= np.meshgrid(kx_rangexp,ky_rangeyp) #grid to calculate wavefunct
+
+
+        f_interp = interpolate.interp2d(k1,k2, energy_cut.T, kind='linear')
+
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.contour(k1p, k2p, f_interp(kx_rangexp,ky_rangeyp),[mu],cmap='RdYlBu')
+        # plt.show()
+        return [f_interp,k_window_sizex,k_window_sizey]
+
+
+
+    #if used in the middle of plotting will close the plot
+    def FS_contour(self, Np, mu):
+        #option for saving the square grid dispersion
+        save_d=False
+        read_d=False
+        [f_interp,k_window_sizex,k_window_sizey]=self.FSinterp( save_d, read_d, mu)
+        y = np.linspace(-k_window_sizex,k_window_sizex, 4603)
+        x = np.linspace(-k_window_sizey,k_window_sizey, 4603)
+        X, Y = np.meshgrid(x, y)
+        Z = f_interp(x,y)  #choose dispersion
+        c= plt.contour(X, Y, Z, levels=[mu],linewidths=3, cmap='summer');
+        plt.close()
+        #plt.show()
+        numcont=np.shape(c.collections[0].get_paths())[0]
+        
+        if numcont==1:
+            v = c.collections[0].get_paths()[0].vertices
+        else:
+            contourchoose=0
+            v = c.collections[0].get_paths()[0].vertices
+            sizecontour_prev=np.prod(np.shape(v))
+            for ind in range(1,numcont):
+                v = c.collections[0].get_paths()[ind].vertices
+                sizecontour=np.prod(np.shape(v))
+                if sizecontour>sizecontour_prev:
+                    contourchoose=ind
+            v = c.collections[0].get_paths()[contourchoose].vertices
+        NFSpoints=Np
+        xFS_dense = v[::int(np.size(v[:,1])/NFSpoints),0]
+        yFS_dense = v[::int(np.size(v[:,1])/NFSpoints),1]
+        
+        return [xFS_dense,yFS_dense]
+
+
+    #METHODS FOR MANIPULATING WAVEFUNCTIONS AND FORM FACTORS
+    #for reference the pattern of kronecker prod is 
+    # layer x umklp x sublattice
+    def rot_WF(self, rot):
+        [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]=self.umklapp_lattice_rot( rot)
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+        
+        [q1,q2,q3]=self.latt.q
+
+        matGGp=np.zeros([Nb,Nb])
+        tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
+
+        for i in range(Nb):
+
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp[i,indi1]=1
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp[i,indi1]=1 #indi1+1=i
+    
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp[i,indi1]=1
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp[i,indi1]=1 #indi1+1=i
+        
+        return matGGp
+
+    def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
+        pauli0=np.array([[0,1],[1,0]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        N=self.cuttoff_momentum_lat[3]
+        Um=np.eye(N, k=umkpl)
+
+        mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
+        return np.dot( psi, mat.T)
+
