@@ -305,11 +305,11 @@ Ene_valley_min_a=np.append(Ene_valley_min_a,E1_m)
 psi_min_a.append(wave1_m)
 
 print(kpath[randind,0],kpath[randind,1])
-print(E1_m,E1_p)
+# print(E1_m,E1_p)
 for nbn in range(nbands):
     psi1=np.conj(wave1_p[:,nbn])
     # psi2=(wave1_m[:,nbn])
-    psi2=(hmin.Op_rot_psi( wave1_m[::-1,nbn] , rot_C2z))
+    psi2=hmin.Op_rot_psi( wave1_m[:,nbn] , rot_C2z)
 
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))

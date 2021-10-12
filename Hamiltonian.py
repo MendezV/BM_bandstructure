@@ -67,11 +67,17 @@ class Ham_BM():
         G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b #umklapp vectors within the cutoff
 
         #reciprocal lattices for both layers
-        qx_t = -qx_difb[ind_to_sum_b]
-        qy_t = -qy_difb[ind_to_sum_b]
-        qx_b = qx_difb[ind_to_sum_b]
-        qy_b = qy_difb[ind_to_sum_b]
-        return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
+        #flipping the order so that same points occur in the same index for plus and minus valleys
+        qx_t = -qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        qy_t = -qy_difb[ind_to_sum_b]#[::int(self.xi)]
+        qx_b = qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        qy_b = qy_difb[ind_to_sum_b]#[::int(self.xi)]
+
+
+        # plt.scatter(qx_t ,qy_t,c='k', s=np.arange(Nb)+1 )
+        # plt.scatter(qx_b ,qy_b , c='r', s=np.arange(Nb)+1 )
+        # plt.show()
+        return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t,qx_b, qy_b] 
 
     def umklapp_lattice_rot(self, rot):
         [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
@@ -82,6 +88,51 @@ class Ham_BM():
         qx_b_p= rot[0,0]*qx_b + rot[0,1]*qy_b
         qy_b_p= rot[1,0]*qx_b + rot[1,1]*qy_b
         return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
+
+    # def umklapp_lattice_rot(self, rot):
+
+    #     #large lattice that will be cuttoff
+    #     Numklpx=30
+    #     Numklpy=30
+    #     gridpx=np.arange(-int(Numklpx/2),int(Numklpx/2),1) #grid to calculate wavefunct
+    #     gridpy=np.arange(-int(Numklpy/2),int(Numklpy/2),1) #grid to calculate wavefunct
+    #     n1,n2=np.meshgrid(gridpx,gridpy) #grid to calculate wavefunct
+
+    #     #q vectors defined as the difference of the K point positions in the two layers
+    #     # and 2pi/3 rotations of that.
+    #     [q1b,q2b,q3b]=self.latt.q
+    #     #getting the momentum lattice to be diagonalized
+    #     [GM1b,GM2b]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+    #     q1=rot@q1b
+    #     GM1= rot@GM1b
+    #     GM2= rot@GM2b
+
+    #     GM=self.latt.GMs
+
+    #     qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
+    #     qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
+    #     valsb = np.sqrt(qx_difb**2+qy_difb**2)
+    #     cutoff=7.*GM*0.7
+    #     ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
+
+    #     #cutoff lattice
+    #     n1_val_b = n1[ind_to_sum_b] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
+    #     n2_val_b = n2[ind_to_sum_b] #
+    #     Nb = np.shape(ind_to_sum_b)[1] ##number of indices for which the condition above is satisfied
+    #     G0xb= GM1[0]*n1_val_b+GM2[0]*n2_val_b #umklapp vectors within the cutoff
+    #     G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b #umklapp vectors within the cutoff
+
+    #     #reciprocal lattices for both layers
+    #     qx_t = -qx_difb[ind_to_sum_b]
+    #     qy_t = -qy_difb[ind_to_sum_b]
+    #     qx_b = qx_difb[ind_to_sum_b]
+    #     qy_b = qy_difb[ind_to_sum_b]
+
+    #     # plt.scatter(qx_t,qy_t, c='k')
+    #     # plt.scatter(qx_b,qy_b, c='r')
+    #     # plt.show()
+    #     return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]
+
 
     def diracH(self, kx, ky):
 
@@ -343,6 +394,11 @@ class Ham_BM():
         
         [q1,q2,q3]=self.latt.q
 
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
         matGGp1=np.zeros([Nb,Nb])
         matGGp2=np.zeros([Nb,Nb])
         matGGp3=np.zeros([Nb,Nb])
@@ -354,36 +410,46 @@ class Ham_BM():
             indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
             if np.size(indi1)>0:
                 matGGp1[i,indi1]=1
-                print(i, indi1, "a")
+                # print(i, indi1, "a")
 
             indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
             if np.size(indi1)>0:
                 matGGp2[i,indi1]=1 #indi1+1=i
-                print(i, indi1, "b")
+                # print(i, indi1, "b")
     
             indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
             if np.size(indi1)>0:
                 matGGp3[i,indi1]=1
-                print(i, indi1, "c")
+                # print(i, indi1, "c")
 
             indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
             if np.size(indi1)>0:
                 matGGp4[i,indi1]=1 #indi1+1=i
-                print(i, indi1, "d")
+                # print(i, indi1, "d")
         
-        return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
+        block_tt=matGGp1
+        block_tb=matGGp3
+        block_bt=matGGp4
+        block_bb=matGGp2
+        return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+        # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
     def Op_rot_psi(self, psi, rot):
-        rot_mat = self.rot_WF(rot)
-        # print("determinant ", np.linalg.det(rot_mat))
-        # plt.imshow(rot_mat)
-        # plt.show()
         pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
 
-        mat=np.kron(rot_mat, pauli0)
-        # plt.imshow(mat)
-        # plt.show()
-        return np.dot( mat,psi )
+        rot_mat = self.rot_WF(rot)
+        mat=np.kron(rot_mat,paulix)[::-1]
+        # print("determinant ", np.linalg.det(rot_mat))
+        plt.imshow(mat)
+        plt.show()
+        
+
+
+        return mat@psi
+        # return rot2@psi
 
     def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
         pauli0=np.array([[1,0],[0,1]])
@@ -396,5 +462,5 @@ class Ham_BM():
         Um=np.eye(N, k=umkpl)
 
         mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
-        return np.dot( psi, mat.T)
+        return  mat@psi
 
