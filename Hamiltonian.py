@@ -2,7 +2,7 @@ import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
 from scipy import interpolate
-
+ 
 
 #TODO: implement density of states calculation.
 
@@ -343,31 +343,50 @@ class Ham_BM():
         
         [q1,q2,q3]=self.latt.q
 
-        matGGp=np.zeros([Nb,Nb])
+        matGGp1=np.zeros([Nb,Nb])
+        matGGp2=np.zeros([Nb,Nb])
+        matGGp3=np.zeros([Nb,Nb])
+        matGGp4=np.zeros([Nb,Nb])
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
         for i in range(Nb):
 
             indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
             if np.size(indi1)>0:
-                matGGp[i,indi1]=1
+                matGGp1[i,indi1]=1
+                print(i, indi1, "a")
 
             indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
             if np.size(indi1)>0:
-                matGGp[i,indi1]=1 #indi1+1=i
+                matGGp2[i,indi1]=1 #indi1+1=i
+                print(i, indi1, "b")
     
             indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
             if np.size(indi1)>0:
-                matGGp[i,indi1]=1
+                matGGp3[i,indi1]=1
+                print(i, indi1, "c")
 
             indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
             if np.size(indi1)>0:
-                matGGp[i,indi1]=1 #indi1+1=i
+                matGGp4[i,indi1]=1 #indi1+1=i
+                print(i, indi1, "d")
         
-        return matGGp
+        return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
+    
+    def Op_rot_psi(self, psi, rot):
+        rot_mat = self.rot_WF(rot)
+        print("determinant ", np.linalg.det(rot_mat))
+        plt.imshow(rot_mat)
+        plt.show()
+        pauli0=np.array([[1,0],[0,1]])
+
+        mat=np.kron(rot_mat, pauli0)
+        # plt.imshow(mat)
+        # plt.show()
+        return np.dot( mat,psi )
 
     def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
-        pauli0=np.array([[0,1],[1,0]])
+        pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])

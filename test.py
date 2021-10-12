@@ -281,7 +281,8 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
-
+rot_C2z=lq.C2z
+rot_C3z=lq.C3z
 nbands=14 #Number of bands 
 kpath=lq.High_symmetry_path()
 # plt.scatter(kpath[:,0],kpath[:,1])
@@ -291,21 +292,37 @@ kpath=lq.High_symmetry_path()
 Npoi=np.shape(kpath)[0]
 hpl=Hamiltonian.Ham_BM(hvkd, alph, 1, lq,kappa,PH)
 hmin=Hamiltonian.Ham_BM(hvkd, alph, -1, lq,kappa,PH)
-for l in range(Npoi):
-    # h.umklapp_lattice()
-    # break
-    E1,wave1_p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-    psi_plus_a.append(wave1_p)
+overlaps=[]
+
+randind=10
+E1_p,wave1_p=hpl.eigens(kpath[randind,0],kpath[randind,1],nbands)
+Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1_p)
+psi_plus_a.append(wave1_p)
 
 
-    E1,wave1_m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
-    Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-    psi_min_a.append(wave1_m)
+E1_m,wave1_m=hmin.eigens(-kpath[randind,0],-kpath[randind,1],nbands)
+Ene_valley_min_a=np.append(Ene_valley_min_a,E1_m)
+psi_min_a.append(wave1_m)
 
-    for nbn in range(nbands):
-        psi1=np.conj(wave1_p[:,nbn])
-        psi2=wave1_m[:,nbn] 
-        # print("nomr plus",np.dot(np.conj(wave1_p[:,nbn]).T,wave1_p[:,nbn]))
-        # print("C2z... initial ks",KX[l],KY[l], "...Final ks...", KXc2z[l],KYc2z[l] )
-        print("...overlap...", np.abs(np.conj(psi1.T)@psi2 ) )
+print(kpath[randind,0],kpath[randind,1])
+print(E1_m,E1_p)
+for nbn in range(nbands):
+    psi1=np.conj(wave1_p[:,nbn])
+    # psi2=(wave1_m[:,nbn])
+    psi2=hpl.Op_rot_psi( wave1_m[:,nbn] , rot_C3z)
+
+
+    # psi1=(wave1_p[:,nbn])
+    # psi2=wave1_m[:,nbn] 
+    # psi2=wave1_m[:,nbn] 
+    # print("nomr plus",np.dot(np.conj(wave1_p[:,nbn]).T,wave1_p[:,nbn]))
+    # print("C2z... initial ks",KX[l],KY[l], "...Final ks...", KXc2z[l],KYc2z[l] )
+    ov=np.array(np.abs(np.conj(psi1.T)@psi2 )).flatten() [0]
+    print("...overlap...",  ov)
+    overlaps.append(ov)
+    print(E1_m[nbn],E1_p[nbn])
+
+plt.plot(np.array(overlaps))
+plt.show()
+
+        
