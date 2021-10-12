@@ -375,9 +375,9 @@ class Ham_BM():
     
     def Op_rot_psi(self, psi, rot):
         rot_mat = self.rot_WF(rot)
-        print("determinant ", np.linalg.det(rot_mat))
-        plt.imshow(rot_mat)
-        plt.show()
+        # print("determinant ", np.linalg.det(rot_mat))
+        # plt.imshow(rot_mat)
+        # plt.show()
         pauli0=np.array([[1,0],[0,1]])
 
         mat=np.kron(rot_mat, pauli0)

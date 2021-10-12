@@ -309,7 +309,11 @@ print(E1_m,E1_p)
 for nbn in range(nbands):
     psi1=np.conj(wave1_p[:,nbn])
     # psi2=(wave1_m[:,nbn])
-    psi2=hpl.Op_rot_psi( wave1_m[:,nbn] , rot_C3z)
+    psi2=(hmin.Op_rot_psi( wave1_m[::-1,nbn] , rot_C2z))
+
+    plt.plot(np.abs(psi1))
+    plt.plot(np.abs(psi2))
+    plt.show()
 
 
     # psi1=(wave1_p[:,nbn])
