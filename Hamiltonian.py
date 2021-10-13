@@ -840,11 +840,15 @@ class Ham_BM_m():
 
 
 class FormFactors():
-    def __init__(self, psi, xi):
+    def __init__(self, psi, xi, lat):
         self.psi = psi #has dimension #kpoints, 4*N, nbands
+        self.lat=lat
         self.cpsi=np.conj(psi)
         self.xi=xi
         self.Nu=int(np.shape(self.psi)[1]/4) #4, 2 for sublattice and 2 for layer
+        [KX,KY]=lat.Generate_lattice()
+        self.kx=KX
+        self.ky=KY
 
     def __repr__(self):
         return "Form factors for valley {xi}".format( xi=self.xi)
@@ -870,5 +874,29 @@ class FormFactors():
         e=time.time()
         print("finsihed the overlaps..........", e-s)
         return(Lambda_Tens)
+
+    def f(self):
+        q=np.sqrt(self.kx**2+self.ky**2)
+        return (self.kx**2-self.ky**2)/q
+
+    def g(self):
+        q=np.sqrt(self.kx**2+self.ky**2)
+        return 2*(self.kx*self.ky)/q
+
+    def h(self):
+        q=np.sqrt(self.kx**2+self.ky**2)
+        return q
+
+    def NemFFL(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.f *L31-self.xi*self.g*L32
+        return Nem_FFL
+
+    def NemFFT(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFT=-self.g *L31- self.xi*self.f*L32
+        return Nem_FFT
 
         
