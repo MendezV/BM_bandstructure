@@ -887,16 +887,37 @@ class FormFactors():
         q=np.sqrt(self.kx**2+self.ky**2)
         return q
 
-    def NemFFL(self):
+    ########### Anti-symmetric displacement of the layers
+    def denFF_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return L30
+
+    def NemFFL_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
         Nem_FFL=self.f *L31-self.xi*self.g*L32
         return Nem_FFL
 
-    def NemFFT(self):
+    def NemFFT_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
         Nem_FFT=-self.g *L31- self.xi*self.f*L32
+        return Nem_FFT
+    ########### Symmetric displacement of the layers
+    def denFF_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return L00
+
+    def NemFFL_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFL=self.f *L01-self.xi*self.g*L02
+        return Nem_FFL
+
+    def NemFFT_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFT=-self.g *L01- self.xi*self.f*L02
         return Nem_FFT
 
         
