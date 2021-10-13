@@ -2,6 +2,7 @@ import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
 from scipy import interpolate
+import time
  
 
 class Ham_BM_p():
@@ -205,7 +206,8 @@ class Ham_BM_p():
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
-            maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1p;",psi_p[maxisind])
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
 
@@ -620,9 +622,11 @@ class Ham_BM_m():
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
-            maxisind = np.unravel_index(np.argmax(psi_p, axis=None), psi_p.shape)
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
 
@@ -834,3 +838,37 @@ class Ham_BM_m():
         mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
         return  mat@psi
 
+
+class FormFactors():
+    def __init__(self, psi, xi):
+        self.psi = psi #has dimension #kpoints, 4*N, nbands
+        self.cpsi=np.conj(psi)
+        self.xi=xi
+        self.Nu=int(np.shape(self.psi)[1]/4) #4, 2 for sublattice and 2 for layer
+
+    def __repr__(self):
+        return "Form factors for valley {xi}".format( xi=self.xi)
+
+    def matmult(self, layer, sublattice):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Qmat=np.eye(self.Nu)
+        
+
+        mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        return  mat@self.psi
+
+    def calcFormFactor(self, layer, sublattice):
+        s=time.time()
+        print("calculating tensor that stores the overlaps........")
+        mult_psi=self.matmult(layer,sublattice)
+        Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
+        e=time.time()
+        print("finsihed the overlaps..........", e-s)
+        return(Lambda_Tens)
+
+        

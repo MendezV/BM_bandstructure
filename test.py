@@ -342,7 +342,82 @@ print("alpha is..", alpha)
 # # #################################
 # # #################################
 # # #################################
-# # # Form Factors
+# # # Disp after all changes above
+# # #################################
+# # #################################
+# # #################################
+
+# Ene_valley_plus_a=np.empty((0))
+# Ene_valley_min_a=np.empty((0))
+# psi_plus_a=[]
+# psi_min_a=[]
+# rot_C2z=lq.C2z
+# rot_C3z=lq.C3z
+
+# nbands=14 #Number of bands 
+# kpath=lq.High_symmetry_path()
+# # plt.scatter(kpath[:,0],kpath[:,1])
+# # VV=lq.boundary()
+# # plt.plot(VV[:,0], VV[:,1])
+# # plt.show()
+# Npoi=np.shape(kpath)[0]
+# hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+# hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+# Edif=[]
+# overlaps=[]
+# for l in range(Npoi):
+#     # h.umklapp_lattice()
+#     # break
+#     E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
+#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+#     psi_plus_a.append(wave1p)
+
+
+#     E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
+#     Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
+#     psi_min_a.append(wave1m)
+
+#     Edif.append(E1p-E1m)
+
+#     psi1=np.conj(wave1p[:,6])
+#     psi2=hmin.Op_rot_psi( wave1m[:,6] , rot_C2z)
+#     ov=np.array(np.abs(np.conj(psi1.T)@psi2 )).flatten() [0]
+#     overlaps.append(ov)
+#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+# Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
+# # plt.plot(Edif)
+# # plt.show()
+
+# # plt.plot(np.array(overlaps))
+# # plt.ylim([0,2])
+# # plt.show()
+
+# print(np.shape(Ene_valley_plus_a))
+# qa=np.linspace(0,1,Npoi)
+# for i in range(nbands):
+#     plt.plot(qa,Ene_valley_plus[:,i] , c='b')
+#     plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+# plt.xlim([0,1])
+# plt.ylim([-0.08,0.08])
+# plt.show()
+
+# bds1=[]
+# for i in range(nbands):
+#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+#     print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+
+
+# print("minimum bw_plus was:",np.min(np.array(bds1)))
+
+
+
+# # #################################
+# # #################################
+# # #################################
+# # # Form factors
 # # #################################
 # # #################################
 # # #################################
@@ -351,63 +426,129 @@ Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
+
 rot_C2z=lq.C2z
 rot_C3z=lq.C3z
-
-nbands=14 #Number of bands 
-kpath=lq.High_symmetry_path()
-# plt.scatter(kpath[:,0],kpath[:,1])
-# VV=lq.boundary()
-# plt.plot(VV[:,0], VV[:,1])
-# plt.show()
-Npoi=np.shape(kpath)[0]
+# print("starting dispersion ..........")
+# # for l in range(Nsamp*Nsamp):
+s=time.time()
 hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
 hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
-Edif=[]
 overlaps=[]
 for l in range(Npoi):
-    # h.umklapp_lattice()
-    # break
-    E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
+    E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
     psi_plus_a.append(wave1p)
 
 
-    E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
+    E1m,wave1m=hmin.eigens(-KX[l],-KY[l],nbands)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
     psi_min_a.append(wave1m)
 
-    Edif.append(E1p-E1m)
-
-    psi1=np.conj(wave1p[:,6])
-    psi2=hmin.Op_rot_psi( wave1m[:,6] , rot_C2z)
-    ov=np.array(np.abs(np.conj(psi1.T)@psi2 )).flatten() [0]
+    psi1=np.conj(wave1p[:,3])
+    psi2=hmin.Op_rot_psi( wave1m[:,3] , rot_C2z)
+    ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+    # ov=np.array(np.abs(np.conj(psi1.T)@psi2 )).flatten() [0]
     overlaps.append(ov)
+
     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
+print((overlaps))
+print(np.abs(overlaps))
+
+plt.plot(np.abs(overlaps))
+plt.plot(np.real(overlaps))
+plt.show()
+e=time.time()
+print("time to diag over MBZ", e-s)
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
 Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+psi_min=np.array(psi_min_a)
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
-# plt.plot(Edif)
+FFp=Hamiltonian.FormFactors(psi_plus, 1)
+L00p=FFp.calcFormFactor(0,0)
+FFm=Hamiltonian.FormFactors(psi_min, -1)
+L00m=FFm.calcFormFactor(0,0)
+print(np.shape(L00p),np.shape(L00m) )
+
+# ######transpose complex conj plus
+# for i in range(4):
+#     for j in range(4):
+#         abs1=[]
+#         abs2=[]
+#         abs3=[]
+#         for k in range(Npoi):
+#             for kp in range(Npoi):
+#                 abs1.append(np.abs(np.conj(L00p[k,i,kp,j])-L00p[kp,j,k,i] ))
+#                 abs2.append(np.abs((L00p[k,i,kp,j])))
+#                 abs3.append(np.abs(L00p[kp,j,k,i] ))
+#         plt.plot(abs1, c='r')
+#         # plt.plot(abs2, c='b')
+#         # plt.plot(abs3,c='k')
 # plt.show()
 
-# plt.plot(np.array(overlaps))
-# plt.ylim([0,2])
+
+# ######transpose complex conj minus
+# for i in range(4):
+#     for j in range(4):
+#         abs1=[]
+#         abs2=[]
+#         abs3=[]
+#         for k in range(Npoi):
+#             for kp in range(Npoi):
+#                 abs1.append(np.abs(np.conj(L00m[k,i,kp,j])-L00m[kp,j,k,i] ))
+#                 abs2.append(np.abs((L00m[k,i,kp,j])))
+#                 abs3.append(np.abs(L00m[kp,j,k,i] ))
+#         plt.plot(abs1, c='b')
+#         # plt.plot(abs2, c='b')
+#         # plt.plot(abs3,c='k')
 # plt.show()
 
-print(np.shape(Ene_valley_plus_a))
-qa=np.linspace(0,1,Npoi)
-for i in range(nbands):
-    plt.plot(qa,Ene_valley_plus[:,i] , c='b')
-    plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
-plt.xlim([0,1])
-plt.ylim([-0.08,0.08])
-plt.show()
 
-bds1=[]
-for i in range(nbands):
-    bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
-    print("bandwidth plus,",int(i),np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+# ###### complex conj valley flip
+# [KXc2z,KYc2z, Indc2z]=lq.C2zLatt(KX,KY)
+# for i in range(4):
+#     for j in range(4):
+#         abs1=[]
+#         abs2=[]
+#         abs3=[]
+#         for k in range(Npoi):
+#             for kp in range(Npoi):
+#                 # print(kp,Indc2z[kp])
+#                 abs1.append(  np.abs(np.conj(L00p[k,i,kp,j])) - np.abs(L00m[k,i,kp,j] ) )
+#                 abs2.append(np.abs((L00p[k,i,kp,j])))
+#                 abs3.append(np.abs(L00m[int(Indc2z[k]),i,int(Indc2z[kp]),j] ))
+
+#                 # print("1:  ",np.conj(L00p[k,i,kp,j]))
+#                 # print("1lat:  ", KX[k], KY[k], " ; ",KX[kp], KY[kp],)
+#                 # print("2:  ",L00m[int(Indc2z[k]),i,int(Indc2z[kp]),j])
+#                 # print("2lat:  ", KX[int(Indc2z[k])], KY[int(Indc2z[k])], " ; ",KX[int(Indc2z[kp])], KY[int(Indc2z[kp])],)
+#         plt.plot(abs1, label=str(i)+"  "+str(j))
+#         # plt.plot(abs2, c='b')
+#         # plt.plot(abs3,c='k')
+
+# plt.legend()
+# plt.show()
+
+##plots dispersion
+# bds1=[]
+# for i in range(nbands):
+#     plt.scatter(KX,KY, s=30, c=Ene_valley_plus[:,i])
+#     bds1.append(np.max(Ene_valley_plus[:,i])-np.min(Ene_valley_plus[:,i]))
+#     plt.gca().set_aspect('equal', adjustable='box')
+#     plt.colorbar()
+#     plt.savefig("2plusvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+#     plt.close()
 
 
-print("minimum bw_plus was:",np.min(np.array(bds1)))
+# bds1=[]
+# for i in range(nbands):
+#     plt.scatter(KX,KY, s=30, c=Ene_valley_min[:,i])
+#     bds1.append(np.max(Ene_valley_min[:,i])-np.min(Ene_valley_min[:,i]))
+#     plt.gca().set_aspect('equal', adjustable='box')
+#     plt.colorbar()
+#     plt.savefig("2minvalley_E"+str(i)+"_size_"+str(Nsamp)+".png")
+#     plt.close()

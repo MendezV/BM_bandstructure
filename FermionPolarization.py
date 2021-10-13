@@ -6,9 +6,7 @@ import time
 
 class Bubble:
 
-    def __init__(self, q, omega, Disp, FormFac, mu):
-        self.q=q
-        self.omega=omega
+    def __init__(self, Disp, FormFac, mu):
         self.Disp=Disp
         self.FormFac=FormFac
         self.mu=mu
