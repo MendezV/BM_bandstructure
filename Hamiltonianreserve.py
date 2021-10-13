@@ -68,8 +68,8 @@ class Ham_BM():
 
         #reciprocal lattices for both layers
         #flipping the order so that same points occur in the same index for plus and minus valleys
-        qx_t = -qx_difb[ind_to_sum_b][::-1]
-        qy_t = -qy_difb[ind_to_sum_b][::-1]
+        qx_t = -qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        qy_t = -qy_difb[ind_to_sum_b]#[::int(self.xi)]
         qx_b = qx_difb[ind_to_sum_b]#[::int(self.xi)]
         qy_b = qy_difb[ind_to_sum_b]#[::int(self.xi)]
 
@@ -435,7 +435,7 @@ class Ham_BM():
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
     def Op_rot_psi(self, psi, rot):
-        
+
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])

@@ -53,8 +53,8 @@ class Ham_BM():
         #getting the momentum lattice to be diagonalized
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         GM=self.latt.GMs
-        qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
-        qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
+        qx_difb = + self.xi*GM1[0]*n1 + self.xi*GM2[0]*n2 + 2*q1[0]
+        qy_difb = + self.xi*GM1[1]*n1 + self.xi*GM2[1]*n2 + 2*q1[1]
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
         cutoff=7.*GM*0.7
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
@@ -68,11 +68,14 @@ class Ham_BM():
 
         #reciprocal lattices for both layers
         #flipping the order so that same points occur in the same index for plus and minus valleys
-        qx_t = -qx_difb[ind_to_sum_b][::-1]
-        qy_t = -qy_difb[ind_to_sum_b][::-1]
+        qx_t = -qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        qy_t = -qy_difb[ind_to_sum_b]#[::int(self.xi)]
         qx_b = qx_difb[ind_to_sum_b]#[::int(self.xi)]
         qy_b = qy_difb[ind_to_sum_b]#[::int(self.xi)]
-
+        # qx_t = -qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        # qy_t = -qy_difb[ind_to_sum_b]#[::int(self.xi)]
+        # qx_b = qx_difb[ind_to_sum_b]#[::int(self.xi)]
+        # qy_b = qy_difb[ind_to_sum_b]#[::int(self.xi)]
 
         plt.scatter(qx_t ,qy_t,c='k', s=np.arange(Nb)+1 )
         plt.scatter(qx_b ,qy_b , c='r', s=np.arange(Nb)+1 )
@@ -137,7 +140,6 @@ class Ham_BM():
     def diracH(self, kx, ky):
 
         [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
-        tau=self.xi
         hvkd=self.hvkd
 
         Qplusx = qx_t
@@ -171,14 +173,13 @@ class Ham_BM():
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),paulix)+np.kron(np.diag(qy_1),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),paulix)+np.kron(np.diag(qy_2),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
         return [H1,H2]
 
 
     def InterlayerU(self):
         [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
-        tau=self.xi
         [q1,q2,q3]=self.latt.q
         
 
@@ -194,15 +195,15 @@ class Ham_BM():
 
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q1[0])**2+(Qplusy[i]-Qminy + tau*q1[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + q1[0])**2+(Qplusy[i]-Qminy + q1[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq1[i,indi1]=1
 
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q2[0])**2+(Qplusy[i]-Qminy+ tau*q2[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + q2[0])**2+(Qplusy[i]-Qminy+ q2[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq2[i,indi1]=1 #indi1+1=i
     
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q3[0])**2+(Qplusy[i]-Qminy + tau*q3[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + q3[0])**2+(Qplusy[i]-Qminy + q3[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq3[i,indi1]=1
 
@@ -218,8 +219,8 @@ class Ham_BM():
         w0=self.kappa
         w1=1
         phi = 2*np.pi/3    
-        z = np.exp(-1j*phi*tau)
-        zs = np.exp(1j*phi*tau)
+        z = np.exp(-1j*phi)
+        zs = np.exp(1j*phi)
         
         T1 = np.array([[w0,w1],[w1,w0]])
         T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
@@ -236,14 +237,33 @@ class Ham_BM():
         return U
         
     def eigens(self, kx,ky, nbands):
-        
-        U=self.U
-        Udag=U.H
-        [H1,H2]=self.diracH( kx, ky)
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Nu=self.cuttoff_momentum_lat[3]
+        Um=np.eye(Nu)
+
+        sx=np.kron(pau[0],np.kron(Um, pau[1]))
+
+        if self.xi>0:
+            U=self.U
+            Udag=U.H
+            [H1,H2]=self.diracH( kx, ky)
+            H=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
+
+        else:
+
+            U=self.U
+            Udag=U.H 
+            [H1,H2]=self.diracH( -kx, -ky)
+            H=np.bmat([[H2, U ], [Udag, H1]]) #Full matrix
+
+
         N =np.shape(U)[0]
-        
-        Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
-        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+        (Eigvals,Eigvect)= np.linalg.eigh(H)  #returns sorted eigenvalues
 
         #######Gauge Fixing by setting the largest element to be real
         # umklp,umklp, layer, sublattice
@@ -435,7 +455,7 @@ class Ham_BM():
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
     def Op_rot_psi(self, psi, rot):
-        
+
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])

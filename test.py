@@ -1,5 +1,7 @@
 import numpy as np
 import Hamiltonian
+import Hamiltonian_min
+import Hamiltonian_2v
 import MoireLattice
 import matplotlib.pyplot as plt
 import sys
@@ -281,6 +283,11 @@ Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
 psi_min_a=[]
 
+Ene_valley_plus_a2=np.empty((0))
+Ene_valley_min_a2=np.empty((0))
+psi_plus_a2=[]
+psi_min_a2=[]
+
 rot_C2z=lq.C2z
 rot_C3z=lq.C3z
 nbands=14 #Number of bands 
@@ -291,7 +298,17 @@ kpath=lq.High_symmetry_path()
 # plt.show()
 Npoi=np.shape(kpath)[0]
 hpl=Hamiltonian.Ham_BM(hvkd, alph, 1, lq,kappa,PH)
+print("p1")
+# hpl2=Hamiltonian_2v.Ham_BM(hvkd, alph, 1, lq,kappa,PH)
+# print("p2")
+# hmin=Hamiltonian_min.Ham_BM(hvkd, alph, -1, lq,kappa,PH)
+# print("m1")
 hmin=Hamiltonian.Ham_BM(hvkd, alph, -1, lq,kappa,PH)
+print("m1")
+# hmin2=Hamiltonian_2v.Ham_BM(hvkd, alph, -1, lq,kappa,PH)
+# print("m2")
+
+
 overlaps=[]
 
 randind=10
@@ -299,20 +316,30 @@ E1_p,wave1_p=hpl.eigens(kpath[randind,0],kpath[randind,1],nbands)
 Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1_p)
 psi_plus_a.append(wave1_p)
 
+# E1_p2,wave1_p2=hpl2.eigens(kpath[randind,0],kpath[randind,1],nbands)
+# Ene_valley_plus_a2=np.append(Ene_valley_plus_a2,E1_p2)
+# psi_plus_a2.append(wave1_p2)
 
 E1_m,wave1_m=hmin.eigens(-kpath[randind,0],-kpath[randind,1],nbands)
 Ene_valley_min_a=np.append(Ene_valley_min_a,E1_m)
 psi_min_a.append(wave1_m)
 
+# E1_m2,wave1_m2=hmin2.eigens(-kpath[randind,0],-kpath[randind,1],nbands)
+# Ene_valley_min_a2=np.append(Ene_valley_min_a2,E1_m2)
+# psi_min_a2.append(wave1_m2)
+
 print(kpath[randind,0],kpath[randind,1])
 # print(E1_m,E1_p)
 for nbn in range(nbands):
     psi1=np.conj(wave1_p[:,nbn])
+    # psi1p=np.conj(wave1_p2[:,nbn])
     # psi2=(wave1_m[:,nbn])
     psi2=hmin.Op_rot_psi( wave1_m[:,nbn] , rot_C2z)
+    # psi2p=hmin2.Op_rot_psi( wave1_m2[:,nbn] , rot_C2z)
 
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))
+    # plt.plot(np.abs(psi2p))
     plt.show()
 
 
