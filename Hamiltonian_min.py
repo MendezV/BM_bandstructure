@@ -444,8 +444,8 @@ class Ham_BM():
         rot_mat = self.rot_WF(rot)
         mat=np.kron(rot_mat,pauli0)
         # print("determinant ", np.linalg.det(rot_mat))
-        plt.imshow(mat)
-        plt.show()
+        # plt.imshow(mat)
+        # plt.show()
         
 
 
