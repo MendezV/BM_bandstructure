@@ -248,7 +248,7 @@ class MoireTriangLattice:
             for y in nn2:
                 kx=(2*np.pi*x/LP)
                 ky=(2*(2*np.pi*y/LP - np.pi*x/LP)/np.sqrt(3))
-                if self.hexagon2( ( kx, ky), Radius_inscribed_hex ):
+                if self.hexagon2( ( kx, ky ), Radius_inscribed_hex ):
                     nn_1p.append(x)
                     nn_2p.append(y)
 

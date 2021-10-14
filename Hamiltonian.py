@@ -874,7 +874,8 @@ class FormFactors():
         e=time.time()
         print("finsihed the overlaps..........", e-s)
         return(Lambda_Tens)
-
+    
+    ########### Functions for the nematic form factors
     def f(self):
         q=np.sqrt(self.kx**2+self.ky**2)
         return (self.kx**2-self.ky**2)/q
@@ -903,6 +904,7 @@ class FormFactors():
         L32=self.calcFormFactor( layer=3, sublattice=2)
         Nem_FFT=-self.g *L31- self.xi*self.f*L32
         return Nem_FFT
+
     ########### Symmetric displacement of the layers
     def denFF_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)

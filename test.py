@@ -468,13 +468,13 @@ Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 psi_min=np.array(psi_min_a)
 Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
 
-FFp=Hamiltonian.FormFactors(psi_plus, 1)
-L00p=FFp.calcFormFactor(0,0)
-FFm=Hamiltonian.FormFactors(psi_min, -1)
-L00m=FFm.calcFormFactor(0,0)
+FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
+L00p=FFp.denFF_s()
+FFm=Hamiltonian.FormFactors(psi_min, -1, lq)
+L00m=FFm.denFF_s()
 print(np.shape(L00p),np.shape(L00m) )
 
-# ######transpose complex conj plus
+######transpose complex conj plus
 # for i in range(4):
 #     for j in range(4):
 #         abs1=[]
@@ -486,12 +486,12 @@ print(np.shape(L00p),np.shape(L00m) )
 #                 abs2.append(np.abs((L00p[k,i,kp,j])))
 #                 abs3.append(np.abs(L00p[kp,j,k,i] ))
 #         plt.plot(abs1, c='r')
-#         # plt.plot(abs2, c='b')
-#         # plt.plot(abs3,c='k')
+#         plt.plot(abs2, c='b')
+#         plt.plot(abs3,c='k')
 # plt.show()
 
 
-# ######transpose complex conj minus
+# # ######transpose complex conj minus
 # for i in range(4):
 #     for j in range(4):
 #         abs1=[]
@@ -508,10 +508,12 @@ print(np.shape(L00p),np.shape(L00m) )
 # plt.show()
 
 
-# ###### complex conj valley flip
+###### complex conj valley flip
 # [KXc2z,KYc2z, Indc2z]=lq.C2zLatt(KX,KY)
-# for i in range(4):
-#     for j in range(4):
+# # for i in range(4):
+# for i in range(1,3):
+#     # for j in range(4):
+#     for j in range(1,3):
 #         abs1=[]
 #         abs2=[]
 #         abs3=[]
