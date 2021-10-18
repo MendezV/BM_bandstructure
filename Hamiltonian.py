@@ -433,7 +433,8 @@ class Ham_BM_p():
         Um=np.eye(N)
         w1=np.exp(sign*1j*(2*np.pi/3)*self.xi)
         w2=np.exp(-sign*1j*(2*np.pi/3)*self.xi)
-        Omega=np.array([[w1,0],[0,w2]])
+        # Omega=np.array([[w1,0],[0,w2]])
+        Omega=np.array([[0,w2],[w1,0]])
 
 
         mat=np.kron(pauli0,np.kron(Um, Omega))
@@ -913,13 +914,31 @@ class FormFactors():
         return(Lambda_Tens)
     
     ########### Functions for the nematic form factors
-    def f(self):
-        q=np.sqrt(self.kx**2+self.ky**2)
-        return (self.kx**2-self.ky**2)/q
+    def f(self, FF ):
+        farr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.kx)):
+            for k_ip in range(np.size(self.kx)):
+                qx=self.kx[k_i]-self.kx[k_ip]
+                qy=self.ky[k_i]-self.ky[k_ip]
+                q=np.sqrt(qx**2+qy**2)
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
+        return farr
 
-    def g(self):
-        q=np.sqrt(self.kx**2+self.ky**2)
-        return 2*(self.kx*self.ky)/q
+    def g(self,FF):
+        garr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.kx)):
+            for k_ip in range(np.size(self.kx)):
+                qx=self.kx[k_i]-self.kx[k_ip]
+                qy=self.ky[k_i]-self.ky[k_ip]
+                q=np.sqrt(qx**2+qy**2)
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        garr[k_i, i, k_ip, j]=2*(qx*qy)/q
+        return garr 
+
+
 
     def h(self):
         q=np.sqrt(self.kx**2+self.ky**2)
@@ -933,13 +952,19 @@ class FormFactors():
     def NemFFL_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
-        Nem_FFL=self.f *L31-self.xi*self.g*L32
+        Nem_FFL=self.f(L31) *L31-self.xi*self.g(L32)*L32
+        return Nem_FFL
+    
+    def NemFFL_a_plus(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.f(L31) *L31+self.xi*self.g(L32)*L32
         return Nem_FFL
 
     def NemFFT_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
-        Nem_FFT=-self.g *L31- self.xi*self.f*L32
+        Nem_FFT=-self.g() *L31- self.xi*self.f()*L32
         return Nem_FFT
 
     ########### Symmetric displacement of the layers

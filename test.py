@@ -650,90 +650,66 @@ print("alpha is..", alpha)
 # # #################################
 # # #################################
 
-Ene_valley_plus_a=np.empty((0))
-Ene_valley_min_a=np.empty((0))
-psi_plus_a=[]
-psi_min_a=[]
+# Ene_valley_plus_a=np.empty((0))
+# Ene_valley_min_a=np.empty((0))
+# psi_plus_a=[]
+# psi_min_a=[]
 
-rot_C2z=lq.C2z
-rot_C3z=lq.C3z
+# rot_C2z=lq.C2z
+# rot_C3z=lq.C3z
 
-[KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
-[KXc3z2,KYc3z2, Indc3z2]=lq.C3zLatt(KXc3z,KYc3z)
-# print("starting dispersion ..........")
-# # for l in range(Nsamp*Nsamp):
-s=time.time()
-hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-overlaps1=[]
-overlaps2=[]
-for l in range(Npoi):
+# [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
+# [KXc3z2,KYc3z2, Indc3z2]=lq.C3zLatt(KXc3z,KYc3z)
+# # print("starting dispersion ..........")
+# # # for l in range(Nsamp*Nsamp):
+# s=time.time()
+# hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+# overlaps1=[]
+# overlaps2=[]
+# for l in range(Npoi):
     
-    E1m_unitary,wave1m_unitary=hpl.eigens(KX[l],KY[l],nbands)
+#     E1m_unitary,wave1m_unitary=hpl.eigens(KX[l],KY[l],nbands)
 
-    E1m_rot0,wave1m_rot0=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
+#     E1m_rot0,wave1m_rot0=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
     
-    E1m_rot1,wave1m_rot1=hpl.eigens(KXc3z2[l],KYc3z2[l],nbands)
+#     E1m_rot1,wave1m_rot1=hpl.eigens(KXc3z2[l],KYc3z2[l],nbands)
 
 
-    psi1=wave1m_rot0[:,2]
-    psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
-    plt.plot(np.abs(psi1))
-    plt.plot(np.abs(psi2))
-    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
-    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-    plt.show()
-    ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    print("0 sing rot + sing rot")
-    print(ov,np.abs(ov))
-    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+#     plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("0 sing rot + sing rot")
+#     print(ov,np.abs(ov))
+#     print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
-    psi1=wave1m_rot0[:,2]
-    psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
-    plt.plot(np.abs(psi1))
-    plt.plot(np.abs(psi2))
-    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
-    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-    plt.show()
-    ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    print("1 sing rot - sing rot")
-    print(ov,np.abs(ov))
-    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-
-    psi1=wave1m_rot0[:,2]
-    psi2=hpl.C3unitary(hpl.Op_rot_psi(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),1)
-    plt.plot(np.abs(psi1))
-    plt.plot(np.abs(psi2))
-    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
-    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-    plt.show()
-    ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    print("2 sing rot + double rot")
-    print(ov,np.abs(ov))
-    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-
-    psi1=wave1m_rot0[:,2]
-    psi2=hpl.C3unitary(hpl.Op_rot_psi(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),-1)
-    plt.plot(np.abs(psi1))
-    plt.plot(np.abs(psi2))
-    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
-    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
-    plt.show()
-    ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    print("3 sing rot - double rot")
-    print(ov,np.abs(ov))
-    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+#     plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("1 sing rot - sing rot")
+#     print(ov,np.abs(ov))
+#     print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
 
-    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
-print((overlaps1))
-print(np.abs(overlaps1))
+# print((overlaps1))
+# print(np.abs(overlaps1))
 
-plt.plot(np.abs(overlaps1))
-plt.plot(np.abs(overlaps2))
-plt.show()
-e=time.time()
-print("time to diag over MBZ", e-s)
+# plt.plot(np.abs(overlaps1))
+# plt.plot(np.abs(overlaps2))
+# plt.show()
+# e=time.time()
+# print("time to diag over MBZ", e-s)
 
 
 
@@ -746,116 +722,65 @@ print("time to diag over MBZ", e-s)
 # # #################################
 # # #################################
 
-# Ene_valley_plus_a=np.empty((0))
-# Ene_valley_min_a=np.empty((0))
-# psi_plus_a=[]
-# psi_min_a=[]
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_plus_ac3=np.empty((0))
+psi_plus_a=[]
+psi_plus_ac3=[]
 
-# rot_C2z=lq.C2z
-# rot_C3z=lq.C3z
-# [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
-# # print("starting dispersion ..........")
-# # # for l in range(Nsamp*Nsamp):
-# s=time.time()
-# hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-# hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
-# overlaps=[]
-# for l in range(Npoi):
-#     E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
-#     psi_plus_a.append(wave1p)
+rot_C2z=lq.C2z
+rot_C3z=lq.C3z
+[KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
+# print("starting dispersion ..........")
+# # for l in range(Nsamp*Nsamp):
+s=time.time()
+hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+overlaps=[]
+nbands=2
+for l in range(Npoi):
+    E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+    psi_plus_a.append(wave1p)
 
 
-#     E1p_c3z,wave1p_c3z=hpl.eigens(KX[l],KY[l],nbands)
-#     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p_c3z)
-#     psi_plus_a.append(wave1p_c3z)
+    E1p_c3z,wave1p_c3z=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
+    wave1p_c3z_rot=hpl.Op_rot_psi( wave1p_c3z , rot_C3z)
+    Ene_valley_plus_ac3=np.append(Ene_valley_plus_ac3,E1p_c3z)
+    psi_plus_ac3.append(wave1p_c3z)
 
-#     psi1=np.conj(wave1p[:,3])
-#     psi2=hmin.Op_rot_psi( wave1m[:,3] , rot_C2z)
-#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-#     # ov=np.array(np.abs(np.conj(psi1.T)@psi2 )).flatten() [0]
-#     overlaps.append(ov)
 
-#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
-# print((overlaps))
-# print(np.abs(overlaps))
+e=time.time()
+print("time to diag over MBZ", e-s)
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 
-# plt.plot(np.abs(overlaps))
-# plt.plot(np.real(overlaps))
-# plt.show()
-# e=time.time()
-# print("time to diag over MBZ", e-s)
-# ##relevant wavefunctions and energies for the + valley
-# psi_plus=np.array(psi_plus_a)
-# Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+psi_plusc3=np.array(psi_plus_ac3)
+Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi,nbands])
 
-# psi_min=np.array(psi_min_a)
-# Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+print(np.shape(psi_plus),np.shape(psi_plusc3))
 
-# FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
-# L00p=FFp.denFF_s()
-# FFm=Hamiltonian.FormFactors(psi_min, -1, lq)
-# L00m=FFm.denFF_s()
-# print(np.shape(L00p),np.shape(L00m) )
+FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
+L00p=FFp.NemFFL_a()
+FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq)
+L00m=FFc3.NemFFL_a()
+print(np.shape(L00p),np.shape(L00m) )
 
-# #####transpose complex conj plus
-# for i in range(4):
-#     for j in range(4):
-#         abs1=[]
-#         abs2=[]
-#         abs3=[]
-#         for k in range(Npoi):
-#             for kp in range(Npoi):
-#                 abs1.append(np.abs(np.conj(L00p[k,i,kp,j])-L00p[kp,j,k,i] ))
-#                 abs2.append(np.abs((L00p[k,i,kp,j])))
-#                 abs3.append(np.abs(L00p[kp,j,k,i] ))
+ind0=np
+#####transpose complex conj plus
+diffar=[]
+for i in range(nbands):
+    for j in range(nbands):
+        abs1=[]
+        abs2=[]
+        abs3=[]
+        for k in range(Npoi):
+            for kp in range(Npoi):
+                print(KX[k]-KX[kp],KY[k]-KY[kp],np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
+                print(KXc3z[k]-KXc3z[kp],KYc3z[k]-KYc3z[kp],np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
+                # abs1.append(np.abs(L00p[k,i,kp,j]-L00m[kp,j,k,i] ))
 #         plt.plot(abs1, c='r')
-#         plt.plot(abs2, c='b')
-#         plt.plot(abs3,c='k')
 # plt.show()
 
-
-# # ######transpose complex conj minus
-# for i in range(4):
-#     for j in range(4):
-#         abs1=[]
-#         abs2=[]
-#         abs3=[]
-#         for k in range(Npoi):
-#             for kp in range(Npoi):
-#                 abs1.append(np.abs(np.conj(L00m[k,i,kp,j])-L00m[kp,j,k,i] ))
-#                 abs2.append(np.abs((L00m[k,i,kp,j])))
-#                 abs3.append(np.abs(L00m[kp,j,k,i] ))
-#         plt.plot(abs1, c='b')
-#         # plt.plot(abs2, c='b')
-#         # plt.plot(abs3,c='k')
-# plt.show()
-
-
-# ##### complex conj valley flip
-# [KXc2z,KYc2z, Indc2z]=lq.C2zLatt(KX,KY)
-# # for i in range(4):
-# for i in range(1,3):
-#     # for j in range(4):
-#     for j in range(1,3):
-#         abs1=[]
-#         abs2=[]
-#         abs3=[]
-#         for k in range(Npoi):
-#             for kp in range(Npoi):
-#                 # print(kp,Indc2z[kp])
-#                 abs1.append(  np.abs(np.conj(L00p[k,i,kp,j])) - np.abs(L00m[k,i,kp,j] ) )
-#                 abs2.append(np.abs((L00p[k,i,kp,j])))
-#                 abs3.append(np.abs(L00m[int(Indc2z[k]),i,int(Indc2z[kp]),j] ))
-
-#                 # print("1:  ",np.conj(L00p[k,i,kp,j]))
-#                 # print("1lat:  ", KX[k], KY[k], " ; ",KX[kp], KY[kp],)
-#                 # print("2:  ",L00m[int(Indc2z[k]),i,int(Indc2z[kp]),j])
-#                 # print("2lat:  ", KX[int(Indc2z[k])], KY[int(Indc2z[k])], " ; ",KX[int(Indc2z[kp])], KY[int(Indc2z[kp])],)
-#         plt.plot(abs1, label=str(i)+"  "+str(j))
-#         # plt.plot(abs2, c='b')
-#         # plt.plot(abs3,c='k')
-
-# plt.legend()
-# plt.show()
