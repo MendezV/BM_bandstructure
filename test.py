@@ -563,6 +563,93 @@ print("alpha is..", alpha)
 # # #################################
 # # #################################
 
+# Ene_valley_plus_a=np.empty((0))
+# Ene_valley_min_a=np.empty((0))
+# psi_plus_a=[]
+# psi_min_a=[]
+
+# rot_C2z=lq.C2z
+# rot_C3z=lq.C3z
+
+# [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
+# [KXc3z2,KYc3z2, Indc3z2]=lq.C3zLatt(KXc3z,KYc3z)
+# # print("starting dispersion ..........")
+# # # for l in range(Nsamp*Nsamp):
+# s=time.time()
+# hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+# overlaps1=[]
+# overlaps2=[]
+# for l in range(Npoi):
+    
+#     E1m_unitary,wave1m_unitary=hmin.eigens(KX[l],KY[l],nbands)
+
+#     E1m_rot0,wave1m_rot0=hmin.eigens(KXc3z[l],KYc3z[l],nbands)
+    
+#     E1m_rot1,wave1m_rot1=hmin.eigens(KXc3z2[l],KYc3z2[l],nbands)
+
+
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("0 sing rot + sing rot")
+#     print(ov,np.abs(ov))
+#     print(np.sum(np.abs(psi1)-np.abs(psi2)))
+
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("1 sing rot - sing rot")
+#     print(ov,np.abs(ov))
+#     print(np.sum(np.abs(psi1)-np.abs(psi2)))
+
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("2 sing rot + double rot")
+#     print(ov,np.abs(ov))
+#     print(np.sum(np.abs(psi1)-np.abs(psi2)))
+
+#     psi1=wave1m_rot0[:,2]
+#     psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),-1)
+#     plt.plot(np.abs(psi1))
+#     plt.plot(np.abs(psi2))
+#     plt.show()
+#     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
+#     print("3 sing rot - double rot")
+#     print(ov,np.abs(ov))
+#     print(np.sum(np.abs(psi1)-np.abs(psi2)))
+
+
+#     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+# print((overlaps1))
+# print(np.abs(overlaps1))
+
+# plt.plot(np.abs(overlaps1))
+# plt.plot(np.abs(overlaps2))
+# plt.show()
+# e=time.time()
+# print("time to diag over MBZ", e-s)
+
+
+
+
+# # #################################
+# # #################################
+# # ##C3 symmetry vmin
+# # #################################
+# # #################################
+# # #################################
+
 Ene_valley_plus_a=np.empty((0))
 Ene_valley_min_a=np.empty((0))
 psi_plus_a=[]
@@ -576,102 +663,65 @@ rot_C3z=lq.C3z
 # print("starting dispersion ..........")
 # # for l in range(Nsamp*Nsamp):
 s=time.time()
-hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
 overlaps1=[]
 overlaps2=[]
 for l in range(Npoi):
     
-    E1m_unitary,wave1m_unitary=hmin.eigens(KX[l],KY[l],nbands)
+    E1m_unitary,wave1m_unitary=hpl.eigens(KX[l],KY[l],nbands)
 
-    E1m_rot0,wave1m_rot0=hmin.eigens(KXc3z[l],KYc3z[l],nbands)
+    E1m_rot0,wave1m_rot0=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
     
-    E1m_rot1,wave1m_rot1=hmin.eigens(KXc3z2[l],KYc3z2[l],nbands)
+    E1m_rot1,wave1m_rot1=hpl.eigens(KXc3z2[l],KYc3z2[l],nbands)
 
 
     psi1=wave1m_rot0[:,2]
-    psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
+    psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))
+    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
     plt.show()
     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
     print("0 sing rot + sing rot")
     print(ov,np.abs(ov))
-    print(np.sum(np.abs(psi1)-np.abs(psi2)))
+    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
     psi1=wave1m_rot0[:,2]
-    psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
+    psi2=hpl.C3unitary(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))
+    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
     plt.show()
     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
     print("1 sing rot - sing rot")
     print(ov,np.abs(ov))
-    print(np.sum(np.abs(psi1)-np.abs(psi2)))
+    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
     psi1=wave1m_rot0[:,2]
-    psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),1)
+    psi2=hpl.C3unitary(hpl.Op_rot_psi(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),1)
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))
+    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
     plt.show()
     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
     print("2 sing rot + double rot")
     print(ov,np.abs(ov))
-    print(np.sum(np.abs(psi1)-np.abs(psi2)))
+    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
     psi1=wave1m_rot0[:,2]
-    psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),-1)
+    psi2=hpl.C3unitary(hpl.Op_rot_psi(hpl.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),-1)
     plt.plot(np.abs(psi1))
     plt.plot(np.abs(psi2))
+    plt.plot(np.abs(np.abs(psi1)-np.abs(psi2)))
+    plt.axhline(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
     plt.show()
     ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
     print("3 sing rot - double rot")
     print(ov,np.abs(ov))
-    print(np.sum(np.abs(psi1)-np.abs(psi2)))
-
-
-    # psi1=wave1m_rot1[:,2]
-    # psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),1)
-    # plt.plot(np.abs(psi1))
-    # plt.plot(np.abs(psi2))
-    # plt.show()
-    # ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    # print("4 double rot +double rot")
-    # print(ov,np.abs(ov))
-    # print(np.sum(np.abs(psi1)-np.abs(psi2)))
-    
-
-    # psi1=wave1m_rot1[:,2]
-    # psi2=hmin.C3unitary(hmin.Op_rot_psi(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z), rot_C3z),-1)
-    # plt.plot(np.abs(psi1))
-    # plt.plot(np.abs(psi2))
-    # plt.show()
-    # ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    # print("5 double rot -double rot")
-    # print(ov,np.abs(ov))
-    # print(np.sum(np.abs(psi1)-np.abs(psi2)))
-
-
-    # psi1=wave1m_rot1[:,2]
-    # psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),1)
-    # plt.plot(np.abs(psi1))
-    # plt.plot(np.abs(psi2))
-    # plt.show()
-    # ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    # print("6 double rot +single rot")
-    # print(ov,np.abs(ov))
-    # print(np.sum(np.abs(psi1)-np.abs(psi2)))
-    
-
-    # psi1=wave1m_rot1[:,2]
-    # psi2=hmin.C3unitary(hmin.Op_rot_psi( wave1m_unitary[:,2] , rot_C3z),-1)
-    # plt.plot(np.abs(psi1))
-    # plt.plot(np.abs(psi2))
-    # plt.show()
-    # ov=np.array((np.conj(psi1.T)@psi2 )).flatten()[0]
-    # print("7 double rot-single rot")
-    # print(ov,np.abs(ov))
-    # print(np.sum(np.abs(psi1)-np.abs(psi2)))
-
+    print(np.mean(np.abs(np.abs(psi1)-np.abs(psi2))))
 
 
     printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
@@ -684,8 +734,6 @@ plt.plot(np.abs(overlaps2))
 plt.show()
 e=time.time()
 print("time to diag over MBZ", e-s)
-
-
 
 
 
