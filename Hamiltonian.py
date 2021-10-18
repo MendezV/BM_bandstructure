@@ -400,8 +400,8 @@ class Ham_BM_p():
         rot_mat = self.rot_WF(rot)
         mat=np.kron(rot_mat,paulix)
         # print("determinant ", np.linalg.det(rot_mat))
-        plt.imshow(mat)
-        plt.show()
+        # plt.imshow(mat)
+        # plt.show()
         
 
 
@@ -419,6 +419,24 @@ class Ham_BM_p():
         Um=np.eye(N, k=umkpl)
 
         mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
+        return  mat@psi
+    
+    
+    def C3unitary(self, psi, sign):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        N=self.cuttoff_momentum_lat[3]
+        Um=np.eye(N)
+        w1=np.exp(sign*1j*(2*np.pi/3)*self.xi)
+        w2=np.exp(-sign*1j*(2*np.pi/3)*self.xi)
+        Omega=np.array([[w1,0],[0,w2]])
+
+
+        mat=np.kron(pauli0,np.kron(Um, Omega))
         return  mat@psi
 
 class Ham_BM_m():
@@ -837,6 +855,25 @@ class Ham_BM_m():
 
         mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
         return  mat@psi
+    
+    def C3unitary(self, psi, sign):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        N=self.cuttoff_momentum_lat[3]
+        Um=np.eye(N)
+        w1=np.exp(sign*1j*(2*np.pi/3)*self.xi)
+        w2=np.exp(-sign*1j*(2*np.pi/3)*self.xi)
+        Omega=np.array([[w1,0],[0,w2]])
+
+
+        mat=np.kron(pauli0,np.kron(Um, Omega))
+        return  mat@psi
+    
+    
 
 
 class FormFactors():
