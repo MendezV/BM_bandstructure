@@ -8,7 +8,7 @@ import MoireLattice
 import matplotlib.pyplot as plt
 
 #TODO: method for electron-phonon coupling Omega
-#TODO: fit q^2
+#TODO: fit q^2, implement small C3 test
 #TODO: plot dets see if this controls width
 #TODO: paralelize when calculating the eigenvalues
 #TODO: executable for jobs an tidy workspace
@@ -264,6 +264,7 @@ class ep_Bubble:
         self.hmin=hmin
         self.KX=KX
         self.KY=KY
+        self.latt=latt
         [q1,q2,q3]=latt.qvect()
         self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.Npoi=np.size(KX)
@@ -301,6 +302,24 @@ class ep_Bubble:
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
 
         self.dS_in=latt.VolMBZ/self.Npoi
+
+        print("testing symmetry of the form factors...")
+        [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
+        diffarp=[]
+        diffarm=[]
+        for i in range(self.nbands):
+            for j in range(self.nbands):
+
+                for k in range(self.Npoi_Q):
+                    for kp in range(self.Npoi_Q):
+                        diffarp.append(   np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+                        diffarm.append(   np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+        plt.plot(diffarp)
+        plt.plot(diffarm)
+        identifier="size"+str(self.Npoi_Q)+"mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
+        plt.savefig("Test_C3_symm_FF_"+identifier+".png")
+        plt.close()
+        print("finished testing symmetry of the form factors...")
 
 
     def nf(self, e, T):
@@ -398,6 +417,9 @@ class ep_Bubble:
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
         Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
         Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+
+        
+
         
         return [Omega_FFp,Omega_FFm]
 
@@ -409,6 +431,8 @@ class ep_Bubble:
         Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
         Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
         
+
+
         return [Omega_FFp,Omega_FFm]
 
     def integrand_ZT(self,nkq,nk,ekn,ekm,w,mu):
@@ -416,12 +440,30 @@ class ep_Bubble:
         edk=ekm[nk]-mu
 
         #zero temp
-        nfk=np.heaviside(-edk,1.0) # at zero its 1
-        nfkq=np.heaviside(-edkq,1.0) #at zero is 1
+        nfk=np.heaviside(-edk,0.5) # at zero its 1
+        nfkq=np.heaviside(-edkq,0.5) #at zero is 1
         eps=self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         return (fac_p)
+
+    def deltad(self, x, epsil):
+        return (1/(np.pi*epsil))/(1+(x/epsil)**2)
+
+    def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
+        eps=self.eta ##SENSITIVE TO DISPERSION
+        edkq=ekn[nkq]-mu
+        edk=ekm[nk]-mu
+
+        #zero temp
+        nfk=np.heaviside(-edk,0.5) # at zero its 1
+        nfkq=np.heaviside(-edkq,0.5) #at zero is 1
+
+        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(-(edkq-edk))
+        fac_p2=(self.deltad( -edk, eps))*np.heaviside(np.abs(edkq-edk)-eps, 1.0)
+
+        return (fac_p+fac_p2)
+
 
     def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
         edkq=ekn[nkq]-mu
@@ -439,7 +481,7 @@ class ep_Bubble:
     def Compute(self, mu, omegas, kpath):
 
         integ=[]
-        s=time.time()
+        sb=time.time()
 
         print("starting bubble.......")
 
@@ -480,7 +522,7 @@ class ep_Bubble:
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
-                e=time.time()
+                eb=time.time()
             
                 bub=bub+np.sum(integrand_var)*self.dS_in
 
@@ -489,7 +531,7 @@ class ep_Bubble:
             integ.append(sd)
             
         integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
-        print("time for bubble...",e-s)
+        print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
@@ -516,6 +558,24 @@ class ep_Bubble:
         plt.colorbar()
         plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
         plt.close()
+
+        print("testing symmetry of the result...")
+        [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(KX,KY)
+        intc3=[integ.flatten()[int(ii)] for ii in Indc3z]
+        plt.plot(np.abs(integ.flatten()- intc3)/np.abs(integ.flatten()), 'ro')
+        plt.plot(np.abs(integ.flatten()- intc3)/np.abs(integ.flatten()), c='k', ls='--')
+        plt.savefig("Test_C3_symm_bubble_"+identifier+".png")
+        plt.close()
+        print("finished testing symmetry of the result...")
+
+        print("saving data from the run ...")
+
+        with open("bubble_data_"+identifier+".npy", 'wb') as f:
+            np.save(f, integ)
+        with open("bubble_data_kx_"+identifier+".npy", 'wb') as f:
+            np.save(f, KX)
+        with open("bubble_data_ky_"+identifier+".npy", 'wb') as f:
+            np.save(f, KY)
 
 
     
@@ -603,7 +663,7 @@ def main() -> int:
     c_phonon=21400 #m/s
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep,omegacoef,sqrt_hbar_M]
+    cons=[alpha_ep, beta_ep, omegacoef, sqrt_hbar_M]
     mode1="L"
     mode2="T"
 
@@ -632,10 +692,8 @@ def main() -> int:
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
-    integ=integ*1000 #convertion to mev
+    integ=integ.flatten()*1000 #convertion to mev
     B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
-
-
 
 
     return 0
