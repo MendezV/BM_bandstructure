@@ -274,8 +274,10 @@ class ep_Bubble:
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
         [self.alpha_ep, self.beta_ep,self.omegacoef,self.sqrt_hbar_M]=cons
+        self.mode=mode
+        self.symmetric=symmetric
 
-        if symmetric:
+        if symmetric=="s":
             if mode=="L":
                 self.L00p=self.FFp.denFFL_s()
                 self.L00m=self.FFm.denFFL_s()
@@ -496,7 +498,7 @@ class ep_Bubble:
         plt.scatter(KX,KY, s=20, c=np.real(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.savefig("Pi_ep_energy_cut_real_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
         plt.close()
         print("the minimum real part is ...", np.min(np.real(integ)))
 
@@ -504,7 +506,7 @@ class ep_Bubble:
         plt.scatter(KX,KY, s=20, c=np.imag(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_imag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.savefig("Pi_ep_energy_cut_imag_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
         plt.close()
         print("the maximum imaginary part is ...", np.max(np.imag(integ)))
 
@@ -512,7 +514,7 @@ class ep_Bubble:
         plt.scatter(KX,KY, s=20, c=np.abs(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.savefig("Pi_ep_energy_cut_abs_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
         plt.close()
 
 
@@ -597,10 +599,10 @@ def main() -> int:
     hhbar=6.582119569e-13 /1000 #(in eV s)
     sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
     alpha_ep=2 # in ev
-    beta_ep=4 #in ev
+    beta_ep=4*0 #in ev
     c_phonon=21400 #m/s
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
-    symmetric=True #whether we are looking at the symmetric or the antisymmetric mode
+    symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep,omegacoef,sqrt_hbar_M]
     mode1="L"
     mode2="T"
@@ -618,15 +620,15 @@ def main() -> int:
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
 
-    B1=ee_Bubble(lq, nbands, hpl, hmin, KX, KY)
-    omega=[1e-14]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
+    # B1=ee_Bubble(lq, nbands, hpl, hmin, KX, KY)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
     
 
 
-    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode2, cons)
+    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode1, cons)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
