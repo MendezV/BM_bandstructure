@@ -229,41 +229,77 @@ class ee_Bubble:
         print("time for bubble...",e-s)
         return integ_arr_no_reshape
 
+    def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.real(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ee_energy_cut_real_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
+        print("the minimum real part is ...", np.min(np.real(integ)))
+
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.imag(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ee_energy_cut_imag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
+        print("the maximum imaginary part is ...", np.max(np.imag(integ)))
+
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ee_energy_cut_abs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
+
 
         
 class ep_Bubble:
 
-    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric):
+    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric, mode, cons):
         self.lq=latt
         self.nbands=nbands
         self.hpl=hpl
         self.hmin=hmin
         self.KX=KX
         self.KY=KY
+        [q1,q2,q3]=latt.qvect()
+        self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.Npoi=np.size(KX)
         [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_lattice( KX, KY)
         self.Npoi_Q=np.size(self.KQX)
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
-        FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
-        FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
+        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
+        self.FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
+        [self.alpha_ep, self.beta_ep,self.omegacoef,self.sqrt_hbar_M]=cons
 
         if symmetric:
-            self.L00p=FFp.denFFL_s()
-            self.L00m=FFm.denFFL_s()
-            self.LnemLp=FFp.NemFFL_s()
-            self.LnemLm=FFm.NemFFL_s()
-            self.LnemTp=FFp.NemFFT_s()
-            self.LnemTm=FFm.NemFFT_s()
+            if mode=="L":
+                self.L00p=self.FFp.denFFL_s()
+                self.L00m=self.FFm.denFFL_s()
+                self.Lnemp=self.FFp.NemFFL_s()
+                self.Lnemm=self.FFm.NemFFL_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else:
+                self.Lnemp=self.FFp.NemFFT_s()
+                self.Lnemm=self.FFm.NemFFT_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
         else:
-            self.L00p=FFp.denFFL_a()
-            self.L00m=FFm.denFFL_a()
-            self.LnemLp=FFp.NemFFL_a()
-            self.LnemLm=FFm.NemFFL_a()
-            self.LnemTp=FFp.NemFFT_a()
-            self.LnemTm=FFm.NemFFT_a()
+            if mode=="L":
+                self.L00p=self.FFp.denFFL_a()
+                self.L00m=self.FFm.denFFL_a()
+                self.Lnemp=self.FFp.NemFFL_a()
+                self.Lnemm=self.FFm.NemFFL_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else:
+                self.Lnemp=self.FFp.NemFFT_a()
+                self.Lnemm=self.FFm.NemFFT_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+
         self.dS_in=latt.VolMBZ/self.Npoi
-        
+
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -352,6 +388,26 @@ class ep_Bubble:
 
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+    
+    def w_ph_L(self):
+        return self.omegacoef*self.FFp.h(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
+        
+    def OmegaL(self):
+        overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
+        Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        
+        return [Omega_FFp,Omega_FFm]
+
+    def w_ph_T(self):
+        return self.omegacoef*self.FFp.h(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
+        
+    def OmegaT(self):
+        overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_T())
+        Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
+        Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
+        
+        return [Omega_FFp,Omega_FFm]
 
     def integrand_ZT(self,nkq,nk,ekn,ekm,w,mu):
         edkq=ekn[nkq]-mu
@@ -401,8 +457,8 @@ class ep_Bubble:
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
 
 
                 integrand_var=0
@@ -434,6 +490,30 @@ class ep_Bubble:
         integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",e-s)
         return integ_arr_no_reshape
+    
+    def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.real(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ep_energy_cut_real_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
+        print("the minimum real part is ...", np.min(np.real(integ)))
+
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.imag(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ep_energy_cut_imag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
+        print("the maximum imaginary part is ...", np.max(np.imag(integ)))
+
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ep_energy_cut_abs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+        plt.close()
 
 
     
@@ -445,8 +525,8 @@ def main() -> int:
 
     #parameters for the calculation
     theta=1.05*np.pi/180  # magic angle
-    fillings = np.array([0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
-    mu_values = np.array([0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
+    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
+    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
     
     try:
@@ -456,7 +536,7 @@ def main() -> int:
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
 
     try:
-        N_SFs=25 #number of SF's currently implemented
+        N_SFs=26 #number of SF's currently implemented
         a=np.arange(N_SFs)
         a[filling_index]
 
@@ -501,7 +581,7 @@ def main() -> int:
     # alph=alpha
 
     #other electronic params
-    filling_index=int(sys.argv[1]) #0-25
+    filling_index=int(sys.argv[1]) #0-26
     mu=mu_values[filling_index]/1000
     filling=fillings[filling_index]
     nbands=4
@@ -515,22 +595,25 @@ def main() -> int:
     c_light=299792458 #m/s
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
     hhbar=6.582119569e-13 /1000 #(in eV s)
-    sqrt_hbar_M=hhbar*np.sqrt(hhbar/M)*c_light
+    sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
     alpha_ep=2 # in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
-    omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega
+    omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric=True #whether we are looking at the symmetric or the antisymmetric mode
+    cons=[alpha_ep, beta_ep,omegacoef,sqrt_hbar_M]
+    mode1="L"
+    mode2="T"
 
     print("kappa is..", kappa)
     print("alpha is..", alpha)
 
 
-    [path,kpath,HSP_index]=lq.embedded_High_symmetry_path(KX,KY)
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
-    plt.gca().set_aspect('equal')
-    plt.show()
+    # [path,kpath,HSP_index]=lq.embedded_High_symmetry_path(KX,KY)
+    # plt.plot(VV[:,0],VV[:,1])
+    # plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+    # plt.gca().set_aspect('equal')
+    # plt.show()
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
@@ -539,28 +622,15 @@ def main() -> int:
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=20, c=np.real(integ))
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("pKQenergycuttestreal_"+str(Nsamp)+"_nu_"+str(filling)+".png")
-    plt.close()
-    print("the minimum real part is ...", np.min(np.real(integ)))
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
+    
 
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=20, c=np.imag(integ))
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("pKQenergycuttestimag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
-    plt.close()
-    print("the maximum imaginary part is ...", np.max(np.imag(integ)))
 
-    plt.plot(VV[:,0],VV[:,1])
-    plt.scatter(KX,KY, s=20, c=np.abs(integ))
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.colorbar()
-    plt.savefig("pKQenergycuttestabs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
-    plt.close()
+    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode2, cons)
+    omega=[1e-14]
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
 
 
 

@@ -885,6 +885,7 @@ class FormFactors():
         self.xi=xi
         self.Nu=int(np.shape(self.psi)[1]/4) #4, 2 for sublattice and 2 for layer
         [KX,KY]=lat.Generate_lattice()
+        [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_lattice( KX, KY)
         self.kx=KX
         self.ky=KY
 
@@ -914,7 +915,7 @@ class FormFactors():
         return(Lambda_Tens)
     
     ########### Functions for the nematic form factors
-    def f(self, FF ):
+    def f_pre(self, FF ):
         farr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
             for k_ip in range(np.size(self.kx)):
@@ -926,7 +927,7 @@ class FormFactors():
                         farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
         return farr
 
-    def g(self,FF):
+    def g_pre(self,FF):
         garr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
             for k_ip in range(np.size(self.kx)):
@@ -940,13 +941,53 @@ class FormFactors():
 
 
 
-    def h(self,FF):
+    def h_pre(self,FF):
 
         harr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
             for k_ip in range(np.size(self.kx)):
                 qx=self.kx[k_i]-self.kx[k_ip]
                 qy=self.ky[k_i]-self.ky[k_ip]
+                q=np.sqrt(qx**2+qy**2)+1e-17
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        harr[k_i, i, k_ip, j]=q
+        return harr
+
+    ########### Functions for the nematic form factors
+    def f(self, FF ):
+        farr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.KQX)):
+            for k_ip in range(np.size(self.KQX)):
+                qx=self.KQX[k_i]-self.KQX[k_ip]
+                qy=self.KQY[k_i]-self.KQY[k_ip]
+                q=np.sqrt(qx**2+qy**2)+1e-17
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
+        return farr
+
+    def g(self,FF):
+        garr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.KQX)):
+            for k_ip in range(np.size(self.KQX)):
+                qx=self.KQX[k_i]-self.KQX[k_ip]
+                qy=self.KQY[k_i]-self.KQY[k_ip]
+                q=np.sqrt(qx**2+qy**2)+1e-17
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        garr[k_i, i, k_ip, j]=2*(qx*qy)/q
+        return garr 
+
+
+
+    def h(self,FF):
+
+        harr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.KQX)):
+            for k_ip in range(np.size(self.KQX)):
+                qx=self.KQX[k_i]-self.KQX[k_ip]
+                qy=self.KQY[k_i]-self.KQY[k_ip]
                 q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
