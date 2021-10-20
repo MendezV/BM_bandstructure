@@ -940,14 +940,28 @@ class FormFactors():
 
 
 
-    def h(self):
-        q=np.sqrt(self.kx**2+self.ky**2)
-        return q
+    def h(self,FF):
+
+        harr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.kx)):
+            for k_ip in range(np.size(self.kx)):
+                qx=self.kx[k_i]-self.kx[k_ip]
+                qy=self.ky[k_i]-self.ky[k_ip]
+                q=np.sqrt(qx**2+qy**2)+1e-17
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        harr[k_i, i, k_ip, j]=q
+        return harr
 
     ########### Anti-symmetric displacement of the layers
     def denFF_a(self):
         L30=self.calcFormFactor( layer=3, sublattice=0)
         return L30
+
+    def denFFL_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return self.h(L30)*L30
+
 
     def NemFFL_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
@@ -971,6 +985,10 @@ class FormFactors():
     def denFF_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)
         return L00
+
+    def denFFL_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return self.h(L00)*L00
 
     def NemFFL_s(self):
         L01=self.calcFormFactor( layer=0, sublattice=1)

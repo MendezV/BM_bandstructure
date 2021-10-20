@@ -53,6 +53,13 @@ class MoireTriangLattice:
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
             self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
 
+        #G processes
+        self.MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
+        self.MGS1=self.MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
+        self.MGS_2=self.MGS1+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]] #2G
+        self.MGS2=self.MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]] #2G and possible corners
+        self.MGS_3=self.MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]] #3G
+
 
     def __repr__(self):
         return "lattice( LX={w}, twist_angle={c})".format(h=self.Npoints, c=self.theta)
@@ -497,4 +504,27 @@ class MoireTriangLattice:
             
         return path,np.array(pthK),HSP_index
 
-#TODO update save and read lattice update path in reciprocal space for Delafossite
+    def embedded_High_symmetry_path(self, KX,KY):
+        [GM1,GM2]=self.GMvec
+        VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        VV=VV+[VV[0]] #verices
+
+        Kps=[]
+        Kps=Kps+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
+        [path,kpath,HSP_index]=self.findpath(Kps,KX,KY)
+
+
+        return [path,kpath,HSP_index]
+
+    def kwrap_FBZ(self,kx,ky):
+        dmin=kx**2+ky**2
+        G=[0,0]
+        [GM1,GM2]=self.GMvec
+        for MG in self.MGS1:
+            d=(kx-MG[0]*GM1[0]-MG[1]*GM2[0])**2+(ky-MG[0]*GM1[1]-MG[1]*GM2[1])**2
+            if d<dmin+1e-10: #slightly more stringent to keep terms fixed if they differ by machine precission 
+                dmin=d
+                G=MG
+        kxp=kx-G[0]*GM1[0]-G[1]*GM2[0]
+        kyp=ky-G[0]*GM1[1]-G[1]*GM2[1]
+        return kxp,kyp

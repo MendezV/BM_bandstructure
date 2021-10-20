@@ -31,13 +31,163 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
         print()
 
 
-class Bubble:
+class ee_Bubble:
 
-    def __init__(self, Disp, FormFac, mu, latt):
-        self.Disp=Disp
-        self.FormFac=FormFac
+    def __init__(self, mu, latt, nbands, hpl, hmin, KX, KY):
         self.mu=mu
-        self.latt=latt
+        self.lq=latt
+        self.nbands=nbands
+        self.hpl=hpl
+        self.hmin=hmin
+        self.KX=KX
+        self.KY=KY
+        self.Npoi=np.size(KX)
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
+        FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
+        FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
+        self.L00p=FFp.denFF_s()
+        self.L00m=FFm.denFF_s()
+        self.dS_in=latt.VolMBZ/self.Npoi
+
+    def nf(self, e, T):
+        rat=np.abs(np.max(e/T))
+        if rat<700:
+            return 1/(1+np.exp( e/T ))
+        else:
+            return np.heaviside(-e,0.5)
+
+
+    def nb(self, e, T):
+        rat=np.abs(np.max(e/T))
+        if rat<700:
+            return 1/(np.exp( e/T )-1)
+        else:
+            return -np.heaviside(-e,0.5)
+
+
+    def precompute_E_psi(self):
+
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+
+
+        print("starting dispersion ..........")
+        
+        s=time.time()
+        
+        for l in range(self.Npoi):
+            E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            psi_plus_a.append(wave1)
+
+
+            E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            psi_min_a.append(wave1)
+
+            printProgressBar(l + 1, self.Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi,self.nbands])
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
+
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+
+    def integrand_ZT(self,nkq,nk,ekn,ekm,w,mu):
+        edkq=ekn[nkq]-mu
+        edk=ekm[nk]-mu
+
+        #zero temp
+        nfk=np.heaviside(-edk,1.0) # at zero its 1
+        nfkq=np.heaviside(-edkq,1.0) #at zero is 1
+        eps=self.eta ##SENSITIVE TO DISPERSION
+
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        return (fac_p)
+
+    def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
+        edkq=ekn[nkq]-mu
+        edk=ekm[nk]-mu
+
+        #finite temp
+        nfk= self.nf(edk,T)
+        nfkq= self.nf(edkq,T)
+
+        eps=self.eta ##SENSITIVE TO DISPERSION
+
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        return (fac_p)
+
+    def Compute(self, mu):
+
+        integ=[]
+        s=time.time()
+
+        print("starting bubble.......")
+        omegas=[1e-14]
+
+        path=np.arange(0,self.Npoi)
+        kpath=np.array([self.KX,self.KY]).T
+        print(np.shape(kpath))
+        for omegas_m_i in omegas:
+            sd=[]
+            for l in path:  #for calculating only along path in FBZ
+                bub=0
+                
+                qx=kpath[l, 0]
+                qy=kpath[l, 1]
+                Ikq=[]
+                for s in range(self.Npoi):
+                    kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
+                    indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
+                    Ikq.append(indmin)
+
+            
+                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
+                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,Ik[ss],:] for ss in range(self.Npoi)])
+
+
+                integrand_var=0
+                #####all bands for the + and - valley
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        ek_n=self.Ene_valley_plus[:,nband]
+                        ek_m=self.Ene_valley_plus[:,mband]
+                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu)
+                        # integrand_var=integrand_var+(Lambda_Tens_plus_k_kq_mn)*(Lambda_Tens_plus_kq_k_nm)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
+                        
+
+                        ek_n=self.Ene_valley_min[:,nband]
+                        ek_m=self.Ene_valley_min[:,mband]
+                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu)
+                        
+
+                e=time.time()
+            
+                bub=bub+np.sum(integrand_var)*self.dS_in
+
+                sd.append( bub )
+
+            integ.append(sd)
+            
+        integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
+        print("time for bubble...",e-s)
+        return integ_arr_no_reshape
+
+
         
 
 
@@ -83,9 +233,7 @@ def main() -> int:
     Npoi=np.size(KX)
     [q1,q1,q3]=l.q
     q=la.norm(q1)
-    [GM1,GM2]=lq.GMvec
-    Vertices_list, Gamma, K, Kp, M, Mp=lq.FBZ_points(GM1,GM2)
-    VV=np.array(Vertices_list+[Vertices_list[0]])
+    VV=lq.boundary()
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
@@ -107,19 +255,40 @@ def main() -> int:
     # alpha=up/hvkd
     # alph=alpha
 
+    #other electronic params
+    filling_index=int(sys.argv[1]) #0-25
+    mu=mu_values[filling_index]/1000
+    nbands=4
+    hbarc=0.1973269804*1e-6 #ev*m
+    alpha=137.0359895 #fine structure constant
+    a_graphene=2.46*(1e-10) #in meters
+    ee2=(hbarc/a_graphene)/alpha
+    kappa_di=3.03
+
+    #phonon parameters
+    c_light=299792458 #m/s
+    M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
+    hhbar=6.582119569e-13 /1000 #(in eV s)
+    sqrt_hbar_M=hhbar*np.sqrt(hhbar/M)*c_light
+    alpha_ep=2 # in ev
+    beta_ep=4 #in ev
+    c_phonon=21400 #m/s
+    omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega
+
     print("kappa is..", kappa)
     print("alpha is..", alpha)
 
-    Kps=[]
-    Kps=Kps+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
-    [path,kpath,HSP_index]=lq.findpath(Kps,KX,KY)
 
-    Npath=np.size(path)
+    [path,kpath,HSP_index]=lq.embedded_High_symmetry_path(KX,KY)
     plt.plot(VV[:,0],VV[:,1])
     plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
     plt.gca().set_aspect('equal')
-    # plt.show()
     plt.show()
+
+    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+
+    B1=Bubble(mu, lq, nbands, hpl, hmin, KX, KY)
 
 
 
