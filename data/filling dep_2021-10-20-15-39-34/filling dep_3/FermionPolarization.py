@@ -7,9 +7,12 @@ import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
 
+#TODO: method for electron-phonon coupling Omega
 #TODO: fit q^2, implement small C3 test
-#TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
+#TODO: plot dets see if this controls width
 #TODO: paralelize when calculating the eigenvalues
+#TODO: executable for jobs an tidy workspace
+#TODO: way of calculating that involves the derivative of the Lindhart
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
 
 # Print iterations progress
@@ -427,6 +430,8 @@ class ep_Bubble:
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_T())
         Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
         Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
+        
+
 
         return [Omega_FFp,Omega_FFm]
 
@@ -528,23 +533,8 @@ class ep_Bubble:
         integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
-
-    def extract_cs(self, integ, thres):
-        
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, thres)
-        id=np.ones(np.shape(KX_m))
-        Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
-        GTG=Gmat.T@Gmat
-        d=np.real(integ[ind])
-        b=Gmat.T@d
-        popt=la.pinv(GTG)@b
-        res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
-        return popt, res
-
-    def quad_pi(self, x, y, popt):
-        return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
     
-    def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res):
+    def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
         identifier=str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
@@ -569,24 +559,6 @@ class ep_Bubble:
         plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
         plt.close()
 
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(KX,KY, np.real(integ))
-
-        x = np.linspace(-1, 1, 30)
-        y = np.linspace(-1, 1, 30)
-
-        X, Y = np.meshgrid(x, y)
-        Z = self.quad_pi(X, Y, c)
-        ax.plot_surface(X, Y, Z)
-
-        ax.set_xlabel('KX')
-        ax.set_ylabel('KY')
-        ax.set_zlabel('Z Label')
-
-        plt.show()
-
-
         print("testing symmetry of the result...")
         [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(KX,KY)
         intc3=[integ.flatten()[int(ii)] for ii in Indc3z]
@@ -604,10 +576,6 @@ class ep_Bubble:
             np.save(f, KX)
         with open("bubble_data_ky_"+identifier+".npy", 'wb') as f:
             np.save(f, KY)
-        with open("cparams_data_ky_"+identifier+".npy", 'wb') as f:
-            np.save(f, c)
-        with open("cparams_res_data_ky_"+identifier+".npy", 'wb') as f:
-            np.save(f, res)
 
 
     
@@ -643,13 +611,6 @@ def main() -> int:
 
     except (ValueError, IndexError):
         raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
-
-
-    try:
-        mode=(sys.argv[3])
-
-    except (ValueError, IndexError):
-        raise Exception("third arg has to be the mode that one wants to simulate either L or T")
 
     #lattices with different normalizations
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
@@ -703,8 +664,8 @@ def main() -> int:
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, omegacoef, sqrt_hbar_M]
-    # mode1="L"
-    # mode2="T"
+    mode1="L"
+    mode2="T"
 
     print("kappa is..", kappa)
     print("alpha is..", alpha)
@@ -727,15 +688,12 @@ def main() -> int:
     
 
 
-    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
+    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode1, cons)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     integ=integ.flatten()*1000 #convertion to mev
-    c, res=B1.extract_cs( integ, 0.25)
-    print(c, omegacoef, res)
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res)
-    
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
 
 
     return 0
