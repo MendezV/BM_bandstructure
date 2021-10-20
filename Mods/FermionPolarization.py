@@ -272,7 +272,7 @@ class ep_Bubble:
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
-        self.FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
+        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt)
         [self.alpha_ep, self.beta_ep,self.omegacoef,self.sqrt_hbar_M]=cons
         self.mode=mode
         self.symmetric=symmetric
@@ -472,8 +472,7 @@ class ep_Bubble:
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        # integrand_var=integrand_var+(Lambda_Tens_plus_k_kq_mn)*(Lambda_Tens_plus_kq_k_nm)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
-                        
+
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
@@ -494,11 +493,12 @@ class ep_Bubble:
         return integ_arr_no_reshape
     
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
+        identifier=str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
+        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
         plt.close()
         print("the minimum real part is ...", np.min(np.real(integ)))
 
@@ -506,7 +506,7 @@ class ep_Bubble:
         plt.scatter(KX,KY, s=20, c=np.imag(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_imag_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
+        plt.savefig("Pi_ep_energy_cut_imag_"+identifier+".png")
         plt.close()
         print("the maximum imaginary part is ...", np.max(np.imag(integ)))
 
@@ -514,7 +514,7 @@ class ep_Bubble:
         plt.scatter(KX,KY, s=20, c=np.abs(integ))
         plt.gca().set_aspect('equal', adjustable='box')
         plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+".png")
+        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
         plt.close()
 
 
@@ -599,7 +599,7 @@ def main() -> int:
     hhbar=6.582119569e-13 /1000 #(in eV s)
     sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
     alpha_ep=2 # in ev
-    beta_ep=4*0 #in ev
+    beta_ep=4 #in ev
     c_phonon=21400 #m/s
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
