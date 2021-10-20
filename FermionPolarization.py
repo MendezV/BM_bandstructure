@@ -390,17 +390,17 @@ class ep_Bubble:
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
     def w_ph_L(self):
-        return self.omegacoef*self.FFp.h(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
+        return self.omegacoef*(self.Gscale*self.FFp.h(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaL(self):
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
         
         return [Omega_FFp,Omega_FFm]
 
     def w_ph_T(self):
-        return self.omegacoef*self.FFp.h(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
+        return self.omegacoef*(self.Gscale*self.FFp.h(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaT(self):
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_T())
