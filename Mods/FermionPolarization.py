@@ -53,7 +53,7 @@ class ee_Bubble:
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
-        FFm=Hamiltonian.FormFactors(self.psi_min, 1, latt)
+        FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt)
         self.L00p=FFp.denFF_s()
         self.L00m=FFm.denFF_s()
         self.dS_in=latt.VolMBZ/self.Npoi
