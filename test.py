@@ -778,9 +778,75 @@ for i in range(nbands):
         abs3=[]
         for k in range(Npoi):
             for kp in range(Npoi):
-                print(KX[k]-KX[kp],KY[k]-KY[kp],np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
-                print(KXc3z[k]-KXc3z[kp],KYc3z[k]-KYc3z[kp],np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
+                # print(KX[k]-KX[kp],KY[k]-KY[kp], KXc3z[k]-KXc3z[kp],KYc3z[k]-KYc3z[kp])
+                # print(np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
+                diffar.append(   np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
                 # abs1.append(np.abs(L00p[k,i,kp,j]-L00m[kp,j,k,i] ))
 #         plt.plot(abs1, c='r')
 # plt.show()
+plt.plot(diffar)
+plt.show()
+
+# # #################################
+# # #################################
+# # #################################
+# # # Form factors C3 minus valley
+# # #################################
+# # #################################
+# # #################################
+
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_plus_ac3=np.empty((0))
+psi_plus_a=[]
+psi_plus_ac3=[]
+
+rot_C2z=lq.C2z
+rot_C3z=lq.C3z
+[KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
+# print("starting dispersion ..........")
+# # for l in range(Nsamp*Nsamp):
+s=time.time()
+hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+overlaps=[]
+nbands=2
+for l in range(Npoi):
+    E1p,wave1p=hmin.eigens(KX[l],KY[l],nbands)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+    psi_plus_a.append(wave1p)
+
+
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+e=time.time()
+print("time to diag over MBZ", e-s)
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+
+
+print(np.shape(psi_plus),np.shape(psi_plusc3))
+
+FFp=Hamiltonian.FormFactors(psi_plus, -1, lq)
+L00p=FFp.NemFFL_a()
+
+ind0=np
+#####transpose complex conj plus
+diffar=[]
+for i in range(nbands):
+    for j in range(nbands):
+        abs1=[]
+        abs2=[]
+        abs3=[]
+        for k in range(Npoi):
+            for kp in range(Npoi):
+                # print(KX[k]-KX[kp],KY[k]-KY[kp], KXc3z[k]-KXc3z[kp],KYc3z[k]-KYc3z[kp])
+                # print(np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
+                diffar.append(   np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+                # abs1.append(np.abs(L00p[k,i,kp,j]-L00m[kp,j,k,i] ))
+#         plt.plot(abs1, c='r')
+# plt.show()
+plt.plot(diffar)
+plt.show()
 

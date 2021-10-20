@@ -920,7 +920,7 @@ class FormFactors():
             for k_ip in range(np.size(self.kx)):
                 qx=self.kx[k_i]-self.kx[k_ip]
                 qy=self.ky[k_i]-self.ky[k_ip]
-                q=np.sqrt(qx**2+qy**2)
+                q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
@@ -932,7 +932,7 @@ class FormFactors():
             for k_ip in range(np.size(self.kx)):
                 qx=self.kx[k_i]-self.kx[k_ip]
                 qy=self.ky[k_i]-self.ky[k_ip]
-                q=np.sqrt(qx**2+qy**2)
+                q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         garr[k_i, i, k_ip, j]=2*(qx*qy)/q
@@ -964,7 +964,7 @@ class FormFactors():
     def NemFFT_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
-        Nem_FFT=-self.g() *L31- self.xi*self.f()*L32
+        Nem_FFT=-self.g(L31) *L31- self.xi*self.f(L32)*L32
         return Nem_FFT
 
     ########### Symmetric displacement of the layers
@@ -975,13 +975,13 @@ class FormFactors():
     def NemFFL_s(self):
         L01=self.calcFormFactor( layer=0, sublattice=1)
         L02=self.calcFormFactor( layer=0, sublattice=2)
-        Nem_FFL=self.f *L01-self.xi*self.g*L02
+        Nem_FFL=self.f(L01) *L01-self.xi*self.g(L02)*L02
         return Nem_FFL
 
     def NemFFT_s(self):
         L01=self.calcFormFactor( layer=0, sublattice=1)
         L02=self.calcFormFactor( layer=0, sublattice=2)
-        Nem_FFT=-self.g *L01- self.xi*self.f*L02
+        Nem_FFT=-self.g(L01)*L01 - self.xi*self.f(L02)*L02
         return Nem_FFT
 
         

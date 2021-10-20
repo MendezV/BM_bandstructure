@@ -3,6 +3,7 @@ import scipy
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy import linalg as la
 import time
+import matplotlib.pyplot as plt
 
 
 class MoireTriangLattice:
@@ -219,6 +220,73 @@ class MoireTriangLattice:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
     
+    #creates two arrays containing X and Y coordinates for the lattice points                                                     
+    def Generating_vec_samp_lattice(self, scale_fac_latt):
+        [GM1,GM2]=self.GM_vec()
+        LM=self.LM()
+        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+
+        k_window_sizey = K[2][1] 
+        k_window_sizex = K[1][0] 
+
+        #will filter points that are in a hexagon inscribed in a circle of radius Radius_inscribed_hex
+        Radius_inscribed_hex=1.0000005*k_window_sizey
+
+
+        print("starting sampling in reciprocal space....")
+        s=time.time()
+
+        #initial grid that will be filtered
+        LP=self.Npoints
+        nn1=np.arange(-LP,LP+1,1)
+        nn2=np.arange(-LP,LP+1,1)
+
+        nn_1,nn_2=np.meshgrid(nn1,nn2)
+
+        nn_1p=[]
+        nn_2p=[]
+        for x in nn1:
+            for y in nn2:
+                kx=(2*np.pi*x/LP)/LM
+                ky=(2*(2*np.pi*y/LP - np.pi*x/LP)/np.sqrt(3))/LM
+                if self.hexagon1( ( kx, ky), Radius_inscribed_hex ):
+                    nn_1p.append(x)
+                    nn_2p.append(y)
+
+        e=time.time()
+        print("finished sampling in reciprocal space....t=",e-s," s")
+
+        nn_1pp=np.array(nn_1p)
+        nn_2pp=np.array(nn_2p)
+
+        KX=(2*np.pi*nn_1pp/LP)/LM
+        KY= (2*(2*np.pi*nn_2pp/LP - np.pi*nn_1pp/LP)/np.sqrt(3))/LM
+
+        #Making the sampling lattice commensurate with the MBZ
+        fact=K[2][1]/np.max(KY)
+        KX=KX*fact
+        KY=KY*fact
+
+        KX_0=(2*np.pi*1/LP)/LM
+        KY_0= (2*(2*np.pi*0/LP - np.pi*1/LP)/np.sqrt(3))/LM
+
+        KX_1=(2*np.pi*0/LP)/LM
+        KY_1= (2*(2*np.pi*1/LP - np.pi*0/LP)/np.sqrt(3))/LM
+    
+        #Making the sampling lattice commensurate with the MBZ
+        K_0=np.array([KX_0,KY_0])*fact
+        K_1=np.array([KX_1,KY_1])*fact
+
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+
+        return [K_0/Gnorm,K_1/Gnorm]
+    
+    
     #same as Generate lattice but for the original graphene (FBZ of triangular lattice)
     def Generate_lattice_og(self):
 
@@ -278,6 +346,7 @@ class MoireTriangLattice:
             linparam[i*Npoints_q:(i+1)*Npoints_q,1]=Kps[i][1]*(1-t)+t*Kps[i+1][1]
 
         return linparam
+        
     def High_symmetry_path(self):
         [GM1,GM2]=self.GM_vec()
         VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
@@ -348,5 +417,84 @@ class MoireTriangLattice:
             Indc3z[i]=np.argmin( (KX-KXc3z[i])**2 +(KY-KYc3z[i])**2)
 
         return [KXc3z,KYc3z, Indc3z]
+
+    #to check whether this is working uncomment the plot statments
+    def findpath(self,Kps,KX,KY):
+
+        path=np.empty((0))
+        pthK=[]
+        HSP_index=[]
+        counter_path=0
+        nnlist=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #specific for the reciprocal lattice vectors that I picked
+        HSP_index.append(counter_path)
+        NHSpoints=np.shape(Kps)[0]
+        
+
+        [k1,k2]=self.Generating_vec_samp_lattice( np.max(KY))
+
+
+        amin=np.linalg.norm(k1)
+        # print(amin, np.sqrt( (KX[1]-KX[0])**2+(KY[1]-KY[0])**2 ))      
+        l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
+
+        path=np.append(path,int(l)) 
+        pthK.append([KX[l],KY[l]])
+
+        
+        for indhs in range(NHSpoints-1):
+
+            c=0
+            c2=0
+            
+            
+            dist=np.sqrt( (Kps[indhs+1][0]-KX[l])**2 + (Kps[indhs+1][1]-KY[l])**2)
+            while ( c2<1  and  dist>=0.8*amin):
+                dists=[]
+                KXnn=[]
+                KYnn=[]
+
+                dist_pre=dist
+                # print(Kps[indhs+1], dist, amin)
+                # plt.scatter(KX,KY)
+                for nn in range(6): #coordination number is 6
+                    kxnn= KX[l]+nnlist[nn][0]*k1[0]+nnlist[nn][1]*k2[0]
+                    kynn= KY[l]+nnlist[nn][0]*k1[1]+nnlist[nn][1]*k2[1]
+                    di=np.sqrt( (Kps[indhs+1][0]-kxnn)**2 + (Kps[indhs+1][1]-kynn)**2)
+                    dists.append(di)
+                    KXnn.append(kxnn)
+                    KYnn.append(kynn)
+                    # plt.scatter(kxnn,kynn)
+                    # print(kxnn,kynn)
+                
+                
+
+                
+                dist=np.min(np.array(dists))
+                ind_min=np.argmin(np.array(dists))
+
+                
+                # print(KX[l],KY[l],KXnn[ind_min],KYnn[ind_min])
+                
+                # plt.scatter(KXnn[ind_min],KYnn[ind_min], marker='x')
+                # plt.show()
+                l=np.argmin(  np.sqrt((KXnn[ind_min]-KX)**2 + (KYnn[ind_min]-KY)**2 ))
+                # print(l)
+                # print(KX[l],KY[l],KXnn[ind_min],KYnn[ind_min])
+
+                if dist_pre==dist:
+                    c2=c2+1
+                
+
+                path=np.append(path,int(l))
+                pthK.append([KX[l],KY[l]])
+                # print([KX[i,j],KY[i,j]],[Kps[indhs+1][0],Kps[indhs+1][1]], dist)
+
+                c=c+1
+                counter_path=counter_path+1
+        
+            HSP_index.append(counter_path)
+            
+            
+        return path,np.array(pthK),HSP_index
 
 #TODO update save and read lattice update path in reciprocal space for Delafossite
