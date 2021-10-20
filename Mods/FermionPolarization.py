@@ -632,6 +632,7 @@ def main() -> int:
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
+    integ=integ*1000 #convertion to mev
     B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
 
 
