@@ -343,6 +343,32 @@ class MoireTriangLattice:
         
         return [KX,KY]
 
+    def Generate_momentum_transfer_lattice(self, KX, KY):
+
+        Npoi=np.shape(KY)[0]
+        KQ=[]
+        for i in range(Npoi):
+            for j in range(Npoi):
+                KQ.append([round(KX[j]+KX[i], 8),round(KY[j]+KY[i], 8)])
+        # plt.scatter(KX,KY)
+        # plt.show()
+        KQarr=np.array(KQ)
+        print("Kq non unique grid ",np.shape(KQarr))
+
+        #unique_data =np.array( [list(x) for x in set(tuple(x) for x in KQ)])
+        unique_data =np.array( [list(i) for i in set(tuple(i) for i in KQ)])
+        print("Kq grid unique",np.shape(unique_data))
+        print("K grid ",np.shape(KX))
+        KQX=unique_data[:,0]
+        KQY=unique_data[:,1]
+
+        Ik=[]
+        for j in range(Npoi):
+            indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
+            Ik.append(indmin)
+
+        return [KQX, KQY, Ik]
+
     #normal linear interpolation to generate samples accross High symmetry points
     def linpam(self,Kps,Npoints_q):
         Npoints=len(Kps)

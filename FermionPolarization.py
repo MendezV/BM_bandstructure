@@ -33,8 +33,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 
 class ee_Bubble:
 
-    def __init__(self, mu, latt, nbands, hpl, hmin, KX, KY):
-        self.mu=mu
+    def __init__(self, latt, nbands, hpl, hmin, KX, KY):
         self.lq=latt
         self.nbands=nbands
         self.hpl=hpl
@@ -42,6 +41,8 @@ class ee_Bubble:
         self.KX=KX
         self.KY=KY
         self.Npoi=np.size(KX)
+        [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_lattice( KX, KY)
+        self.Npoi_Q=np.size(self.KQX)
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
@@ -49,6 +50,7 @@ class ee_Bubble:
         self.L00p=FFp.denFF_s()
         self.L00m=FFm.denFF_s()
         self.dS_in=latt.VolMBZ/self.Npoi
+        
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -66,6 +68,42 @@ class ee_Bubble:
             return -np.heaviside(-e,0.5)
 
 
+    # def precompute_E_psi(self):
+
+    #     Ene_valley_plus_a=np.empty((0))
+    #     Ene_valley_min_a=np.empty((0))
+    #     psi_plus_a=[]
+    #     psi_min_a=[]
+
+
+    #     print("starting dispersion ..........")
+        
+    #     s=time.time()
+        
+    #     for l in range(self.Npoi):
+    #         E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
+    #         Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+    #         psi_plus_a.append(wave1)
+
+
+    #         E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
+    #         Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+    #         psi_min_a.append(wave1)
+
+    #         printProgressBar(l + 1, self.Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+    #     e=time.time()
+    #     print("time to diag over MBZ", e-s)
+    #     ##relevant wavefunctions and energies for the + valley
+    #     psi_plus=np.array(psi_plus_a)
+    #     Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi,self.nbands])
+
+    #     psi_min=np.array(psi_min_a)
+    #     Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
+
+
+    #     return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+
     def precompute_E_psi(self):
 
         Ene_valley_plus_a=np.empty((0))
@@ -78,26 +116,26 @@ class ee_Bubble:
         
         s=time.time()
         
-        for l in range(self.Npoi):
-            E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
+        for l in range(self.Npoi_Q):
+            E1,wave1=self.hpl.eigens(self.KQX[l],self.KQY[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             psi_plus_a.append(wave1)
 
 
-            E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
+            E1,wave1=self.hmin.eigens(self.KQX[l],self.KQY[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
 
-            printProgressBar(l + 1, self.Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+            printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
         e=time.time()
         print("time to diag over MBZ", e-s)
         ##relevant wavefunctions and energies for the + valley
         psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi,self.nbands])
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi_Q,self.nbands])
 
         psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
 
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
@@ -127,24 +165,21 @@ class ee_Bubble:
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         return (fac_p)
 
-    def Compute(self, mu):
+    def Compute(self, mu, omegas, kpath):
 
         integ=[]
         s=time.time()
 
         print("starting bubble.......")
-        omegas=[1e-14]
 
         path=np.arange(0,self.Npoi)
-        kpath=np.array([self.KX,self.KY]).T
-        print(np.shape(kpath))
         for omegas_m_i in omegas:
             sd=[]
             for l in path:  #for calculating only along path in FBZ
                 bub=0
                 
-                qx=kpath[l, 0]
-                qy=kpath[l, 1]
+                qx=kpath[int(l), 0]
+                qy=kpath[int(l), 1]
                 Ikq=[]
                 for s in range(self.Npoi):
                     kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
@@ -153,8 +188,8 @@ class ee_Bubble:
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
 
 
                 integrand_var=0
@@ -165,14 +200,14 @@ class ee_Bubble:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu)
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         # integrand_var=integrand_var+(Lambda_Tens_plus_k_kq_mn)*(Lambda_Tens_plus_kq_k_nm)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
                         
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu)
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
                 e=time.time()
@@ -258,6 +293,7 @@ def main() -> int:
     #other electronic params
     filling_index=int(sys.argv[1]) #0-25
     mu=mu_values[filling_index]/1000
+    filling=fillings[filling_index]
     nbands=4
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
@@ -288,7 +324,33 @@ def main() -> int:
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
 
-    B1=Bubble(mu, lq, nbands, hpl, hmin, KX, KY)
+    B1=ee_Bubble(lq, nbands, hpl, hmin, KX, KY)
+    omega=[1e-14]
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX,KY, s=20, c=np.real(integ))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("pKQenergycuttestreal_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+    plt.close()
+    print("the minimum real part is ...", np.min(np.real(integ)))
+
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX,KY, s=20, c=np.imag(integ))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("pKQenergycuttestimag_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+    plt.close()
+    print("the maximum imaginary part is ...", np.max(np.imag(integ)))
+
+    plt.plot(VV[:,0],VV[:,1])
+    plt.scatter(KX,KY, s=20, c=np.abs(integ))
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.colorbar()
+    plt.savefig("pKQenergycuttestabs_"+str(Nsamp)+"_nu_"+str(filling)+".png")
+    plt.close()
+
 
 
 
