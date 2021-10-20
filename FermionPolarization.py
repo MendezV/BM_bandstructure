@@ -8,6 +8,8 @@ import MoireLattice
 import matplotlib.pyplot as plt
 
 #TODO: method for electron-phonon coupling Omega
+#TODO: fit q^2
+#TODO: plot dets see if this controls width
 #TODO: paralelize when calculating the eigenvalues
 #TODO: executable for jobs an tidy workspace
 #TODO: way of calculating that involves the derivative of the Lindhart
