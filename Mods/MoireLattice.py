@@ -554,3 +554,15 @@ class MoireTriangLattice:
         kxp=kx-G[0]*GM1[0]-G[1]*GM2[0]
         kyp=ky-G[0]*GM1[1]-G[1]*GM2[1]
         return kxp,kyp
+
+    def mask_KPs(self, KX,KY, thres):
+        [GM1,GM2]=self.GMvec
+        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+
+        k_window_sizey = K[2][1] 
+        k_window_sizex = K[1][0] 
+
+        Radius_inscribed_hex=1.0000005*k_window_sizey
+        K=np.sqrt(KX**2+KY**2)
+        ind=np.where(K<k_window_sizex*thres)
+        return [KX[ind],KY[ind], ind]

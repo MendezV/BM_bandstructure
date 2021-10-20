@@ -7,12 +7,9 @@ import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
 
-#TODO: method for electron-phonon coupling Omega
 #TODO: fit q^2, implement small C3 test
-#TODO: plot dets see if this controls width
+#TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: paralelize when calculating the eigenvalues
-#TODO: executable for jobs an tidy workspace
-#TODO: way of calculating that involves the derivative of the Lindhart
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
 
 # Print iterations progress
@@ -533,6 +530,18 @@ class ep_Bubble:
         integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
+
+    def extract_cs(self, integ, thres):
+        
+        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, thres)
+        id=np.ones(np.shape(KX_m))
+        Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
+        GTG=Gmat.T@Gmat
+        d=np.real(integ[ind])
+        b=Gmat.T@d
+        popt=la.pinv(GTG)@b
+        res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
+        return popt, res
     
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
         identifier=str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
@@ -612,6 +621,13 @@ def main() -> int:
     except (ValueError, IndexError):
         raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
 
+
+    try:
+        mode=(sys.argv[3])
+
+    except (ValueError, IndexError):
+        raise Exception("third arg has to be the mode that one wants to simulate either L or T")
+
     #lattices with different normalizations
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
     ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
@@ -664,8 +680,8 @@ def main() -> int:
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, omegacoef, sqrt_hbar_M]
-    mode1="L"
-    mode2="T"
+    # mode1="L"
+    # mode2="T"
 
     print("kappa is..", kappa)
     print("alpha is..", alpha)
@@ -688,12 +704,14 @@ def main() -> int:
     
 
 
-    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode1, cons)
+    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     integ=integ.flatten()*1000 #convertion to mev
     B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
+    c, res=B1.extract_cs( integ, 1)
+    print(c, omegacoef, res)
 
 
     return 0
