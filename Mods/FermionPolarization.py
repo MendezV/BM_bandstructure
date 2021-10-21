@@ -787,31 +787,44 @@ def main() -> int:
 
     B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
 
+    cs=[]
+    cs_lh=[]
 
-    omega=[0]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    integ_lh=B1.Compute_lh(mu, omega, kpath)
+    for ide in range(np.size(fillings)):
+        mu= mu_values[ide]/1000
+        filling=fillings[ide]
+        omega=[0]
+        kpath=np.array([KX,KY]).T
+        integ=B1.Compute(mu, omega, kpath)
+        integ_lh=B1.Compute_lh(mu, omega, kpath)
 
-    plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
-    print(np.abs(integ-integ_lh))
-    plt.savefig("comparison_of_integrands_"+B1.name+".png")
-    plt.close()
-    integ=integ.flatten()*1000 #convertion to mev
-    c, res=B1.extract_cs( integ, 0.25)
-    print("parameters of the fit...", c)
-    print("residual of the fit...", res)
-    print("original coeff...", omegacoef)
-    integ_lh=integ_lh.flatten()*1000 #convertion to mev
-    c, res=B1.extract_cs( integ_lh, 0.25)
-    print("parameters of the fit _lh...", c)
-    print("residual of the fit..._lh", res)
-    print("original coeff..._lh", omegacoef)
+        plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
+        plt.savefig("comparison_of_integrands_"+B1.name+"_filling_"+str(filling)+".png")
+        plt.close()
 
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res, "eps")
-    B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
-    
 
+        integ=integ.flatten()*1000 #convertion to mev
+        c, res=B1.extract_cs( integ, 0.25)
+        print("parameters of the fit...", c)
+        print("residual of the fit...", res)
+        print("original coeff...", omegacoef)
+        B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res, "eps")
+        cs.append(c)
+
+
+        integ_lh=integ_lh.flatten()*1000 #convertion to mev
+        c, res=B1.extract_cs( integ_lh, 0.25)
+        print("parameters of the fit _lh...", c)
+        print("residual of the fit..._lh", res)
+        print("original coeff..._lh", omegacoef)    
+        B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
+        cs_lh.append(c)
+
+    cep=np.mean(np.array(cs), axis=1)
+    clh=np.mean(np.array(cs_lh), axis=1)
+    plt.plot(fillings, cep/omegacoef)
+    plt.plot(fillings, clh/omegacoef)
+    plt.show()
 
     return 0
 
