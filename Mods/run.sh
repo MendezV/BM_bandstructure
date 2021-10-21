@@ -11,7 +11,7 @@
 #Readibg parameter file
 
 param_arr=$(awk -F= '{print $1}' params)
-jobname="filling dep"  #JOBNAME importan to declare -has to be descriptive
+jobname="L_modulation_beta"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
@@ -39,7 +39,7 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 
-	time python3 -u FermionPolarization.py ${param_val} 20 >> output.out & 
+	time python3 -u FermionPolarization.py 0 10 L ${param_val} >> output.out & 
 	cd "../../../Mods"
 	sleep 1
 

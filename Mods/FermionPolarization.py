@@ -663,9 +663,9 @@ class ep_Bubble:
             np.save(f, KX)
         with open("bubble_data_ky_"+identifier+".npy", 'wb') as f:
             np.save(f, KY)
-        with open("cparams_data_ky_"+identifier+".npy", 'wb') as f:
+        with open("cparams_data_"+identifier+".npy", 'wb') as f:
             np.save(f, c)
-        with open("cparams_res_data_ky_"+identifier+".npy", 'wb') as f:
+        with open("cparams_res_data_"+identifier+".npy", 'wb') as f:
             np.save(f, res)
 
 
@@ -762,7 +762,7 @@ def main() -> int:
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
     hhbar=6.582119569e-13 /1000 #(in eV s)
     sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
-    alpha_ep=2 # in ev
+    alpha_ep=2*0 # in ev
     beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
@@ -840,7 +840,7 @@ def main() -> int:
     plt.xlabel(r"$\nu$")
     plt.ylabel(r"$\alpha /a_0 / \hbar c/ a_0 $ ")
     plt.savefig("velocities_V_filling_"+B1.name+".png")
-    plt.show()
+    plt.close()
 
     rep=np.array(rs)
     rlh=np.array(rs_lh)
@@ -852,8 +852,13 @@ def main() -> int:
     plt.xlabel(r"$\nu$")
     plt.ylabel(r"res$/a_0 / \hbar c/ a_0 $ ")
     plt.yscale('log')
-    plt.savefig("velocities_V_filling_"+B1.name+".png")
-    plt.show()
+    plt.savefig("velocities_res_V_filling_"+B1.name+".png")
+    plt.close()
+
+    with open("velocities_V_filling_"+B1.name+".npy", 'wb') as f:
+            np.save(f, c)
+    with open("velocities_res_V_filling_"+B1.name+".npy", 'wb') as f:
+            np.save(f, res)
 
     return 0
 
