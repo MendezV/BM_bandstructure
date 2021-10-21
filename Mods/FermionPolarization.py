@@ -415,17 +415,10 @@ class ep_Bubble:
     def OmegaL(self):
         
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        print("MINIMUM coup", np.min(overall_coef))
-        print("MAXIMUM coup", np.max(overall_coef))
-        plt.plot(np.sort(overall_coef.flatten()))
-        plt.yscale('log')
-        plt.show()
-        Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
-
         
-
-        
+        Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)/np.sqrt(self.Npoi)
+        Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)/np.sqrt(self.Npoi)
+                
         return [Omega_FFp,Omega_FFm]
 
     def w_ph_T(self):
@@ -768,7 +761,7 @@ def main() -> int:
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
     hhbar=6.582119569e-13 /1000 #(in eV s)
     sqrt_hbar_M=np.sqrt(hhbar/M)*c_light*(q/a_graphene) #last factor comes from the normalization of the lattice and accounts for the form factors propto q units of sqrt(sec)
-    alpha_ep=2*1# in ev
+    alpha_ep=2*0# in ev
     beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
     omegacoef=c_phonon*q/a_graphene #proportionality bw q and omega   in 1/s  since we are working with a normalized lattice
