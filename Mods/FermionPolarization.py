@@ -410,10 +410,16 @@ class ep_Bubble:
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
     def w_ph_L(self):
-        return self.omegacoef*(self.Gscale*self.FFp.h(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaL(self):
+        
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
+        print("MINIMUM coup", np.min(overall_coef))
+        print("MAXIMUM coup", np.max(overall_coef))
+        plt.plot(np.sort(overall_coef.flatten()))
+        plt.yscale('log')
+        plt.show()
         Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
         Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
 
@@ -423,7 +429,7 @@ class ep_Bubble:
         return [Omega_FFp,Omega_FFm]
 
     def w_ph_T(self):
-        return self.omegacoef*(self.Gscale*self.FFp.h(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaT(self):
         overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_T())
@@ -761,11 +767,12 @@ def main() -> int:
     c_light=299792458 #m/s
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
     hhbar=6.582119569e-13 /1000 #(in eV s)
-    sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
-    alpha_ep=2*0 # in ev
+    sqrt_hbar_M=np.sqrt(hhbar/M)*c_light*(q/a_graphene) #last factor comes from the normalization of the lattice and accounts for the form factors propto q units of sqrt(sec)
+    alpha_ep=2*1# in ev
     beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
-    omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
+    omegacoef=c_phonon*q/a_graphene #proportionality bw q and omega   in 1/s  since we are working with a normalized lattice
+    print("phonon params...", sqrt_hbar_M,omegacoef, sqrt_hbar_M/np.sqrt(omegacoef),np.sqrt(omegacoef) )
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, omegacoef, sqrt_hbar_M]
     # mode1="L"
@@ -830,29 +837,30 @@ def main() -> int:
         cs_lh.append(c)
         rs_lh.append(res)
 
+    homegcoef=omegacoef*hhbar
     cep=np.mean(np.array(cs), axis=1)
     clh=np.mean(np.array(cs_lh), axis=1)
-    plt.scatter(fillings, cep/omegacoef, c='b', label='eps')
-    plt.plot(fillings, cep/omegacoef, c='k', ls='--')
-    plt.scatter(fillings, clh/omegacoef, c='r', label='lh')
-    plt.plot(fillings, clh/omegacoef, c='k', ls='--')
+    plt.scatter(fillings, cep/homegcoef, c='b', label='eps')
+    plt.plot(fillings, cep/homegcoef, c='k', ls='--')
+    plt.scatter(fillings, clh/homegcoef, c='r', label='lh')
+    plt.plot(fillings, clh/homegcoef, c='k', ls='--')
     plt.legend()
     plt.xlabel(r"$\nu$")
-    plt.ylabel(r"$\alpha /a_0 / \hbar c/ a_0 $ ")
-    plt.savefig("velocities_V_filling_"+B1.name+".png")
+    plt.ylabel(r"$\alpha  / \hbar c $ ")
+    plt.savefig("velocities_V_filling_"+B1.name+"_"+str(Nsamp)+".png")
     plt.close()
 
     rep=np.array(rs)
     rlh=np.array(rs_lh)
-    plt.scatter(fillings, rep/omegacoef, c='b', label='eps')
-    plt.plot(fillings, rep/omegacoef, c='k', ls='--')
-    plt.scatter(fillings, rlh/omegacoef, c='r', label='lh')
-    plt.plot(fillings, rlh/omegacoef, c='k', ls='--')
+    plt.scatter(fillings, rep/homegcoef, c='b', label='eps')
+    plt.plot(fillings, rep/homegcoef, c='k', ls='--')
+    plt.scatter(fillings, rlh/homegcoef, c='r', label='lh')
+    plt.plot(fillings, rlh/homegcoef, c='k', ls='--')
     plt.legend()
     plt.xlabel(r"$\nu$")
-    plt.ylabel(r"res$/a_0 / \hbar c/ a_0 $ ")
+    plt.ylabel(r"res$ / \hbar c $ ")
     plt.yscale('log')
-    plt.savefig("velocities_res_V_filling_"+B1.name+".png")
+    plt.savefig("velocities_res_V_filling_"+B1.name+"_"+str(Nsamp)+".png")
     plt.close()
 
     with open("velocities_V_filling_"+B1.name+".npy", 'wb') as f:

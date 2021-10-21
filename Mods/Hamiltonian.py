@@ -956,24 +956,34 @@ class FormFactors():
 
     ########### Functions for the nematic form factors
     def f(self, FF ):
+        qx=self.KQX[1]-self.KQX[0]
+        qy=self.KQY[1]-self.KQY[0]
+        qmin=np.sqrt(qx**2+qy**2)
         farr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.KQX)):
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
+                q=np.sqrt(qx**2+qy**2)
+                if q<0.01*qmin:
+                    q=qmin
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
         return farr
 
     def g(self,FF):
+        qx=self.KQX[1]-self.KQX[0]
+        qy=self.KQY[1]-self.KQY[0]
+        qmin=np.sqrt(qx**2+qy**2)
         garr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.KQX)):
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
+                q=np.sqrt(qx**2+qy**2)
+                if q<0.01*qmin:
+                    q=qmin
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         garr[k_i, i, k_ip, j]=2*(qx*qy)/q
@@ -988,7 +998,24 @@ class FormFactors():
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
+                q=np.sqrt(qx**2+qy**2)
+                for i in range(np.shape(FF)[1]):
+                    for j in range(np.shape(FF)[1]):
+                        harr[k_i, i, k_ip, j]=q
+        return harr
+
+    def h_denominator(self,FF):
+        qx=self.KQX[1]-self.KQX[0]
+        qy=self.KQY[1]-self.KQY[0]
+        qmin=np.sqrt(qx**2+qy**2)
+        harr= np.ones(np.shape(FF))
+        for k_i in range(np.size(self.KQX)):
+            for k_ip in range(np.size(self.KQX)):
+                qx=self.KQX[k_i]-self.KQX[k_ip]
+                qy=self.KQY[k_i]-self.KQY[k_ip]
+                q=np.sqrt(qx**2+qy**2)
+                if q<0.01*qmin:
+                    q=qmin
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         harr[k_i, i, k_ip, j]=q
