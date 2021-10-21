@@ -7,7 +7,8 @@ import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
  
-#TODO: fit q^2, implement small C3 test
+#TODO: parameter file that contains Nsamp, Numklaps, kappa, theta, mode, default_filling, alpha, beta, alphamod, betamod
+
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: paralelize when calculating the eigenvalues
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
@@ -709,6 +710,12 @@ def main() -> int:
     except (ValueError, IndexError):
         raise Exception("third arg has to be the mode that one wants to simulate either L or T")
 
+    try:
+        modulation=float(sys.argv[4])
+
+    except (ValueError, IndexError):
+        raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+
     #lattices with different normalizations
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
     ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
@@ -756,7 +763,7 @@ def main() -> int:
     hhbar=6.582119569e-13 /1000 #(in eV s)
     sqrt_hbar_M=np.sqrt(hhbar/M)*c_light
     alpha_ep=2 # in ev
-    beta_ep=4 #in ev
+    beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
     omegacoef=hhbar*c_phonon/a_graphene #proportionality bw q and omega   
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
@@ -789,6 +796,8 @@ def main() -> int:
 
     cs=[]
     cs_lh=[]
+    rs=[]
+    rs_lh=[]
 
     for ide in range(np.size(fillings)):
         mu= mu_values[ide]/1000
@@ -810,7 +819,7 @@ def main() -> int:
         print("original coeff...", omegacoef)
         B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res, "eps")
         cs.append(c)
-
+        rs.append(res)
 
         integ_lh=integ_lh.flatten()*1000 #convertion to mev
         c, res=B1.extract_cs( integ_lh, 0.25)
@@ -819,11 +828,31 @@ def main() -> int:
         print("original coeff..._lh", omegacoef)    
         B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
         cs_lh.append(c)
+        rs_lh.append(res)
 
     cep=np.mean(np.array(cs), axis=1)
     clh=np.mean(np.array(cs_lh), axis=1)
-    plt.plot(fillings, cep/omegacoef)
-    plt.plot(fillings, clh/omegacoef)
+    plt.scatter(fillings, cep/omegacoef, c='b', label='eps')
+    plt.plot(fillings, cep/omegacoef, c='k', ls='--')
+    plt.scatter(fillings, clh/omegacoef, c='r', label='lh')
+    plt.plot(fillings, clh/omegacoef, c='k', ls='--')
+    plt.legend()
+    plt.xlabel(r"$\nu$")
+    plt.ylabel(r"$\alpha /a_0 / \hbar c/ a_0 $ ")
+    plt.savefig("velocities_V_filling_"+B1.name+".png")
+    plt.show()
+
+    rep=np.array(rs)
+    rlh=np.array(rs_lh)
+    plt.scatter(fillings, rep/omegacoef, c='b', label='eps')
+    plt.plot(fillings, rep/omegacoef, c='k', ls='--')
+    plt.scatter(fillings, rlh/omegacoef, c='r', label='lh')
+    plt.plot(fillings, rlh/omegacoef, c='k', ls='--')
+    plt.legend()
+    plt.xlabel(r"$\nu$")
+    plt.ylabel(r"res$/a_0 / \hbar c/ a_0 $ ")
+    plt.yscale('log')
+    plt.savefig("velocities_V_filling_"+B1.name+".png")
     plt.show()
 
     return 0
