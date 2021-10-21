@@ -3,6 +3,7 @@ import MoireLattice
 import matplotlib.pyplot as plt
 from scipy import interpolate
 import time
+import MoireLattice
   
 
 class Ham_BM_p():
@@ -775,6 +776,46 @@ class Ham_BM_m():
         yFS_dense = v[::int(np.size(v[:,1])/NFSpoints),1]
         
         return [xFS_dense,yFS_dense]
+
+    def DOS(self,size_E, Npoi_ints):
+
+        #DOMAIN OF THE DOS
+        minE=self.bandmin-0.001*self.bandwidth
+        maxE=self.bandmax+0.001*self.bandwidth
+        earr=np.linspace(minE,maxE,size_E)
+        save_d=False
+        read_d=False
+
+        #INTEGRATION LATTICE
+        [f_interp,k_window_sizex,k_window_sizey]=self.FSinterp( save_d, read_d, 0)
+        latt_int=MoireLattice.MoireTriangLattice(Npoi_ints, False) #temp grid for integrating and getting filling
+        
+        # [KX,KY]=l.Generate_lattice()
+        [KX,KY]=latt_int.read_lattice()
+        Vol_rec=latt_int.Vol_BZ()
+        ds=Vol_rec/np.size(KX)
+
+        #DISPERSION FOR INTEGRAL
+        energy_k = f_interp(KX,KY)
+        #parameter for delta func approximation
+        epsil=0.002*self.bandwidth
+
+        ##DOS 
+        Dos=[]
+        for i in earr:
+            dosi=np.sum(self.deltad(energy_k-i,epsil))*ds
+            Dos.append(dosi)
+
+        #FILLING FOR EACH CHEMICAL POTENTIAL
+        ndens=[]
+        for mu_ind in range(size_E):
+            de=earr[1]-earr[0]
+            N=np.trapz(Dos[0:mu_ind])*de
+            ndens.append(N)
+        nn=np.array(ndens)
+        nn=nn/nn[-1]
+
+        return [nn,earr,Dos]
 
 
     #METHODS FOR MANIPULATING WAVEFUNCTIONS AND FORM FACTORS

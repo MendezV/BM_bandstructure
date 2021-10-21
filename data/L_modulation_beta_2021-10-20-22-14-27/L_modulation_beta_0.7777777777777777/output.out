@@ -1,628 +1,0 @@
-starting sampling in reciprocal space....
-finished sampling in reciprocal space....t= 0.005922079086303711  s
-kappa is.. 0.8174358974358973
-alpha is.. 137.0359895
-Kq non unique grid  (8281, 2)
-Kq grid unique (331, 2)
-K grid  (91,)
-starting dispersion ..........
-Progress Diag2: |--------------------------------------------------| 0.3% Complete Progress Diag2: |--------------------------------------------------| 0.6% Complete Progress Diag2: |--------------------------------------------------| 0.9% Complete Progress Diag2: |--------------------------------------------------| 1.2% Complete Progress Diag2: |--------------------------------------------------| 1.5% Complete Progress Diag2: |--------------------------------------------------| 1.8% Complete Progress Diag2: |█-------------------------------------------------| 2.1% Complete Progress Diag2: |█-------------------------------------------------| 2.4% Complete Progress Diag2: |█-------------------------------------------------| 2.7% Complete Progress Diag2: |█-------------------------------------------------| 3.0% Complete Progress Diag2: |█-------------------------------------------------| 3.3% Complete Progress Diag2: |█-------------------------------------------------| 3.6% Complete Progress Diag2: |█-------------------------------------------------| 3.9% Complete Progress Diag2: |██------------------------------------------------| 4.2% Complete Progress Diag2: |██------------------------------------------------| 4.5% Complete Progress Diag2: |██------------------------------------------------| 4.8% Complete Progress Diag2: |██------------------------------------------------| 5.1% Complete Progress Diag2: |██------------------------------------------------| 5.4% Complete Progress Diag2: |██------------------------------------------------| 5.7% Complete Progress Diag2: |███-----------------------------------------------| 6.0% Complete Progress Diag2: |███-----------------------------------------------| 6.3% Complete Progress Diag2: |███-----------------------------------------------| 6.6% Complete Progress Diag2: |███-----------------------------------------------| 6.9% Complete Progress Diag2: |███-----------------------------------------------| 7.3% Complete Progress Diag2: |███-----------------------------------------------| 7.6% Complete Progress Diag2: |███-----------------------------------------------| 7.9% Complete Progress Diag2: |████----------------------------------------------| 8.2% Complete Progress Diag2: |████----------------------------------------------| 8.5% Complete Progress Diag2: |████----------------------------------------------| 8.8% Complete Progress Diag2: |████----------------------------------------------| 9.1% Complete Progress Diag2: |████----------------------------------------------| 9.4% Complete Progress Diag2: |████----------------------------------------------| 9.7% Complete Progress Diag2: |████----------------------------------------------| 10.0% Complete Progress Diag2: |█████---------------------------------------------| 10.3% Complete Progress Diag2: |█████---------------------------------------------| 10.6% Complete Progress Diag2: |█████---------------------------------------------| 10.9% Complete Progress Diag2: |█████---------------------------------------------| 11.2% Complete Progress Diag2: |█████---------------------------------------------| 11.5% Complete Progress Diag2: |█████---------------------------------------------| 11.8% Complete Progress Diag2: |██████--------------------------------------------| 12.1% Complete Progress Diag2: |██████--------------------------------------------| 12.4% Complete Progress Diag2: |██████--------------------------------------------| 12.7% Complete Progress Diag2: |██████--------------------------------------------| 13.0% Complete Progress Diag2: |██████--------------------------------------------| 13.3% Complete Progress Diag2: |██████--------------------------------------------| 13.6% Complete Progress Diag2: |██████--------------------------------------------| 13.9% Complete Progress Diag2: |███████-------------------------------------------| 14.2% Complete Progress Diag2: |███████-------------------------------------------| 14.5% Complete Progress Diag2: |███████-------------------------------------------| 14.8% Complete Progress Diag2: |███████-------------------------------------------| 15.1% Complete Progress Diag2: |███████-------------------------------------------| 15.4% Complete Progress Diag2: |███████-------------------------------------------| 15.7% Complete Progress Diag2: |████████------------------------------------------| 16.0% Complete Progress Diag2: |████████------------------------------------------| 16.3% Complete Progress Diag2: |████████------------------------------------------| 16.6% Complete Progress Diag2: |████████------------------------------------------| 16.9% Complete Progress Diag2: |████████------------------------------------------| 17.2% Complete Progress Diag2: |████████------------------------------------------| 17.5% Complete Progress Diag2: |████████------------------------------------------| 17.8% Complete Progress Diag2: |█████████-----------------------------------------| 18.1% Complete Progress Diag2: |█████████-----------------------------------------| 18.4% Complete Progress Diag2: |█████████-----------------------------------------| 18.7% Complete Progress Diag2: |█████████-----------------------------------------| 19.0% Complete Progress Diag2: |█████████-----------------------------------------| 19.3% Complete Progress Diag2: |█████████-----------------------------------------| 19.6% Complete Progress Diag2: |█████████-----------------------------------------| 19.9% Complete Progress Diag2: |██████████----------------------------------------| 20.2% Complete Progress Diag2: |██████████----------------------------------------| 20.5% Complete Progress Diag2: |██████████----------------------------------------| 20.8% Complete Progress Diag2: |██████████----------------------------------------| 21.1% Complete Progress Diag2: |██████████----------------------------------------| 21.5% Complete Progress Diag2: |██████████----------------------------------------| 21.8% Complete Progress Diag2: |███████████---------------------------------------| 22.1% Complete Progress Diag2: |███████████---------------------------------------| 22.4% Complete Progress Diag2: |███████████---------------------------------------| 22.7% Complete Progress Diag2: |███████████---------------------------------------| 23.0% Complete Progress Diag2: |███████████---------------------------------------| 23.3% Complete Progress Diag2: |███████████---------------------------------------| 23.6% Complete Progress Diag2: |███████████---------------------------------------| 23.9% Complete Progress Diag2: |████████████--------------------------------------| 24.2% Complete Progress Diag2: |████████████--------------------------------------| 24.5% Complete Progress Diag2: |████████████--------------------------------------| 24.8% Complete Progress Diag2: |████████████--------------------------------------| 25.1% Complete Progress Diag2: |████████████--------------------------------------| 25.4% Complete Progress Diag2: |████████████--------------------------------------| 25.7% Complete Progress Diag2: |████████████--------------------------------------| 26.0% Complete Progress Diag2: |█████████████-------------------------------------| 26.3% Complete Progress Diag2: |█████████████-------------------------------------| 26.6% Complete Progress Diag2: |█████████████-------------------------------------| 26.9% Complete Progress Diag2: |█████████████-------------------------------------| 27.2% Complete Progress Diag2: |█████████████-------------------------------------| 27.5% Complete Progress Diag2: |█████████████-------------------------------------| 27.8% Complete Progress Diag2: |██████████████------------------------------------| 28.1% Complete Progress Diag2: |██████████████------------------------------------| 28.4% Complete Progress Diag2: |██████████████------------------------------------| 28.7% Complete Progress Diag2: |██████████████------------------------------------| 29.0% Complete Progress Diag2: |██████████████------------------------------------| 29.3% Complete Progress Diag2: |██████████████------------------------------------| 29.6% Complete Progress Diag2: |██████████████------------------------------------| 29.9% Complete Progress Diag2: |███████████████-----------------------------------| 30.2% Complete Progress Diag2: |███████████████-----------------------------------| 30.5% Complete Progress Diag2: |███████████████-----------------------------------| 30.8% Complete Progress Diag2: |███████████████-----------------------------------| 31.1% Complete Progress Diag2: |███████████████-----------------------------------| 31.4% Complete Progress Diag2: |███████████████-----------------------------------| 31.7% Complete Progress Diag2: |████████████████----------------------------------| 32.0% Complete Progress Diag2: |████████████████----------------------------------| 32.3% Complete Progress Diag2: |████████████████----------------------------------| 32.6% Complete Progress Diag2: |████████████████----------------------------------| 32.9% Complete Progress Diag2: |████████████████----------------------------------| 33.2% Complete Progress Diag2: |████████████████----------------------------------| 33.5% Complete Progress Diag2: |████████████████----------------------------------| 33.8% Complete Progress Diag2: |█████████████████---------------------------------| 34.1% Complete Progress Diag2: |█████████████████---------------------------------| 34.4% Complete Progress Diag2: |█████████████████---------------------------------| 34.7% Complete Progress Diag2: |█████████████████---------------------------------| 35.0% Complete Progress Diag2: |█████████████████---------------------------------| 35.3% Complete Progress Diag2: |█████████████████---------------------------------| 35.6% Complete Progress Diag2: |█████████████████---------------------------------| 36.0% Complete Progress Diag2: |██████████████████--------------------------------| 36.3% Complete Progress Diag2: |██████████████████--------------------------------| 36.6% Complete Progress Diag2: |██████████████████--------------------------------| 36.9% Complete Progress Diag2: |██████████████████--------------------------------| 37.2% Complete Progress Diag2: |██████████████████--------------------------------| 37.5% Complete Progress Diag2: |██████████████████--------------------------------| 37.8% Complete Progress Diag2: |███████████████████-------------------------------| 38.1% Complete Progress Diag2: |███████████████████-------------------------------| 38.4% Complete Progress Diag2: |███████████████████-------------------------------| 38.7% Complete Progress Diag2: |███████████████████-------------------------------| 39.0% Complete Progress Diag2: |███████████████████-------------------------------| 39.3% Complete Progress Diag2: |███████████████████-------------------------------| 39.6% Complete Progress Diag2: |███████████████████-------------------------------| 39.9% Complete Progress Diag2: |████████████████████------------------------------| 40.2% Complete Progress Diag2: |████████████████████------------------------------| 40.5% Complete Progress Diag2: |████████████████████------------------------------| 40.8% Complete Progress Diag2: |████████████████████------------------------------| 41.1% Complete Progress Diag2: |████████████████████------------------------------| 41.4% Complete Progress Diag2: |████████████████████------------------------------| 41.7% Complete Progress Diag2: |████████████████████------------------------------| 42.0% Complete Progress Diag2: |█████████████████████-----------------------------| 42.3% Complete Progress Diag2: |█████████████████████-----------------------------| 42.6% Complete Progress Diag2: |█████████████████████-----------------------------| 42.9% Complete Progress Diag2: |█████████████████████-----------------------------| 43.2% Complete Progress Diag2: |█████████████████████-----------------------------| 43.5% Complete Progress Diag2: |█████████████████████-----------------------------| 43.8% Complete Progress Diag2: |██████████████████████----------------------------| 44.1% Complete Progress Diag2: |██████████████████████----------------------------| 44.4% Complete Progress Diag2: |██████████████████████----------------------------| 44.7% Complete Progress Diag2: |██████████████████████----------------------------| 45.0% Complete Progress Diag2: |██████████████████████----------------------------| 45.3% Complete Progress Diag2: |██████████████████████----------------------------| 45.6% Complete Progress Diag2: |██████████████████████----------------------------| 45.9% Complete Progress Diag2: |███████████████████████---------------------------| 46.2% Complete Progress Diag2: |███████████████████████---------------------------| 46.5% Complete Progress Diag2: |███████████████████████---------------------------| 46.8% Complete Progress Diag2: |███████████████████████---------------------------| 47.1% Complete Progress Diag2: |███████████████████████---------------------------| 47.4% Complete Progress Diag2: |███████████████████████---------------------------| 47.7% Complete Progress Diag2: |████████████████████████--------------------------| 48.0% Complete Progress Diag2: |████████████████████████--------------------------| 48.3% Complete Progress Diag2: |████████████████████████--------------------------| 48.6% Complete Progress Diag2: |████████████████████████--------------------------| 48.9% Complete Progress Diag2: |████████████████████████--------------------------| 49.2% Complete Progress Diag2: |████████████████████████--------------------------| 49.5% Complete Progress Diag2: |████████████████████████--------------------------| 49.8% Complete Progress Diag2: |█████████████████████████-------------------------| 50.2% Complete Progress Diag2: |█████████████████████████-------------------------| 50.5% Complete Progress Diag2: |█████████████████████████-------------------------| 50.8% Complete Progress Diag2: |█████████████████████████-------------------------| 51.1% Complete Progress Diag2: |█████████████████████████-------------------------| 51.4% Complete Progress Diag2: |█████████████████████████-------------------------| 51.7% Complete Progress Diag2: |█████████████████████████-------------------------| 52.0% Complete Progress Diag2: |██████████████████████████------------------------| 52.3% Complete Progress Diag2: |██████████████████████████------------------------| 52.6% Complete Progress Diag2: |██████████████████████████------------------------| 52.9% Complete Progress Diag2: |██████████████████████████------------------------| 53.2% Complete Progress Diag2: |██████████████████████████------------------------| 53.5% Complete Progress Diag2: |██████████████████████████------------------------| 53.8% Complete Progress Diag2: |███████████████████████████-----------------------| 54.1% Complete Progress Diag2: |███████████████████████████-----------------------| 54.4% Complete Progress Diag2: |███████████████████████████-----------------------| 54.7% Complete Progress Diag2: |███████████████████████████-----------------------| 55.0% Complete Progress Diag2: |███████████████████████████-----------------------| 55.3% Complete Progress Diag2: |███████████████████████████-----------------------| 55.6% Complete Progress Diag2: |███████████████████████████-----------------------| 55.9% Complete Progress Diag2: |████████████████████████████----------------------| 56.2% Complete Progress Diag2: |████████████████████████████----------------------| 56.5% Complete Progress Diag2: |████████████████████████████----------------------| 56.8% Complete Progress Diag2: |████████████████████████████----------------------| 57.1% Complete Progress Diag2: |████████████████████████████----------------------| 57.4% Complete Progress Diag2: |████████████████████████████----------------------| 57.7% Complete Progress Diag2: |█████████████████████████████---------------------| 58.0% Complete Progress Diag2: |█████████████████████████████---------------------| 58.3% Complete Progress Diag2: |█████████████████████████████---------------------| 58.6% Complete Progress Diag2: |█████████████████████████████---------------------| 58.9% Complete Progress Diag2: |█████████████████████████████---------------------| 59.2% Complete Progress Diag2: |█████████████████████████████---------------------| 59.5% Complete Progress Diag2: |█████████████████████████████---------------------| 59.8% Complete Progress Diag2: |██████████████████████████████--------------------| 60.1% Complete Progress Diag2: |██████████████████████████████--------------------| 60.4% Complete Progress Diag2: |██████████████████████████████--------------------| 60.7% Complete Progress Diag2: |██████████████████████████████--------------------| 61.0% Complete Progress Diag2: |██████████████████████████████--------------------| 61.3% Complete Progress Diag2: |██████████████████████████████--------------------| 61.6% Complete Progress Diag2: |██████████████████████████████--------------------| 61.9% Complete Progress Diag2: |███████████████████████████████-------------------| 62.2% Complete Progress Diag2: |███████████████████████████████-------------------| 62.5% Complete Progress Diag2: |███████████████████████████████-------------------| 62.8% Complete Progress Diag2: |███████████████████████████████-------------------| 63.1% Complete Progress Diag2: |███████████████████████████████-------------------| 63.4% Complete Progress Diag2: |███████████████████████████████-------------------| 63.7% Complete Progress Diag2: |████████████████████████████████------------------| 64.0% Complete Progress Diag2: |████████████████████████████████------------------| 64.4% Complete Progress Diag2: |████████████████████████████████------------------| 64.7% Complete Progress Diag2: |████████████████████████████████------------------| 65.0% Complete Progress Diag2: |████████████████████████████████------------------| 65.3% Complete Progress Diag2: |████████████████████████████████------------------| 65.6% Complete Progress Diag2: |████████████████████████████████------------------| 65.9% Complete Progress Diag2: |█████████████████████████████████-----------------| 66.2% Complete Progress Diag2: |█████████████████████████████████-----------------| 66.5% Complete Progress Diag2: |█████████████████████████████████-----------------| 66.8% Complete Progress Diag2: |█████████████████████████████████-----------------| 67.1% Complete Progress Diag2: |█████████████████████████████████-----------------| 67.4% Complete Progress Diag2: |█████████████████████████████████-----------------| 67.7% Complete Progress Diag2: |█████████████████████████████████-----------------| 68.0% Complete Progress Diag2: |██████████████████████████████████----------------| 68.3% Complete Progress Diag2: |██████████████████████████████████----------------| 68.6% Complete Progress Diag2: |██████████████████████████████████----------------| 68.9% Complete Progress Diag2: |██████████████████████████████████----------------| 69.2% Complete Progress Diag2: |██████████████████████████████████----------------| 69.5% Complete Progress Diag2: |██████████████████████████████████----------------| 69.8% Complete Progress Diag2: |███████████████████████████████████---------------| 70.1% Complete Progress Diag2: |███████████████████████████████████---------------| 70.4% Complete Progress Diag2: |███████████████████████████████████---------------| 70.7% Complete Progress Diag2: |███████████████████████████████████---------------| 71.0% Complete Progress Diag2: |███████████████████████████████████---------------| 71.3% Complete Progress Diag2: |███████████████████████████████████---------------| 71.6% Complete Progress Diag2: |███████████████████████████████████---------------| 71.9% Complete Progress Diag2: |████████████████████████████████████--------------| 72.2% Complete Progress Diag2: |████████████████████████████████████--------------| 72.5% Complete Progress Diag2: |████████████████████████████████████--------------| 72.8% Complete Progress Diag2: |████████████████████████████████████--------------| 73.1% Complete Progress Diag2: |████████████████████████████████████--------------| 73.4% Complete Progress Diag2: |████████████████████████████████████--------------| 73.7% Complete Progress Diag2: |█████████████████████████████████████-------------| 74.0% Complete Progress Diag2: |█████████████████████████████████████-------------| 74.3% Complete Progress Diag2: |█████████████████████████████████████-------------| 74.6% Complete Progress Diag2: |█████████████████████████████████████-------------| 74.9% Complete Progress Diag2: |█████████████████████████████████████-------------| 75.2% Complete Progress Diag2: |█████████████████████████████████████-------------| 75.5% Complete Progress Diag2: |█████████████████████████████████████-------------| 75.8% Complete Progress Diag2: |██████████████████████████████████████------------| 76.1% Complete Progress Diag2: |██████████████████████████████████████------------| 76.4% Complete Progress Diag2: |██████████████████████████████████████------------| 76.7% Complete Progress Diag2: |██████████████████████████████████████------------| 77.0% Complete Progress Diag2: |██████████████████████████████████████------------| 77.3% Complete Progress Diag2: |██████████████████████████████████████------------| 77.6% Complete Progress Diag2: |██████████████████████████████████████------------| 77.9% Complete Progress Diag2: |███████████████████████████████████████-----------| 78.2% Complete Progress Diag2: |███████████████████████████████████████-----------| 78.5% Complete Progress Diag2: |███████████████████████████████████████-----------| 78.9% Complete Progress Diag2: |███████████████████████████████████████-----------| 79.2% Complete Progress Diag2: |███████████████████████████████████████-----------| 79.5% Complete Progress Diag2: |███████████████████████████████████████-----------| 79.8% Complete Progress Diag2: |████████████████████████████████████████----------| 80.1% Complete Progress Diag2: |████████████████████████████████████████----------| 80.4% Complete Progress Diag2: |████████████████████████████████████████----------| 80.7% Complete Progress Diag2: |████████████████████████████████████████----------| 81.0% Complete Progress Diag2: |████████████████████████████████████████----------| 81.3% Complete Progress Diag2: |████████████████████████████████████████----------| 81.6% Complete Progress Diag2: |████████████████████████████████████████----------| 81.9% Complete Progress Diag2: |█████████████████████████████████████████---------| 82.2% Complete Progress Diag2: |█████████████████████████████████████████---------| 82.5% Complete Progress Diag2: |█████████████████████████████████████████---------| 82.8% Complete Progress Diag2: |█████████████████████████████████████████---------| 83.1% Complete Progress Diag2: |█████████████████████████████████████████---------| 83.4% Complete Progress Diag2: |█████████████████████████████████████████---------| 83.7% Complete Progress Diag2: |█████████████████████████████████████████---------| 84.0% Complete Progress Diag2: |██████████████████████████████████████████--------| 84.3% Complete Progress Diag2: |██████████████████████████████████████████--------| 84.6% Complete Progress Diag2: |██████████████████████████████████████████--------| 84.9% Complete Progress Diag2: |██████████████████████████████████████████--------| 85.2% Complete Progress Diag2: |██████████████████████████████████████████--------| 85.5% Complete Progress Diag2: |██████████████████████████████████████████--------| 85.8% Complete Progress Diag2: |███████████████████████████████████████████-------| 86.1% Complete Progress Diag2: |███████████████████████████████████████████-------| 86.4% Complete Progress Diag2: |███████████████████████████████████████████-------| 86.7% Complete Progress Diag2: |███████████████████████████████████████████-------| 87.0% Complete Progress Diag2: |███████████████████████████████████████████-------| 87.3% Complete Progress Diag2: |███████████████████████████████████████████-------| 87.6% Complete Progress Diag2: |███████████████████████████████████████████-------| 87.9% Complete Progress Diag2: |████████████████████████████████████████████------| 88.2% Complete Progress Diag2: |████████████████████████████████████████████------| 88.5% Complete Progress Diag2: |████████████████████████████████████████████------| 88.8% Complete Progress Diag2: |████████████████████████████████████████████------| 89.1% Complete Progress Diag2: |████████████████████████████████████████████------| 89.4% Complete Progress Diag2: |████████████████████████████████████████████------| 89.7% Complete Progress Diag2: |█████████████████████████████████████████████-----| 90.0% Complete Progress Diag2: |█████████████████████████████████████████████-----| 90.3% Complete Progress Diag2: |█████████████████████████████████████████████-----| 90.6% Complete Progress Diag2: |█████████████████████████████████████████████-----| 90.9% Complete Progress Diag2: |█████████████████████████████████████████████-----| 91.2% Complete Progress Diag2: |█████████████████████████████████████████████-----| 91.5% Complete Progress Diag2: |█████████████████████████████████████████████-----| 91.8% Complete Progress Diag2: |██████████████████████████████████████████████----| 92.1% Complete Progress Diag2: |██████████████████████████████████████████████----| 92.4% Complete Progress Diag2: |██████████████████████████████████████████████----| 92.7% Complete Progress Diag2: |██████████████████████████████████████████████----| 93.1% Complete Progress Diag2: |██████████████████████████████████████████████----| 93.4% Complete Progress Diag2: |██████████████████████████████████████████████----| 93.7% Complete Progress Diag2: |██████████████████████████████████████████████----| 94.0% Complete Progress Diag2: |███████████████████████████████████████████████---| 94.3% Complete Progress Diag2: |███████████████████████████████████████████████---| 94.6% Complete Progress Diag2: |███████████████████████████████████████████████---| 94.9% Complete Progress Diag2: |███████████████████████████████████████████████---| 95.2% Complete Progress Diag2: |███████████████████████████████████████████████---| 95.5% Complete Progress Diag2: |███████████████████████████████████████████████---| 95.8% Complete Progress Diag2: |████████████████████████████████████████████████--| 96.1% Complete Progress Diag2: |████████████████████████████████████████████████--| 96.4% Complete Progress Diag2: |████████████████████████████████████████████████--| 96.7% Complete Progress Diag2: |████████████████████████████████████████████████--| 97.0% Complete Progress Diag2: |████████████████████████████████████████████████--| 97.3% Complete Progress Diag2: |████████████████████████████████████████████████--| 97.6% Complete Progress Diag2: |████████████████████████████████████████████████--| 97.9% Complete Progress Diag2: |█████████████████████████████████████████████████-| 98.2% Complete Progress Diag2: |█████████████████████████████████████████████████-| 98.5% Complete Progress Diag2: |█████████████████████████████████████████████████-| 98.8% Complete Progress Diag2: |█████████████████████████████████████████████████-| 99.1% Complete Progress Diag2: |█████████████████████████████████████████████████-| 99.4% Complete Progress Diag2: |█████████████████████████████████████████████████-| 99.7% Complete Progress Diag2: |██████████████████████████████████████████████████| 100.0% Complete 
-time to diag over MBZ 143.68178033828735
-starting sampling in reciprocal space....
-finished sampling in reciprocal space....t= 0.016460895538330078  s
-Kq non unique grid  (8281, 2)
-Kq grid unique (331, 2)
-K grid  (91,)
-starting sampling in reciprocal space....
-finished sampling in reciprocal space....t= 0.01083683967590332  s
-Kq non unique grid  (8281, 2)
-Kq grid unique (331, 2)
-K grid  (91,)
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.8708035945892334
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.7268743515014648
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.7873361110687256
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.8020827770233154
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.6964766979217529
-calculating tensor that stores the overlaps........
-finsihed the overlaps.......... 0.3087790012359619
-testing symmetry of the form factors...
-finished testing symmetry of the form factors...
-starting bubble.......
-time for bubble... 0.25969481468200684
-starting bubble.......
-time for bubble... 0.3251771926879883
-parameters of the fit... [-5.42101086e-19  5.05772260e-11  7.27489324e-13  6.90026254e-03
- -2.17410954e-06  6.88564773e-03]
-residual of the fit... 1.0077335786208495e-12
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.011823761485815e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-5.42101086e-19  4.75739013e-11  5.24367283e-12  7.07341764e-03
- -2.17623940e-06  7.05800199e-03]
-residual of the fit..._lh 9.076210202952483e-13
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.1622225179501916e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.27132320404052734
-starting bubble.......
-time for bubble... 0.32491588592529297
-parameters of the fit... [-5.42101086e-19  8.47032947e-19 -3.38812708e-19  6.88313393e-03
- -2.17794125e-06  6.88129312e-03]
-residual of the fit... 1.1422778687397997e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.665599226096633e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19  3.78341383e-18  1.38348763e-18  7.05136422e-03
- -2.18021177e-06  7.04952202e-03]
-residual of the fit..._lh 1.1486916073507361e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 3.547684865491722e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.25601816177368164
-starting bubble.......
-time for bubble... 0.3577382564544678
-parameters of the fit... [-2.16840434e-19  7.90564084e-19 -2.82343845e-19  6.89337165e-03
- -2.17794125e-06  6.89153085e-03]
-residual of the fit... 8.040658511292829e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 5.366346357908254e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-5.42101086e-19  3.33166293e-18  1.43995650e-18  7.09259785e-03
- -2.18021177e-06  7.09075565e-03]
-residual of the fit..._lh 1.051173006585001e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6974349772812204e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.24338293075561523
-starting bubble.......
-time for bubble... 0.256253719329834
-parameters of the fit... [-4.33680869e-19  5.08219768e-19 -4.23516001e-19  6.91356187e-03
- -2.17794125e-06  6.91172106e-03]
-residual of the fit... 1.2527110434364958e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.964016143725217e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19  2.71050543e-18  5.92923548e-19  7.09800419e-03
- -2.18021177e-06  7.09616199e-03]
-residual of the fit..._lh 9.682234993950385e-19
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6221772339698657e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2504770755767822
-starting bubble.......
-time for bubble... 0.32753443717956543
-parameters of the fit... [-1.08420217e-19  5.08219768e-19 -2.82339608e-20  6.88899687e-03
- -2.17794125e-06  6.88715607e-03]
-residual of the fit... 1.0595268307293047e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.96401614348451e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19  2.37169225e-18  7.90564567e-19  7.06446572e-03
- -2.18021177e-06  7.06262352e-03]
-residual of the fit..._lh 1.1852070490984407e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.622177235155884e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.3784339427947998
-starting bubble.......
-time for bubble... 0.3058652877807617
-parameters of the fit... [-2.16840434e-19  4.51750905e-19 -2.82339608e-20  6.88899687e-03
- -2.17794125e-06  6.88715607e-03]
-residual of the fit... 7.7427522168759e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.96401614348451e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19  2.42816112e-18  1.07290888e-18  7.06470530e-03
- -2.18021177e-06  7.06286309e-03]
-residual of the fit..._lh 9.135649889766049e-19
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.622177235155884e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.22410964965820312
-starting bubble.......
-time for bubble... 0.2204439640045166
-parameters of the fit... [-1.08420217e-19  5.08219768e-19 -2.82339608e-20  6.88899687e-03
- -2.17794125e-06  6.88715607e-03]
-residual of the fit... 1.0595268307293047e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.96401614348451e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19  2.37169225e-18  1.10114331e-18  7.06490442e-03
- -2.18021177e-06  7.06306222e-03]
-residual of the fit..._lh 1.3606629276000367e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6221772351558837e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2587776184082031
-starting bubble.......
-time for bubble... 0.2298126220703125
-parameters of the fit... [-3.25260652e-19  3.95282042e-19 -5.64683923e-20  6.88899687e-03
- -2.17794125e-06  6.88715607e-03]
-residual of the fit... 1.1422778687397997e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.96401614348451e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-1.08420217e-19  2.37169225e-18  9.31736725e-19  7.06506170e-03
- -2.18021177e-06  7.06321950e-03]
-residual of the fit..._lh 1.0553581844113957e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.622177235155884e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.3024153709411621
-starting bubble.......
-time for bubble... 0.29894447326660156
-parameters of the fit... [-2.16840434e-19  5.08219768e-19 -8.47028251e-20  6.87145754e-03
- -2.17794125e-06  6.86961674e-03]
-residual of the fit... 8.077124269852294e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.7006214785241e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-5.42101086e-19  1.91994135e-18  1.07290888e-18  7.04513454e-03
- -2.18021177e-06  7.04329233e-03]
-residual of the fit..._lh 1.2432920297867705e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.608767337017336e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2735629081726074
-starting bubble.......
-time for bubble... 0.2843496799468994
-parameters of the fit... [-2.16840434e-19  5.08219768e-19 -8.47028251e-20  6.87145754e-03
- -2.17794125e-06  6.86961674e-03]
-residual of the fit... 8.077124269852294e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.7006214785241005e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19  1.97641021e-18  9.88205587e-19  7.04521467e-03
- -2.18021177e-06  7.04337247e-03]
-residual of the fit..._lh 1.0098224345588359e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.608767337017336e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.22021126747131348
-starting bubble.......
-time for bubble... 0.33051133155822754
-parameters of the fit... [-2.16840434e-19  3.95282042e-19  2.82349012e-20  6.87145754e-03
- -2.17794125e-06  6.86961674e-03]
-residual of the fit... 7.472347801331162e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 4.7006214785241005e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19  1.75053476e-18  1.04467445e-18  7.04522758e-03
- -2.18021177e-06  7.04338538e-03]
-residual of the fit..._lh 9.310891921461858e-19
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.608767337017336e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.33936309814453125
-starting bubble.......
-time for bubble... 0.2553849220275879
-parameters of the fit... [-2.16840434e-19 -5.64688632e-19  5.64693366e-20  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 7.647276897916592e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -1.18584613e-18  2.25875934e-19  7.05018623e-03
- -2.18021177e-06  7.04834403e-03]
-residual of the fit..._lh 1.3189888700125507e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213653e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.22896313667297363
-starting bubble.......
-time for bubble... 0.3083000183105469
-parameters of the fit... [-2.16840434e-19 -5.64688632e-19  5.64693366e-20  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 7.647276897916592e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -1.52465931e-18  3.10579229e-19  7.04994791e-03
- -2.18021177e-06  7.04810570e-03]
-residual of the fit..._lh 1.4073762756049125e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213658e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.269467830657959
-starting bubble.......
-time for bubble... 0.39023733139038086
-parameters of the fit... [-2.16840434e-19 -4.51750905e-19  1.12938200e-19  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 8.058912016080793e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-6.50521303e-19 -1.75053476e-18  1.41172640e-19  7.04903508e-03
- -2.18021177e-06  7.04719288e-03]
-residual of the fit..._lh 1.5217502656874768e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213653e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.3502049446105957
-starting bubble.......
-time for bubble... 0.4697260856628418
-parameters of the fit... [-1.08420217e-19 -3.95282042e-19 -2.82339582e-20  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 7.35341690221799e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-5.42101086e-19 -2.20228566e-18  2.82344797e-19  7.04728421e-03
- -2.18021177e-06  7.04544201e-03]
-residual of the fit..._lh 1.5748946251210036e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213658e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.27866315841674805
-starting bubble.......
-time for bubble... 0.3037598133087158
-parameters of the fit... [-2.16840434e-19 -4.51750905e-19  1.12938200e-19  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 8.058912016080793e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19 -2.42816112e-18 -2.82339501e-20  7.04555497e-03
- -2.18021177e-06  7.04371277e-03]
-residual of the fit..._lh 1.4157040185547262e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213653e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.21184158325195312
-starting bubble.......
-time for bubble... 0.3869631290435791
-parameters of the fit... [-2.16840434e-19 -4.51750905e-19  4.73401941e-25  6.92693896e-03
- -2.17794125e-06  6.92509815e-03]
-residual of the fit... 7.432915611565055e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.272758752952641e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19 -2.65403657e-18 -1.97640540e-19  7.04323206e-03
- -2.18021177e-06  7.04138986e-03]
-residual of the fit..._lh 1.0539649716793541e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.6251487912213658e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.20310425758361816
-starting bubble.......
-time for bubble... 0.4879772663116455
-parameters of the fit... [-2.16840434e-19  2.82344316e-19  5.36454669e-19  6.86478570e-03
- -2.17794125e-06  6.86294489e-03]
-residual of the fit... 1.180237605622025e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.578921617463725e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-1.08420217e-19 -2.93638088e-18 -1.38348667e-18  7.03121304e-03
- -2.18021177e-06  7.02937084e-03]
-residual of the fit..._lh 1.156341136542479e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.5282835841926277e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.34846019744873047
-starting bubble.......
-time for bubble... 0.3230910301208496
-parameters of the fit... [-4.33680869e-19  2.25875453e-19  5.92923532e-19  6.86478570e-03
- -2.17794125e-06  6.86294489e-03]
-residual of the fit... 1.1070017437801238e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.578921617463725e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -3.10578747e-18 -2.20228518e-18  7.02379815e-03
- -2.18021177e-06  7.02195595e-03]
-residual of the fit..._lh 1.2254362623880004e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.5282835841926277e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.4531111717224121
-starting bubble.......
-time for bubble... 0.6322770118713379
-parameters of the fit... [-4.33680869e-19 -5.64688632e-20  4.69203562e-25  6.86551940e-03
- -2.17794125e-06  6.86367859e-03]
-residual of the fit... 7.109589093988369e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.239267224453722e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-2.16840434e-19 -2.20228566e-18 -1.58112769e-18  7.00095857e-03
- -2.18021177e-06  6.99911636e-03]
-residual of the fit..._lh 1.3820920085458194e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.3080735497963955e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2696661949157715
-starting bubble.......
-time for bubble... 0.3255159854888916
-parameters of the fit... [-4.33680869e-19 -1.12937726e-19  5.64693324e-20  6.86551940e-03
- -2.17794125e-06  6.86367859e-03]
-residual of the fit... 7.252818224614303e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.239267224453722e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-6.50521303e-19 -1.97641021e-18 -1.32701781e-18  6.99708487e-03
- -2.18021177e-06  6.99524267e-03]
-residual of the fit..._lh 1.5897524506249135e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.3080735497963955e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2528996467590332
-starting bubble.......
-time for bubble... 0.33362555503845215
-parameters of the fit... [-4.33680869e-19 -5.64688632e-20  4.69203562e-25  6.86551940e-03
- -2.17794125e-06  6.86367859e-03]
-residual of the fit... 7.109589093988369e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.23926722445372e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-2.16840434e-19 -1.86347248e-18 -1.10114235e-18  6.99701305e-03
- -2.18021177e-06  6.99517085e-03]
-residual of the fit..._lh 1.5504470153576928e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.308073549796395e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.33619046211242676
-starting bubble.......
-time for bubble... 0.31141233444213867
-parameters of the fit... [-5.42101086e-19 -2.82344316e-19  5.64693318e-20  6.85747995e-03
- -2.17794125e-06  6.85563914e-03]
-residual of the fit... 1.1435634942100045e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.2392668488769634e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -1.86347248e-18 -9.03501333e-19  6.98435306e-03
- -2.18021177e-06  6.98251086e-03]
-residual of the fit..._lh 1.3649756576779404e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.308073547728905e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.20514202117919922
-starting bubble.......
-time for bubble... 0.330491304397583
-parameters of the fit... [-3.25260652e-19 -1.69406589e-19  8.47037634e-20  6.85747995e-03
- -2.17794125e-06  6.85563914e-03]
-residual of the fit... 8.673617379884035e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.2392668488769634e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -1.63759703e-18 -8.47032469e-19  6.99788297e-03
- -2.18021177e-06  6.99604076e-03]
-residual of the fit..._lh 1.828737659723069e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.308073547728905e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2464427947998047
-starting bubble.......
-time for bubble... 0.5274693965911865
-parameters of the fit... [-2.16840434e-19  5.64688632e-20 -2.82339677e-20  6.78734754e-03
- -2.17794125e-06  6.78550674e-03]
-residual of the fit... 9.922079010034468e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.22773117708354e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -2.48462998e-18 -7.90563609e-19  6.95774878e-03
- -2.18021177e-06  6.95590658e-03]
-residual of the fit..._lh 2.1121082030451426e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.303325673116379e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2999134063720703
-starting bubble.......
-time for bubble... 0.4568300247192383
-parameters of the fit... [-4.33680869e-19  5.64688632e-20  4.63860067e-25  6.78734754e-03
- -2.17794125e-06  6.78550674e-03]
-residual of the fit... 1.0678153025208146e-18
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 6.22773117708354e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-3.25260652e-19 -4.23516474e-18 -1.10114235e-18  7.04181487e-03
- -2.18021177e-06  7.03997266e-03]
-residual of the fit..._lh 3.3841178633265915e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 2.303325673116379e-19
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-starting bubble.......
-time for bubble... 0.2600834369659424
-starting bubble.......
-time for bubble... 0.3655514717102051
-parameters of the fit... [-5.42101086e-19 -1.12937726e-19  2.82348938e-20  6.75034481e-03
-  2.79147507e-05  6.76599565e-03]
-residual of the fit... 9.119551815778934e-19
-original coeff... 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 1.5634312572267197e-06
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...
-parameters of the fit _lh... [-4.33680869e-19 -2.59756770e-18  3.95282513e-19  6.87214049e-03
-  2.79182909e-05  6.88779332e-03]
-residual of the fit..._lh 1.6353133180282928e-18
-original coeff..._lh 0.05725908893357723
-the minimum real part is ... 0.0
-the maximum imaginary part is ... 5.604865182905532e-20
-testing symmetry of the result...
-finished testing symmetry of the result...
-saving data from the run ...

@@ -668,6 +668,76 @@ class ep_Bubble:
             np.save(f, res)
 
 
+    def Fill_sweep(self,fillings, mu_values, omegacoef , VV, Nsamp):
+
+        cs=[]
+        cs_lh=[]
+        rs=[]
+        rs_lh=[]
+
+        for ide in range(np.size(fillings)):
+            mu= mu_values[ide]/1000
+            filling=fillings[ide]
+            omega=[0]
+            kpath=np.array([self.KX,self.KY]).T
+            integ=self.Compute(mu, omega, kpath)
+            integ_lh=self.Compute_lh(mu, omega, kpath)
+
+            plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
+            plt.savefig("comparison_of_integrands_"+self.name+"_filling_"+str(filling)+".png")
+            plt.close()
+
+
+            integ=integ.flatten()*1000 #convertion to mev
+            c, res=self.extract_cs( integ, 0.25)
+            print("parameters of the fit...", c)
+            print("residual of the fit...", res)
+            print("original coeff...", omegacoef)
+            self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
+            cs.append(c)
+            rs.append(res)
+
+            integ_lh=integ_lh.flatten()*1000 #convertion to mev
+            c, res=self.extract_cs( integ_lh, 0.25)
+            print("parameters of the fit _lh...", c)
+            print("residual of the fit..._lh", res)
+            print("original coeff..._lh", omegacoef)    
+            self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
+            cs_lh.append(c)
+            rs_lh.append(res)
+
+        homegcoef=omegacoef
+        cep=np.mean(np.array(cs), axis=1)
+        clh=np.mean(np.array(cs_lh), axis=1)
+        plt.scatter(fillings, cep/homegcoef, c='b', label='eps')
+        plt.plot(fillings, cep/homegcoef, c='k', ls='--')
+        plt.scatter(fillings, clh/homegcoef, c='r', label='lh')
+        plt.plot(fillings, clh/homegcoef, c='k', ls='--')
+        plt.legend()
+        plt.xlabel(r"$\nu$")
+        plt.ylabel(r"$\alpha  / \hbar c $ ")
+        plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
+        plt.close()
+
+        rep=np.array(rs)
+        rlh=np.array(rs_lh)
+        plt.scatter(fillings, rep/homegcoef, c='b', label='eps')
+        plt.plot(fillings, rep/homegcoef, c='k', ls='--')
+        plt.scatter(fillings, rlh/homegcoef, c='r', label='lh')
+        plt.plot(fillings, rlh/homegcoef, c='k', ls='--')
+        plt.legend()
+        plt.xlabel(r"$\nu$")
+        plt.ylabel(r"res$ / \hbar c $ ")
+        plt.yscale('log')
+        plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
+        plt.close()
+
+        with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
+                np.save(f, c)
+        with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
+                np.save(f, res)
+
+
     
         
 def main() -> int:
@@ -794,73 +864,9 @@ def main() -> int:
 
     B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
 
-    cs=[]
-    cs_lh=[]
-    rs=[]
-    rs_lh=[]
+    
 
-    for ide in range(np.size(fillings)):
-        mu= mu_values[ide]/1000
-        filling=fillings[ide]
-        omega=[0]
-        kpath=np.array([KX,KY]).T
-        integ=B1.Compute(mu, omega, kpath)
-        integ_lh=B1.Compute_lh(mu, omega, kpath)
-
-        plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
-        plt.savefig("comparison_of_integrands_"+B1.name+"_filling_"+str(filling)+".png")
-        plt.close()
-
-
-        integ=integ.flatten()*1000 #convertion to mev
-        c, res=B1.extract_cs( integ, 0.25)
-        print("parameters of the fit...", c)
-        print("residual of the fit...", res)
-        print("original coeff...", omegacoef)
-        B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res, "eps")
-        cs.append(c)
-        rs.append(res)
-
-        integ_lh=integ_lh.flatten()*1000 #convertion to mev
-        c, res=B1.extract_cs( integ_lh, 0.25)
-        print("parameters of the fit _lh...", c)
-        print("residual of the fit..._lh", res)
-        print("original coeff..._lh", omegacoef)    
-        B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
-        cs_lh.append(c)
-        rs_lh.append(res)
-
-    homegcoef=omegacoef*hhbar
-    cep=np.mean(np.array(cs), axis=1)
-    clh=np.mean(np.array(cs_lh), axis=1)
-    plt.scatter(fillings, cep/homegcoef, c='b', label='eps')
-    plt.plot(fillings, cep/homegcoef, c='k', ls='--')
-    plt.scatter(fillings, clh/homegcoef, c='r', label='lh')
-    plt.plot(fillings, clh/homegcoef, c='k', ls='--')
-    plt.legend()
-    plt.xlabel(r"$\nu$")
-    plt.ylabel(r"$\alpha  / \hbar c $ ")
-    plt.savefig("velocities_V_filling_"+B1.name+"_"+str(Nsamp)+".png")
-    plt.close()
-
-    rep=np.array(rs)
-    rlh=np.array(rs_lh)
-    plt.scatter(fillings, rep/homegcoef, c='b', label='eps')
-    plt.plot(fillings, rep/homegcoef, c='k', ls='--')
-    plt.scatter(fillings, rlh/homegcoef, c='r', label='lh')
-    plt.plot(fillings, rlh/homegcoef, c='k', ls='--')
-    plt.legend()
-    plt.xlabel(r"$\nu$")
-    plt.ylabel(r"res$ / \hbar c $ ")
-    plt.yscale('log')
-    plt.savefig("velocities_res_V_filling_"+B1.name+"_"+str(Nsamp)+".png")
-    plt.close()
-
-    with open("velocities_V_filling_"+B1.name+".npy", 'wb') as f:
-            np.save(f, c)
-    with open("velocities_res_V_filling_"+B1.name+".npy", 'wb') as f:
-            np.save(f, res)
-
+    
     return 0
 
 if __name__ == '__main__':

@@ -39,7 +39,7 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 
-	nohup time python3 -u FermionPolarization.py 0 25 L ${param_val} >> output.out & 
+	nohup time python3 -u FermionPolarization.py 0 4 L ${param_val} >> output.out & 
 	cd "../../../Mods"
 	sleep 1
 
