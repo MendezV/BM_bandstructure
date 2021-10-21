@@ -274,6 +274,7 @@ class ep_Bubble:
         [self.alpha_ep, self.beta_ep,self.omegacoef,self.sqrt_hbar_M]=cons
         self.mode=mode
         self.symmetric=symmetric
+        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
 
         if symmetric=="s":
             if mode=="L":
@@ -601,7 +602,7 @@ class ep_Bubble:
         return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
     
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
-        identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
+        identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
         plt.gca().set_aspect('equal', adjustable='box')
@@ -785,25 +786,29 @@ def main() -> int:
 
 
     B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
-    omega=[1e-14]
+
+
+    omega=[0]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     integ_lh=B1.Compute_lh(mu, omega, kpath)
-    plt.plot((abs(integ-integ_lh).flatten())/abs(integ_lh).flatten())
+
+    plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
     print(np.abs(integ-integ_lh))
-    plt.show()
+    plt.savefig("comparison_of_integrands_"+B1.name+".png")
+    plt.close()
     integ=integ.flatten()*1000 #convertion to mev
-    c, res=B1.extract_cs( integ, 0.5)
+    c, res=B1.extract_cs( integ, 0.25)
     print("parameters of the fit...", c)
     print("residual of the fit...", res)
     print("original coeff...", omegacoef)
-
-    c, res=B1.extract_cs( integ_lh, 0.5)
+    integ_lh=integ_lh.flatten()*1000 #convertion to mev
+    c, res=B1.extract_cs( integ_lh, 0.25)
     print("parameters of the fit _lh...", c)
     print("residual of the fit..._lh", res)
     print("original coeff..._lh", omegacoef)
 
-    B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "eps")
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res, "eps")
     B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
     
 
