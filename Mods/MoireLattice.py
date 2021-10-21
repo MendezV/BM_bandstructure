@@ -4,7 +4,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy import linalg as la
 import time
 import matplotlib.pyplot as plt
-
+ 
 
 class MoireTriangLattice:
 

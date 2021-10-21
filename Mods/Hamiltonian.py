@@ -3,7 +3,7 @@ import MoireLattice
 import matplotlib.pyplot as plt
 from scipy import interpolate
 import time
- 
+  
 
 class Ham_BM_p():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH):

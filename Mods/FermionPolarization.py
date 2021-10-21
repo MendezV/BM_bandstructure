@@ -6,7 +6,7 @@ import sys
 import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
-
+ 
 #TODO: fit q^2, implement small C3 test
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: paralelize when calculating the eigenvalues
@@ -454,8 +454,8 @@ class ep_Bubble:
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
 
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(-(edkq-edk))
-        fac_p2=(self.deltad( -edk, eps))*np.heaviside(np.abs(edkq-edk)-eps, 1.0)
+        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(1j*1e-17-(edkq-edk))
+        fac_p2=(self.deltad( edk, eps))*np.heaviside(eps-np.abs(edkq-edk), 0.0)
 
         return (fac_p+fac_p2)
 
@@ -473,6 +473,62 @@ class ep_Bubble:
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         return (fac_p)
 
+    def Compute_lh(self, mu, omegas, kpath):
+
+        integ=[]
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        path=np.arange(0,self.Npoi)
+        for omegas_m_i in omegas:
+            sd=[]
+            for l in path:  #for calculating only along path in FBZ
+                bub=0
+                
+                qx=kpath[int(l), 0]
+                qy=kpath[int(l), 1]
+                Ikq=[]
+                for s in range(self.Npoi):
+                    kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
+                    indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
+                    Ikq.append(indmin)
+
+            
+                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
+                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+
+
+                integrand_var=0
+                #####all bands for the + and - valley
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        ek_n=self.Ene_valley_plus[:,nband]
+                        ek_m=self.Ene_valley_plus[:,mband]
+                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
+
+
+                        ek_n=self.Ene_valley_min[:,nband]
+                        ek_m=self.Ene_valley_min[:,mband]
+                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
+                        
+
+                eb=time.time()
+            
+                bub=bub+np.sum(integrand_var)*self.dS_in
+
+                sd.append( bub )
+
+            integ.append(sd)
+            
+        integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
+        print("time for bubble...",eb-sb)
+        return integ_arr_no_reshape
+    
     def Compute(self, mu, omegas, kpath):
 
         integ=[]
@@ -544,8 +600,8 @@ class ep_Bubble:
     def quad_pi(self, x, y, popt):
         return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
     
-    def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res):
-        identifier=str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
+    def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
+        identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+"_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
         plt.gca().set_aspect('equal', adjustable='box')
@@ -571,10 +627,10 @@ class ep_Bubble:
 
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-        ax.scatter(KX,KY, np.real(integ))
+        ax.scatter(KX,KY, np.real(integ), c='r')
 
-        x = np.linspace(-1, 1, 30)
-        y = np.linspace(-1, 1, 30)
+        x = np.linspace(-0.5, 0.5, 30)
+        y = np.linspace(-0.5, 0.5, 30)
 
         X, Y = np.meshgrid(x, y)
         Z = self.quad_pi(X, Y, c)
@@ -584,7 +640,8 @@ class ep_Bubble:
         ax.set_ylabel('KY')
         ax.set_zlabel('Z Label')
 
-        plt.show()
+        plt.savefig("Quadr_"+identifier+".png")
+        plt.close()
 
 
         print("testing symmetry of the result...")
@@ -731,10 +788,23 @@ def main() -> int:
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
+    integ_lh=B1.Compute_lh(mu, omega, kpath)
+    plt.plot((abs(integ-integ_lh).flatten())/abs(integ_lh).flatten())
+    print(np.abs(integ-integ_lh))
+    plt.show()
     integ=integ.flatten()*1000 #convertion to mev
-    c, res=B1.extract_cs( integ, 0.25)
-    print(c, omegacoef, res)
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp,c, res)
+    c, res=B1.extract_cs( integ, 0.5)
+    print("parameters of the fit...", c)
+    print("residual of the fit...", res)
+    print("original coeff...", omegacoef)
+
+    c, res=B1.extract_cs( integ_lh, 0.5)
+    print("parameters of the fit _lh...", c)
+    print("residual of the fit..._lh", res)
+    print("original coeff..._lh", omegacoef)
+
+    B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "eps")
+    B1.plot_res( integ_lh, KX,KY, VV, filling, Nsamp,c, res, "lh")
     
 
 
