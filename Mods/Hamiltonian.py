@@ -922,7 +922,7 @@ class FormFactors():
         return(Lambda_Tens)
     
     ########### Functions for the nematic form factors
-    def f_pre(self, FF ):
+    def f(self, FF ):
         farr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
             for k_ip in range(np.size(self.kx)):
@@ -934,7 +934,7 @@ class FormFactors():
                         farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
         return farr
 
-    def g_pre(self,FF):
+    def g(self,FF):
         garr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
             for k_ip in range(np.size(self.kx)):
@@ -948,7 +948,7 @@ class FormFactors():
 
 
 
-    def h_pre(self,FF):
+    def h(self,FF):
 
         harr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.kx)):
@@ -962,35 +962,76 @@ class FormFactors():
         return harr
 
     ########### Functions for the nematic form factors
-    def f(self, FF ):
-        qx=self.KQX[1]-self.KQX[0]
-        qy=self.KQY[1]-self.KQY[0]
-        qmin=np.sqrt(qx**2+qy**2)
+    # def f(self, FF ):
+    #     qx=self.KQX[1]-self.KQX[0]
+    #     qy=self.KQY[1]-self.KQY[0]
+    #     qmin=np.sqrt(qx**2+qy**2)
+    #     farr= np.ones(np.shape(FF))
+    #     for k_i in range(np.size(self.KQX)):
+    #         for k_ip in range(np.size(self.KQX)):
+    #             qx=self.KQX[k_i]-self.KQX[k_ip]
+    #             qy=self.KQY[k_i]-self.KQY[k_ip]
+    #             q=np.sqrt(qx**2+qy**2)
+    #             # if q<0.01*qmin:
+    #             #     q=qmin
+    #             for i in range(np.shape(FF)[1]):
+    #                 for j in range(np.shape(FF)[1]):
+    #                     farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
+    #     return farr
+
+    # def g(self,FF):
+    #     qx=self.KQX[1]-self.KQX[0]
+    #     qy=self.KQY[1]-self.KQY[0]
+    #     qmin=np.sqrt(qx**2+qy**2)
+    #     garr= np.ones(np.shape(FF))
+    #     for k_i in range(np.size(self.KQX)):
+    #         for k_ip in range(np.size(self.KQX)):
+    #             qx=self.KQX[k_i]-self.KQX[k_ip]
+    #             qy=self.KQY[k_i]-self.KQY[k_ip]
+    #             q=np.sqrt(qx**2+qy**2)
+    #             # if q<0.01*qmin:
+    #             #     q=qmin
+    #             for i in range(np.shape(FF)[1]):
+    #                 for j in range(np.shape(FF)[1]):
+    #                     garr[k_i, i, k_ip, j]=2*(qx*qy)/q
+    #     return garr 
+
+
+
+    # def h(self,FF):
+
+    #     harr= np.ones(np.shape(FF))
+    #     for k_i in range(np.size(self.KQX)):
+    #         for k_ip in range(np.size(self.KQX)):
+    #             qx=self.KQX[k_i]-self.KQX[k_ip]
+    #             qy=self.KQY[k_i]-self.KQY[k_ip]
+    #             q=np.sqrt(qx**2+qy**2)+1e-17
+    #             for i in range(np.shape(FF)[1]):
+    #                 for j in range(np.shape(FF)[1]):
+    #                     harr[k_i, i, k_ip, j]=q
+    #     return harr
+
+
+    #######third round
+    def fq(self, FF ):
         farr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.KQX)):
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)
-                if q<0.01*qmin:
-                    q=qmin
+                q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
         return farr
 
-    def g(self,FF):
-        qx=self.KQX[1]-self.KQX[0]
-        qy=self.KQY[1]-self.KQY[0]
-        qmin=np.sqrt(qx**2+qy**2)
+    def gq(self,FF):
         garr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.KQX)):
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)
-                if q<0.01*qmin:
-                    q=qmin
+                q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         garr[k_i, i, k_ip, j]=2*(qx*qy)/q
@@ -998,18 +1039,19 @@ class FormFactors():
 
 
 
-    def h(self,FF):
+    def hq(self,FF):
 
         harr= np.ones(np.shape(FF))
         for k_i in range(np.size(self.KQX)):
             for k_ip in range(np.size(self.KQX)):
                 qx=self.KQX[k_i]-self.KQX[k_ip]
                 qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)
+                q=np.sqrt(qx**2+qy**2)+1e-17
                 for i in range(np.shape(FF)[1]):
                     for j in range(np.shape(FF)[1]):
                         harr[k_i, i, k_ip, j]=q
         return harr
+
 
     def h_denominator(self,FF):
         qx=self.KQX[1]-self.KQX[0]
@@ -1076,5 +1118,57 @@ class FormFactors():
         L02=self.calcFormFactor( layer=0, sublattice=2)
         Nem_FFT=-self.g(L01)*L01 - self.xi*self.f(L02)*L02
         return Nem_FFT
+
+    
+
+    ########### Anti-symmetric displacement of the layers
+    def denqFF_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return L30
+
+    def denqFFL_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return self.hq(L30)*L30
+
+
+    def NemqFFL_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.fq(L31) *L31-self.xi*self.gq(L32)*L32
+        return Nem_FFL
+    
+    def NemqFFL_a_plus(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.fq(L31) *L31+self.xi*self.gq(L32)*L32
+        return Nem_FFL
+
+    def NemqFFT_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFT=-self.gq(L31) *L31- self.xi*self.fq(L32)*L32
+        return Nem_FFT
+
+    ########### Symmetric displacement of the layers
+    def denqFF_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return L00
+
+    def denqFFL_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return self.hq(L00)*L00
+
+    def NemqFFL_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFL=self.fq(L01) *L01-self.xi*self.gq(L02)*L02
+        return Nem_FFL
+
+    def NemqFFT_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
+        return Nem_FFT
+
 
         

@@ -6,6 +6,8 @@ import sys
 import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+
  
 #TODO: parameter file that contains Nsamp, Numklaps, kappa, theta, mode, default_filling, alpha, beta, alphamod, betamod
 
@@ -56,6 +58,40 @@ class ee_Bubble:
         self.L00m=FFm.denFF_s()
         self.dS_in=latt.VolMBZ/self.Npoi
         
+        [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(self.KQX, self.KQY)
+        diffar=[]
+        K=[]
+        KP=[]
+        cos1=[]
+        cos2=[]
+        for k in range(self.Npoi):
+            for kp in range(self.Npoi):
+                K.append(KX[k]-KX[kp])
+                KP.append(KY[k]-KY[kp])
+                undet=np.abs(np.linalg.det(self.L00p[self.Ik[k],:,self.Ik[kp],:]))
+                dosdet=np.abs(np.linalg.det(self.L00p[int(Indc3z[self.Ik[k]]),:,int(Indc3z[self.Ik[kp]]),:]))
+                diffar.append( undet - dosdet )
+                cos1.append(undet)
+                cos2.append(dosdet)
+
+        plt.plot(diffar)
+        plt.show()
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax = plt.axes(projection='3d')
+
+        ax.scatter3D(K,KP,cos1);
+        plt.show()
+
+        plt.scatter(K,KP,c=cos1)
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
+
+        plt.scatter(K,KP,c=cos2)
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -255,7 +291,7 @@ class ee_Bubble:
         
 class ep_Bubble:
 
-    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric, mode, cons):
+    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric, mode, cons , test):
         self.lq=latt
         self.nbands=nbands
         self.hpl=hpl
@@ -284,41 +320,120 @@ class ep_Bubble:
                 self.Lnemp=self.FFp.NemFFL_s()
                 self.Lnemm=self.FFm.NemFFL_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-            else:
+            else: #Tmode
                 self.Lnemp=self.FFp.NemFFT_s()
                 self.Lnemm=self.FFm.NemFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-        else:
+        else: # a- mode
             if mode=="L":
                 self.L00p=self.FFp.denFFL_a()
                 self.L00m=self.FFm.denFFL_a()
                 self.Lnemp=self.FFp.NemFFL_a()
                 self.Lnemm=self.FFm.NemFFL_a()
+                print("ACA ESTOY")
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-            else:
+            else: #Tmode
                 self.Lnemp=self.FFp.NemFFT_a()
                 self.Lnemm=self.FFm.NemFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
 
         self.dS_in=latt.VolMBZ/self.Npoi
 
-        print("testing symmetry of the form factors...")
-        [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
-        diffarp=[]
-        diffarm=[]
-        for i in range(self.nbands):
-            for j in range(self.nbands):
+        # if test:
+        #     print("testing symmetry of the form factors...")
+        #     [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KX,self.KY)
+        #     diffar=[]
+        #     K=[]
+        #     KP=[]
+        #     cos1=[]
+        #     cos2=[]
+        #     for k in range(self.Npoi):
+        #         for kp in range(self.Npoi):
+        #             K.append(self.KX[k]-self.KX[kp])
+        #             KP.append(self.KY[k]-self.KY[kp])
+        #             undet=np.abs(np.linalg.det(self.Lnemp[k,:,kp,:]))
+        #             dosdet=np.abs(np.linalg.det(self.Lnemp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+        #             diffar.append( undet   -dosdet   )
+        #             cos1.append(undet)
+        #             cos2.append(dosdet)
 
-                for k in range(self.Npoi_Q):
-                    for kp in range(self.Npoi_Q):
-                        diffarp.append(   np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
-                        diffarm.append(   np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
-        plt.plot(diffarp)
-        plt.plot(diffarm)
-        identifier="size"+str(self.Npoi_Q)+"mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
-        plt.savefig("Test_C3_symm_FF_"+identifier+".png")
-        plt.close()
-        print("finished testing symmetry of the form factors...")
+        #     plt.plot(diffar)
+        #     plt.show()
+
+        #     plt.scatter(K,KP,c=cos1)
+        #     plt.colorbar()
+        #     plt.gca().set_aspect('equal', adjustable='box')
+        #     plt.show()
+
+        #     plt.scatter(K,KP,c=cos2)
+        #     plt.colorbar()
+        #     plt.gca().set_aspect('equal', adjustable='box')
+        #     plt.show()
+        
+        if test:
+            print("testing symmetry of the form factors...")
+            [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
+            diffar=[]
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            for k in range(self.Npoi_Q):
+                for kp in range(self.Npoi_Q):
+                    K.append(self.KQX[k]-self.KQX[kp])
+                    KP.append(self.KQY[k]-self.KQY[kp])
+                    undet=np.abs(np.linalg.det(self.Lnemp[k,:,kp,:]))
+                    dosdet=np.abs(np.linalg.det(self.Lnemp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                    diffar.append( undet   - dosdet   )
+                    cos1.append(undet)
+                    cos2.append(dosdet)
+
+            plt.plot(diffar)
+            plt.show()
+
+            plt.scatter(K,KP,c=cos1)
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.show()
+
+            plt.scatter(K,KP,c=cos2)
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.show()
+            # plt.scatter(0,0)
+            # plt.scatter(KXc3z[0],KYc3z[0])
+            # plt.scatter(self.KQX[0], self.KQY[0])
+            # plt.gca().set_aspect('equal', adjustable='box')
+            # plt.show()
+            # diffarp=[]
+            # diffarm=[]
+            # mean1=[]
+            # mean2=[]
+            # for k in range(self.Npoi_Q):
+            #     for kp in range(self.Npoi_Q):
+            #         diffarp.append(   np.abs(np.linalg.det(self.L00p[k,:,kp,:]))-np.abs(np.linalg.det(self.L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+            #         diffarm.append(   np.abs(np.linalg.det(self.L00m[k,:,kp,:]))-np.abs(np.linalg.det(self.L00m[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+            #         mean1.append(np.abs(np.linalg.det(self.L00p[k,:,kp,:])))
+            #         mean2.append(np.abs(np.linalg.det(self.L00m[k,:,kp,:])))
+
+            #         # diffarp.append(   np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+            #         # diffarm.append(   np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))-np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
+            #         # mean1.append(np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:])))
+            #         # mean2.append(np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:])))
+            # plt.plot(diffarp)
+            # plt.plot(diffarm)
+            # identifier="size"+str(self.Npoi_Q)+"mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
+            # plt.savefig("Test_C3_symm_FF_"+identifier+".png")
+            # # plt.close()
+            # plt.show()
+            # plt.plot(np.array(diffarp)/np.mean(np.array(mean1)))
+            # plt.plot(np.array(diffarm)/np.mean(np.array(mean2)))
+            # identifier="size"+str(self.Npoi_Q)+"mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
+            # print(np.mean(np.array(mean1)),np.mean(np.array(mean2)))
+            # plt.savefig("Test_C3_symm_FF2_"+identifier+".png")
+            # # plt.close()
+            # plt.show()
+            print("finished testing symmetry of the form factors...")
 
 
     def nf(self, e, T):
@@ -370,6 +485,9 @@ class ep_Bubble:
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
 
+        plt.scatter(self.KX, self.KY, c=Ene_valley_min[:,-1])
+        plt.show()
+
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
@@ -416,7 +534,7 @@ class ep_Bubble:
     def OmegaL(self):
         
         # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        overall_coef=1/np.sqrt(self.w_ph_L())
+        overall_coef=1#/np.sqrt(self.w_ph_L())
         
         Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
         Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
@@ -655,7 +773,7 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
-        prop_BZ=0.5
+        prop_BZ=0.2
         cs=[]
         cs_lh=[]
         rs=[]
@@ -679,7 +797,7 @@ class ep_Bubble:
             print("parameters of the fit...", c)
             print("residual of the fit...", res)
             print("original coeff...", c_phonon)
-            # self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
+            self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
             cs.append(c)
             rs.append(resc)
 
@@ -688,7 +806,7 @@ class ep_Bubble:
             print("parameters of the fit _lh...", c)
             print("residual of the fit..._lh", res)
             print("original coeff..._lh",  c_phonon)    
-            # self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
+            self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
             cs_lh.append(c)
             rs_lh.append(resc)
 
@@ -701,7 +819,7 @@ class ep_Bubble:
         plt.plot(fillings, clh, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$\alpha  / c $ ")
+        plt.ylabel(r"$\alpha/ c$"+self.mode)
         plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
         plt.show()
 
@@ -713,7 +831,7 @@ class ep_Bubble:
         plt.plot(fillings, rlh, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"res$ /  c $ ")
+        plt.ylabel(r"res$ /c$ "+self.mode)
         plt.yscale('log')
         plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
         plt.show()
@@ -802,10 +920,10 @@ def main() -> int:
     # alph=alpha
 
     #other electronic params
-    filling_index=int(sys.argv[1]) #0-26
+    filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]/1000
     filling=fillings[filling_index]
-    nbands=4
+    nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.46*(1e-10) #in meters
@@ -815,19 +933,19 @@ def main() -> int:
     #phonon parameters
     c_light=299792458 #m/s
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
-    m=M/(c_light**2) # in ev *s^2/m^2
+    mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-13 /1000 #(in eV s)
     alpha_ep=2*1# in ev
     beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
-    gamma=np.sqrt(hhbar*q/(a_graphene*m*c_phonon))
+    gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
     gammap=(q*q*gamma**2/a_graphene**2)/(4*np.pi*np.pi)
     print("phonon params...", gammap )
-    symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep, gammap, a_graphene, m]
+    mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
+    cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
     print("kappa is..", kappa)
-    print("alpha is..", alpha)
+    print("alpha is..", alph)
 
 
     # [path,kpath,HSP_index]=lq.embedded_High_symmetry_path(KX,KY)
@@ -836,25 +954,25 @@ def main() -> int:
     # plt.gca().set_aspect('equal')
     # plt.show()
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
 
-    # B1=ee_Bubble(lq, nbands, hpl, hmin, KX, KY)
-    # omega=[1e-14]
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
-    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
-    
-
-
-    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
+    B1=ee_Bubble(lq, nbands, hpl, hmin, KX, KY)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs( integ, 1)
-    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp)
+    
+
+    # test_symmetry=True
+    # B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, mode_layer_symmetry, mode, cons, test_symmetry)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs( integ, 1)
+    # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    # print(np.mean(popt),np.mean(c), resc, c_phonon)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
     
 
     
