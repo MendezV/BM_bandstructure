@@ -272,7 +272,7 @@ class ep_Bubble:
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt)
-        [self.alpha_ep, self.beta_ep,self.omegacoef,self.sqrt_hbar_M, self.agraph, self.mass ]=cons
+        [self.alpha_ep, self.beta_ep, self.gamma, self.agraph, self.mass ]=cons
         self.mode=mode
         self.symmetric=symmetric
         self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)
@@ -410,14 +410,16 @@ class ep_Bubble:
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
     def w_ph_L(self):
-        return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        # return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaL(self):
         
-        overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
+        # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
+        overall_coef=1/np.sqrt(self.w_ph_L())
         
-        Omega_FFp=self.Gscale*overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
-        Omega_FFm=self.Gscale*overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
+        Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
+        Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
                 
         return [Omega_FFp,Omega_FFm]
 
@@ -526,9 +528,9 @@ class ep_Bubble:
 
             integ.append(sd)
             
-        integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
+        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
+        return self.gamma*integ_arr_no_reshape
     
     def Compute(self, mu, omegas, kpath):
 
@@ -582,13 +584,13 @@ class ep_Bubble:
 
             integ.append(sd)
             
-        integ_arr_no_reshape=np.array(integ)#/(8*Vol_rec) #8= 4bands x 2valleys
+        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
+        return self.gamma*integ_arr_no_reshape
 
     def extract_cs(self, integ, thres):
-        GMoir=self.latt.GM()
-        scaling_fac=self.agraph**2 /(self.mass*(GMoir**2))
+        scaling_fac=self.agraph**2 /(self.mass*(self.Gscale**2))
+        print(scaling_fac)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, thres)
         id=np.ones(np.shape(KX_m))
         Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
@@ -597,7 +599,8 @@ class ep_Bubble:
         b=Gmat.T@d
         popt=la.pinv(GTG)@b
         res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
-        return popt, res, np.sqrt(popt*scaling_fac),np.sqrt(res*scaling_fac)
+        print(popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac))
+        return popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac)
 
     def quad_pi(self, x, y, popt):
         return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
@@ -626,33 +629,13 @@ class ep_Bubble:
         plt.colorbar()
         plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
         plt.close()
-        """
-
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-        ax.scatter(KX,KY, np.real(integ), c='r')
-
-        x = np.linspace(-0.5, 0.5, 30)
-        y = np.linspace(-0.5, 0.5, 30)
-
-        X, Y = np.meshgrid(x, y)
-        Z = self.quad_pi(X, Y, c)
-        ax.plot_surface(X, Y, Z)
-
-        ax.set_xlabel('KX')
-        ax.set_ylabel('KY')
-        ax.set_zlabel('Z Label')
-
-        plt.savefig("Quadr_"+identifier+".png")
-        plt.close()
-        """
 
 
         print("testing symmetry of the result...")
         [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(KX,KY)
-        intc3=[integ.flatten()[int(ii)] for ii in Indc3z]
-        plt.plot(np.abs(integ.flatten()- intc3)/np.abs(integ.flatten()), 'ro')
-        plt.plot(np.abs(integ.flatten()- intc3)/np.abs(integ.flatten()), c='k', ls='--')
+        intc3=[integ[int(ii)] for ii in Indc3z]
+        plt.plot(np.abs(integ- intc3)/np.abs(integ), 'ro')
+        plt.plot(np.abs(integ- intc3)/np.abs(integ), c='k', ls='--')
         plt.savefig("Test_C3_symm_bubble_"+identifier+".png")
         plt.close()
         print("finished testing symmetry of the result...")
@@ -671,8 +654,8 @@ class ep_Bubble:
             np.save(f, res)
 
 
-    def Fill_sweep(self,fillings, mu_values, omegacoef , VV, Nsamp, cphonon):
-
+    def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
+        prop_BZ=0.5
         cs=[]
         cs_lh=[]
         rs=[]
@@ -690,50 +673,50 @@ class ep_Bubble:
             plt.savefig("comparison_of_integrands_"+self.name+"_filling_"+str(filling)+".png")
             plt.close()
 
-
+            print("the filling is .. " , filling)
             integ=integ.flatten()*1000 #convertion to mev
-            popt, res, c, resc=self.extract_cs( integ, 0.25)
+            popt, res, c, resc=self.extract_cs( integ, prop_BZ)
             print("parameters of the fit...", c)
             print("residual of the fit...", res)
-            print("original coeff...", omegacoef)
-            self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
+            print("original coeff...", c_phonon)
+            # self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
             cs.append(c)
             rs.append(resc)
 
             integ_lh=integ_lh.flatten()*1000 #convertion to mev
-            popt, res, c, resc=self.extract_cs( integ_lh, 0.25)
+            popt, res, c, resc=self.extract_cs( integ_lh, prop_BZ)
             print("parameters of the fit _lh...", c)
             print("residual of the fit..._lh", res)
-            print("original coeff..._lh", omegacoef)    
-            self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
+            print("original coeff..._lh",  c_phonon)    
+            # self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
             cs_lh.append(c)
             rs_lh.append(resc)
 
         
-        cep=np.mean(np.array(cs), axis=1)/cphonon
-        clh=np.mean(np.array(cs_lh), axis=1)/cphonon
+        cep=np.array(cs)/c_phonon
+        clh=np.array(cs_lh)/c_phonon
         plt.scatter(fillings, cep, c='b', label='eps')
         plt.plot(fillings, cep, c='k', ls='--')
         plt.scatter(fillings, clh, c='r', label='lh')
         plt.plot(fillings, clh, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$\alpha  / \hbar c $ ")
+        plt.ylabel(r"$\alpha  / c $ ")
         plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.close()
+        plt.show()
 
-        rep=np.array(rs)/cphonon
-        rlh=np.array(rs_lh)/cphonon
+        rep=np.array(rs)/ c_phonon
+        rlh=np.array(rs_lh)/ c_phonon
         plt.scatter(fillings, rep, c='b', label='eps')
         plt.plot(fillings, rep, c='k', ls='--')
         plt.scatter(fillings, rlh, c='r', label='lh')
         plt.plot(fillings, rlh, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"res$ / \hbar c $ ")
+        plt.ylabel(r"res$ /  c $ ")
         plt.yscale('log')
         plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.close()
+        plt.show()
 
         with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
                 np.save(f, c)
@@ -832,16 +815,16 @@ def main() -> int:
     #phonon parameters
     c_light=299792458 #m/s
     M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
-    m=M/(c_light**2)
+    m=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-13 /1000 #(in eV s)
-    sqrt_hbar_M=np.sqrt(hhbar/m)*(q/a_graphene) #last factor comes from the normalization of the lattice and accounts for the form factors propto q units of sqrt(sec)
     alpha_ep=2*1# in ev
     beta_ep=4*modulation #in ev
     c_phonon=21400 #m/s
-    omegacoef=c_phonon*q/a_graphene #proportionality bw q and omega   in 1/s  since we are working with a normalized lattice
-    print("phonon params...", sqrt_hbar_M,omegacoef, sqrt_hbar_M/np.sqrt(omegacoef),np.sqrt(omegacoef) )
+    gamma=np.sqrt(hhbar*q/(a_graphene*m*c_phonon))
+    gammap=(q*q*gamma**2/a_graphene**2)/(4*np.pi*np.pi)
+    print("phonon params...", gammap )
     symmetric="s" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep, omegacoef, sqrt_hbar_M,a_graphene, m]
+    cons=[alpha_ep, beta_ep, gammap, a_graphene, m]
 
     print("kappa is..", kappa)
     print("alpha is..", alpha)
@@ -865,7 +848,13 @@ def main() -> int:
 
 
     B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, symmetric, mode, cons)
-
+    omega=[1e-14]
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    popt, res, c, resc=B1.extract_cs( integ, 1)
+    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    print(np.mean(popt),np.mean(c), resc, c_phonon)
+    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
     
 
     
