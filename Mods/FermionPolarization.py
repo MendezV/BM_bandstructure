@@ -860,7 +860,7 @@ def main() -> int:
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
     kappa_p=0.0797/0.0975
-    kappa=kappa_p
+    kappa=kappa_p*modulation
     up = 0.0975; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -893,7 +893,7 @@ def main() -> int:
     mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-13 /1000 #(in eV s)
     alpha_ep=2*1# in ev
-    beta_ep=4*modulation #in ev
+    beta_ep=4 #in ev
     c_phonon=21400 #m/s
     gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
     gammap=(q*q*gamma**2/a_graphene**2)/(4*np.pi*np.pi)
