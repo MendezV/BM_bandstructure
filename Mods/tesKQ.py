@@ -730,6 +730,7 @@ psi_plus_ac3=[]
 rot_C2z=lq.C2z
 rot_C3z=lq.C3z
 [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
+[KQX, KQY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
 # print("starting dispersion ..........")
 # # for l in range(Nsamp*Nsamp):
 s=time.time()
@@ -760,13 +761,26 @@ Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
 psi_plusc3=np.array(psi_plus_ac3)
 Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi,nbands])
 
+
+plt.scatter(KX,KY,c=Ene_valley_plus[:,1])
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+plt.scatter(KX,KY,c=Ene_valley_plusc3[:,1])
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
 print(np.shape(psi_plus),np.shape(psi_plusc3))
 
 FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
-L00p=FFp.NemFFL_a_plus()
+L00p=FFp.NemFFL_a()
 FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq)
-L00m=FFc3.NemFFL_a_plus()
+L00m=FFc3.NemFFL_a()
 print(np.shape(L00p),np.shape(L00m) )
+
+
 
 ind0=np
 #####transpose complex conj plus
@@ -775,24 +789,121 @@ ind0=np
 diffar=[]
 K=[]
 KP=[]
-cos1=[]
+cos=[]
 cos2=[]
-# for k in range(Npoi):
-#     for kp in range(Npoi):
-#         K.append(KX[k]-KX[kp])
-#         KP.append(KY[k]-KY[kp])
-#         undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
-#         dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-#         diffar.append( undet - dosdet )
-#         cos1.append(undet)
-#         cos2.append(dosdet)
+
 kp=np.argmin(KX**2+KY**2)
 for k in range(Npoi):
+    # plt.scatter(KX,KY)
+    # plt.plot(KX[kp],KY[kp], 'o', c='r' )
+    # plt.plot(KX[k],KY[k], 'o' , c='g')
+    # plt.plot(KXc3z[k],KYc3z[k], 'o' , c='orange')
+    # plt.plot(KX[int(Indc3z[k])],KY[int(Indc3z[k])],'o', c='k' )
+    # plt.show()
+    undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
+    dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+    diffar.append( undet - dosdet )
+    cos.append(undet)
+    cos2.append(dosdet)
+    print(undet, dosdet)
+
+plt.plot(diffar)
+plt.show()
+
+plt.scatter(KX,KY,c=cos)
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+plt.scatter(KX,KY,c=cos2)
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+fig = plt.figure()
+ax = plt.axes(projection='3d')
+ax = plt.axes(projection='3d')
+
+ax.scatter3D(KX,KY,cos, c=cos);
+plt.show()
+#######################
+
+########################
+
+Ene_valley_plus_a=np.empty((0))
+Ene_valley_plus_ac3=np.empty((0))
+psi_plus_a=[]
+psi_plus_ac3=[]
+[KX, KY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
+Npoi=np.size(KX)
+[KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX, KY)
+for l in range(Npoi):
+    E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
+    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+    psi_plus_a.append(wave1p)
+
+
+    E1p_c3z,wave1p_c3z=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
+    wave1p_c3z_rot=hpl.Op_rot_psi( wave1p_c3z , rot_C3z)
+    Ene_valley_plus_ac3=np.append(Ene_valley_plus_ac3,E1p_c3z)
+    psi_plus_ac3.append(wave1p_c3z)
+
+
+    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+e=time.time()
+print("time to diag over MBZ", e-s)
+##relevant wavefunctions and energies for the + valley
+psi_plus=np.array(psi_plus_a)
+Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+psi_plusc3=np.array(psi_plus_ac3)
+Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi,nbands])
+
+print(np.shape(psi_plus),np.shape(psi_plusc3))
+
+FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
+L00p=FFp.NemqFFL_a()
+FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq)
+L00m=FFc3.NemqFFL_a()
+print(np.shape(L00p),np.shape(L00m) )
+
+ind0=np
+#####transpose complex conj plus
+
+
+plt.scatter(KX,KY,c=Ene_valley_plus[:,1])
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+plt.scatter(KX,KY,c=Ene_valley_plusc3[:,1])
+plt.colorbar()
+plt.gca().set_aspect('equal', adjustable='box')
+plt.show()
+
+
+
+diffar=[]
+K=[]
+KP=[]
+cos1=[]
+cos2=[]
+
+kp=np.argmin(KX**2+KY**2)
+for k in range(Npoi):
+    # plt.scatter(KX,KY)
+    # plt.plot(KX[kp],KY[kp], 'o', c='r' )
+    # plt.plot(KX[k],KY[k], 'o' , c='g')
+    # plt.plot(KXc3z[k],KYc3z[k], 'o' , c='orange')
+    # plt.plot(KX[int(Indc3z[k])],KY[int(Indc3z[k])],'o', c='k' )
+    # plt.show()
     undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
     dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
     diffar.append( undet - dosdet )
     cos1.append(undet)
     cos2.append(dosdet)
+    print(undet, dosdet)
 
 plt.plot(diffar)
 plt.show()
@@ -813,67 +924,4 @@ ax = plt.axes(projection='3d')
 
 ax.scatter3D(KX,KY,cos1, c=cos1);
 plt.show()
-
-# # #################################
-# # #################################
-# # #################################
-# # # Form factors C3 minus valley
-# # #################################
-# # #################################
-# # #################################
-
-Ene_valley_plus_a=np.empty((0))
-Ene_valley_plus_ac3=np.empty((0))
-psi_plus_a=[]
-psi_plus_ac3=[]
-
-rot_C2z=lq.C2z
-rot_C3z=lq.C3z
-[KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KX,KY)
-# print("starting dispersion ..........")
-# # for l in range(Nsamp*Nsamp):
-s=time.time()
-hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
-overlaps=[]
-nbands=2
-for l in range(Npoi):
-    E1p,wave1p=hmin.eigens(KX[l],KY[l],nbands)
-    Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
-    psi_plus_a.append(wave1p)
-
-
-    printProgressBar(l + 1, Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-e=time.time()
-print("time to diag over MBZ", e-s)
-##relevant wavefunctions and energies for the + valley
-psi_plus=np.array(psi_plus_a)
-Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-
-
-print(np.shape(psi_plus),np.shape(psi_plusc3))
-
-FFp=Hamiltonian.FormFactors(psi_plus, -1, lq)
-L00p=FFp.NemFFL_a()
-
-ind0=np
-#####transpose complex conj plus
-diffar=[]
-for i in range(nbands):
-    for j in range(nbands):
-        abs1=[]
-        abs2=[]
-        abs3=[]
-        for k in range(Npoi):
-            for kp in range(Npoi):
-                # print(KX[k]-KX[kp],KY[k]-KY[kp], KXc3z[k]-KXc3z[kp],KYc3z[k]-KYc3z[kp])
-                # print(np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])))
-                diffar.append(   np.abs(np.linalg.det(L00p[k,:,kp,:]))-np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))   )
-                # abs1.append(np.abs(L00p[k,i,kp,j]-L00m[kp,j,k,i] ))
-#         plt.plot(abs1, c='r')
-# plt.show()
-plt.plot(diffar)
-plt.show()
-
+################################################################
