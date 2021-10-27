@@ -730,7 +730,7 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
-        prop_BZ=0.5
+        prop_BZ=0.1
         cs=[]
         cs_lh=[]
         rs=[]
@@ -929,7 +929,7 @@ def main() -> int:
     popt, res, c, resc=B1.extract_cs( integ, 1)
     B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
     
 
     
