@@ -226,8 +226,39 @@ class MoireTriangLattice:
         else:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
+
+    def Generate_Umklapp_lattice(self, KX, KY, numklapps):
+        Npoi=np.size(KX)
+        [GM1,GM2]=self.GMvec
+        if numklapps==1:
+            GSu=self.MGS_1
+        elif numklapps==2:
+            GSu=self.MGS_2
+        elif numklapps==3:
+            GSu=self.MGS_3
+        else:
+            GSu=[[0,0]]
+        K_um=[]
+        #adding original samples
+        for i in range(Npoi):
+            K_um.append([round(KX[i], 8),round(KY[i], 8)])
+
+        #extending for different moire lattice vectors
+        for mg in GSu:
+            for i in range(Npoi):
+                K_um.append([round(KX[i]+mg[0]*GM1[0]+mg[1]*GM2[0], 8),round(KY[i]+mg[0]*GM1[1]+mg[1]*GM2[1], 8)])
+
+        unique_data =np.array( [list(i) for i in set(tuple(i) for i in K_um)])
+        print("K umkplapp unique grid ",np.shape(unique_data))
+        KumX=unique_data[:,0]
+        KumY=unique_data[:,1]
+        # plt.scatter(KumX,KumY)
+        # plt.scatter(KX,KY)
+        # plt.show()
+        return [KumX,KumY]
+
     
-    #creates two arrays containing X and Y coordinates for the lattice points                                                     
+    #returns the lattice vectors that span the sampling lattice when multiplied by integers                                              
     def Generating_vec_samp_lattice(self, scale_fac_latt):
         [GM1,GM2]=self.GM_vec()
         LM=self.LM()
@@ -367,6 +398,35 @@ class MoireTriangLattice:
             indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
             Ik.append(indmin)
 
+        return [KQX, KQY, Ik]
+    
+    def Generate_momentum_transfer_umklapp_lattice(self, KX, KY,  KXu, KYu):
+
+        Npoi=np.shape(KYu)[0]
+        KQ=[]
+        for i in range(Npoi):
+            for j in range(np.shape(KY)[0]):
+                KQ.append([round(KX[j]+KXu[i], 8),round(KY[j]+KYu[i], 8)])
+        # plt.scatter(KX,KY)
+        # plt.show()
+        KQarr=np.array(KQ)
+        print("Kq non unique grid ",np.shape(KQarr))
+
+        #unique_data =np.array( [list(x) for x in set(tuple(x) for x in KQ)])
+        unique_data =np.array( [list(i) for i in set(tuple(i) for i in KQ)])
+        print("Kq grid unique",np.shape(unique_data))
+        print("K grid ",np.shape(KX))
+        KQX=unique_data[:,0]
+        KQY=unique_data[:,1]
+
+        Ik=[]
+        for j in range(Npoi):
+            indmin=np.argmin(np.sqrt((KQX-KXu[j])**2+(KQY-KYu[j])**2))
+            Ik.append(indmin)
+
+        # plt.scatter(KQX, KQY)
+        # plt.scatter(KQX[Ik], KQY[Ik])
+        # plt.show()
         return [KQX, KQY, Ik]
 
     #normal linear interpolation to generate samples accross High symmetry points

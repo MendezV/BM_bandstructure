@@ -885,16 +885,24 @@ class Ham_BM_m():
 
 
 class FormFactors():
-    def __init__(self, psi, xi, lat):
+    def __init__(self, psi, xi, lat, umklapp):
         self.psi = psi #has dimension #kpoints, 4*N, nbands
         self.lat=lat
         self.cpsi=np.conj(psi)
         self.xi=xi
         self.Nu=int(np.shape(self.psi)[1]/4) #4, 2 for sublattice and 2 for layer
-        [KX,KY]=lat.Generate_lattice()
-        [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_lattice( KX, KY)
-        self.kx=KX
-        self.ky=KY
+        if umklapp<1:
+            [KX,KY]=lat.Generate_lattice()
+            [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_lattice( KX, KY)
+            self.kx=KX
+            self.ky=KY
+        else:
+            [KX,KY]=lat.Generate_lattice()
+            [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
+            
+            self.kx=KXu
+            self.ky=KYu
+            [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
 
     def __repr__(self):
         return "Form factors for valley {xi}".format( xi=self.xi)

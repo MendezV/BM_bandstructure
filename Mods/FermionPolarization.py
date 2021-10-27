@@ -291,7 +291,7 @@ class ee_Bubble:
         
 class ep_Bubble:
 
-    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric, mode, cons , test):
+    def __init__(self, latt, nbands, hpl, hmin, KX, KY, symmetric, mode, cons , test, umkl):
         self.lq=latt
         self.nbands=nbands
         self.hpl=hpl
@@ -299,15 +299,21 @@ class ep_Bubble:
         self.KX=KX
         self.KY=KY
         self.latt=latt
+        self.umkl=umkl
         [q1,q2,q3]=latt.qvect()
         self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.Npoi=np.size(KX)
-        [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_lattice( KX, KY)
-        self.Npoi_Q=np.size(self.KQX)
+        [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
+        if umkl<1:
+            [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_lattice( KX, KY)
+            self.Npoi_Q=np.size(self.KQX)
+        else:
+            [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_umklapp_lattice( self.KX1bz, self.KY1bz,  KX, KY)
+            self.Npoi_Q=np.size(self.KQX)
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
-        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt)
-        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt)
+        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
+        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl)
         [self.alpha_ep, self.beta_ep, self.gamma, self.agraph, self.mass ]=cons
         self.mode=mode
         self.symmetric=symmetric
@@ -330,7 +336,6 @@ class ep_Bubble:
                 self.L00m=self.FFm.denqFFL_a()
                 self.Lnemp=self.FFp.NemqFFL_a()
                 self.Lnemm=self.FFm.NemqFFL_a()
-                print("ACA ESTOY")
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
             else: #Tmode
                 self.Lnemp=self.FFp.NemqFFT_a()
@@ -556,9 +561,9 @@ class ep_Bubble:
         integ=[]
         sb=time.time()
 
-        print("starting bubble.......")
+        print("starting bubble.......",np.shape(kpath)[0])
 
-        path=np.arange(0,self.Npoi)
+        path=np.arange(0,np.shape(kpath)[0])
         for omegas_m_i in omegas:
             sd=[]
             for l in path:  #for calculating only along path in FBZ
@@ -612,9 +617,9 @@ class ep_Bubble:
         integ=[]
         sb=time.time()
 
-        print("starting bubble.......")
+        print("starting bubble.......",np.shape(kpath)[0])
 
-        path=np.arange(0,self.Npoi)
+        path=np.arange(0,np.shape(kpath)[0])
         for omegas_m_i in omegas:
             sd=[]
             for l in path:  #for calculating only along path in FBZ
@@ -666,7 +671,7 @@ class ep_Bubble:
     def extract_cs(self, integ, thres):
         scaling_fac=self.agraph**2 /(self.mass*(self.Gscale**2))
         print(scaling_fac)
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, thres)
+        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, thres)
         id=np.ones(np.shape(KX_m))
         Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
         GTG=Gmat.T@Gmat
@@ -851,10 +856,14 @@ def main() -> int:
     ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
     [KX,KY]=lq.Generate_lattice()
-    Npoi=np.size(KX)
+    Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q1,q3]=l.q
     q=la.norm(q1)
+    umkl=1
     VV=lq.boundary()
+    [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
+    # [KQX, KQY, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
+
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
@@ -922,10 +931,10 @@ def main() -> int:
     
 
     test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin, KX, KY, mode_layer_symmetry, mode, cons, test_symmetry)
+    B1=ep_Bubble(lq, nbands, hpl, hmin, KXu,KYu, mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
+    integ=B1.Compute_lh(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 1)
     B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
@@ -933,7 +942,7 @@ def main() -> int:
     
 
     
-    return 0
+    # return 0
 
 if __name__ == '__main__':
     sys.exit(main())  # next section explains the use of sys.exit
