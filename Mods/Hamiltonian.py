@@ -214,6 +214,29 @@ class Ham_BM_p():
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
 
+    def parallel_eigens(self,  nbands,q):
+        kx,ky=q[0], q[1]
+        U=self.U
+        Udag=U.H
+        [H1,H2]=self.diracH( kx, ky)
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1p;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+
+        return [Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi]
+
 
 
     ### FERMI SURFACE ANALYSIS
@@ -650,6 +673,29 @@ class Ham_BM_m():
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
 
+    def parallel_eigens(self,  nbands,q):
+        kx,ky=q[0], q[1]
+        U=self.U
+        Udag=U.H
+        [H1,H2]=self.diracH( kx, ky)
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H2, U ], [Udag, H1]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
+
+        return [Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi]
 
 
     ### FERMI SURFACE ANALYSIS

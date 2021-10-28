@@ -7,6 +7,8 @@ import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
+import concurrent.futures
+import functools
 
  
 #TODO: parameter file that contains Nsamp, Numklaps, kappa, theta, mode, default_filling, alpha, beta, alphamod, betamod
@@ -310,7 +312,7 @@ class ep_Bubble:
         else:
             [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_umklapp_lattice( self.KX1bz, self.KY1bz,  KX, KY)
             self.Npoi_Q=np.size(self.KQX)
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.parallel_precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl)
@@ -478,6 +480,47 @@ class ep_Bubble:
             printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
         e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi_Q,self.nbands])
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
+
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+
+    def parallel_precompute_E_psi(self):
+        Mac_maxthreads=6
+        Desk_maxthreads=12
+
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+
+
+        print("starting dispersion ..........")
+        qp=np.array([self.KQX, self.KQY]).T
+        s=time.time()
+        eigplus = functools.partial(self.hpl.parallel_eigens, self.nbands)
+        eigmin = functools.partial(self.hmin.parallel_eigens, self.nbands)
+
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results_pl = executor.map(eigplus, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
+            results_min = executor.map(eigmin, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
+
+            for result in results_pl:
+                Ene_valley_plus_a=np.append(Ene_valley_plus_a,result[0])
+                psi_plus_a.append(result[1])
+            for result in results_min:
+                Ene_valley_min_a=np.append(Ene_valley_min_a,result[0])
+                psi_min_a.append(result[1])
+
+        e=time.time()
+
+
         print("time to diag over MBZ", e-s)
         ##relevant wavefunctions and energies for the + valley
         psi_plus=np.array(psi_plus_a)
@@ -672,10 +715,14 @@ class ep_Bubble:
         scaling_fac=self.agraph**2 /(self.mass*(self.Gscale**2))
         print(scaling_fac)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, thres)
+        plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
+        plt.show()
         id=np.ones(np.shape(KX_m))
         Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
+        plt.scatter(KX_m, KY_m, c=id)
+        plt.show()
         b=Gmat.T@d
         popt=la.pinv(GTG)@b
         res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
