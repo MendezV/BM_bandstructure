@@ -733,8 +733,9 @@ class ep_Bubble:
         b=Gmat.T@d
         popt=la.pinv(GTG)@b
         res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
-        print(popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac))
-        return popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac)
+        nn=np.sqrt(np.sum((d)**2)) #residual of the least squares procedure
+        print(popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn))
+        return popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn)
 
     def quad_pi(self, x, y, popt):
         return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
