@@ -464,6 +464,29 @@ class Ham_BM_p():
         mat=np.kron(pauli0,np.kron(Um, Omega))
         return  mat@psi
 
+    ###########DOS FOR DEBUGGING
+    def DOS(self,Ene_valley_plus,Ene_valley_min):
+        nbands=np.shape(Ene_valley_plus)[1]
+        print(nbands)
+        eps=np.mean( np.abs( np.diff( Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
+        
+        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
+        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
+        NN=int((mmax-mmin)/eps)
+        binn=np.linspace(mmin,mmax,NN+1)
+        valt=np.zeros(NN)
+        val,bins=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val
+
+        val,bins=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val
+        plt.plot(bins[:-1],valt)
+        plt.scatter(bins[:-1],valt)
+        plt.show()
+        
+
+        return [binn,valt]
+
 class Ham_BM_m():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
 
@@ -823,12 +846,6 @@ class Ham_BM_m():
         
         return [xFS_dense,yFS_dense]
 
-    def DOS(self,):
-
-        
-
-        return 0
-
 
     #METHODS FOR MANIPULATING WAVEFUNCTIONS AND FORM FACTORS
     #for reference the pattern of kronecker prod is 
@@ -926,6 +943,28 @@ class Ham_BM_m():
 
         mat=np.kron(pauli0,np.kron(Um, Omega))
         return  mat@psi
+
+    ###########DOS FOR DEBUGGING
+    def DOS(self,Ene_valley_plus,Ene_valley_min):
+        nbands=np.shape(Ene_valley_plus)[1]
+        eps=np.mean( np.abs( np.diff( Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
+        
+        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
+        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
+        NN=int((mmax-mmin)/eps)
+        binn=np.linspace(mmin,mmax,NN+1)
+        valt=np.zeros(NN)
+        val,bins=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val
+
+        val,bins=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val
+        plt.plot(bins[:-1],valt)
+        plt.scatter(bins[:-1],valt)
+        plt.show()
+        
+
+        return [binn,valt]
     
     
 
@@ -1165,5 +1204,7 @@ class FormFactors():
         Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
         return Nem_FFT
 
+
+    
 
         

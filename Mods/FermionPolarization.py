@@ -308,6 +308,11 @@ class ep_Bubble:
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
         [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_umklapp_lattice( self.KX1bz, self.KY1bz,  KX, KY)
         self.Npoi_Q=np.size(self.KQX)
+        # ##########
+        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi_noQ()
+        # hpl.DOS(self.Ene_valley_plus,self.Ene_valley_min)
+
+        # #########
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
@@ -832,7 +837,8 @@ class ep_Bubble:
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"$\alpha/ c$"+self.mode)
         plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.show()
+        plt.close()
+        # plt.show()
 
         cep=np.array(cs)/c_phonon
         clh=np.array(cs_lh)/c_phonon
@@ -844,7 +850,8 @@ class ep_Bubble:
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"$1-(\alpha/ c)^{2}$, "+self.mode+"-mode")
         plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+".png")
-        plt.show()
+        plt.close()
+        # plt.show()
 
         rep=np.array(rs)/ c_phonon
         rlh=np.array(rs_lh)/ c_phonon
@@ -857,7 +864,8 @@ class ep_Bubble:
         plt.ylabel(r"res$ /c$ "+self.mode)
         plt.yscale('log')
         plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.show()
+        plt.close()
+        # plt.show()
 
         with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
                 np.save(f, c)
