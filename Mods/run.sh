@@ -11,7 +11,7 @@
 #Readibg parameter file
 
 param_arr=$(awk -F= '{print $1}' params)
-jobname="L_modulation_kappa_miss_coef"  #JOBNAME importan to declare -has to be descriptive
+jobname="L_modulation_kappa_ukmlp0_correct_norm_full_beta_20"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
