@@ -790,7 +790,7 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
-        prop_BZ=0.1
+        prop_BZ=0.2
         cs=[]
         cs_lh=[]
         rs=[]
