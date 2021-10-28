@@ -545,7 +545,7 @@ class ep_Bubble:
     def OmegaL(self):
         
         # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        overall_coef=1/np.sqrt(self.w_ph_L())
+        overall_coef=1#/np.sqrt(self.w_ph_L())
         
         
         Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
@@ -557,7 +557,7 @@ class ep_Bubble:
         return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaT(self):
-        overall_coef=1/np.sqrt(self.w_ph_T())
+        overall_coef=1#/np.sqrt(self.w_ph_T())
         Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
         Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
 
