@@ -306,13 +306,12 @@ class ep_Bubble:
         self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.Npoi=np.size(KX)
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
-        if umkl<1:
-            [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_lattice( KX, KY)
-            self.Npoi_Q=np.size(self.KQX)
-        else:
-            [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_umklapp_lattice( self.KX1bz, self.KY1bz,  KX, KY)
-            self.Npoi_Q=np.size(self.KQX)
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.parallel_precompute_E_psi()
+        [self.KQX, self.KQY, self.Ik]=latt.Generate_momentum_transfer_umklapp_lattice( self.KX1bz, self.KY1bz,  KX, KY)
+        plt.scatter(self.KQX, self.KQY)
+        plt.scatter(KX, KY)
+        plt.show()
+        self.Npoi_Q=np.size(self.KQX)
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl)
@@ -362,23 +361,27 @@ class ep_Bubble:
                 K.append(self.KQX[k]-self.KQX[kp])
                 KP.append(self.KQY[k]-self.KQY[kp])
                 #Regular FF
+                # Plus Valley FF Omega
                 # undet=np.abs(np.linalg.det(self.Lnemp[k,:,kp,:]))
                 # dosdet=np.abs(np.linalg.det(self.Lnemp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                # Plus Valley FF Omega
                 undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
                 dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                # cos1.append(undet)
+                # cos2.append(dosdet)
                 diffarp.append( undet   - dosdet   )
                 # Minus Valley FF Omega
+                # undet=np.abs(np.linalg.det(self.Lnemm[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Lnemm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
                 dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 diffarm.append( undet   - dosdet   )
-                # cos1.append(undet)
-                # cos2.append(dosdet)
+                
 
             plt.plot(diffarp, label="plus valley")
             plt.plot(diffarm, label="minsu valley")
             plt.title("FF- C3 FF")
             plt.savefig("TestC3_symm"+self.name+".png")
+            # plt.show()
             plt.close()
 
             # plt.scatter(K,KP,c=cos1)
@@ -489,6 +492,9 @@ class ep_Bubble:
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
 
 
+        plt.scatter(self.KQX, self.KQY, c=Ene_valley_min[:,-1])
+        plt.show()
+
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
     def parallel_precompute_E_psi(self):
@@ -534,12 +540,15 @@ class ep_Bubble:
     
     def w_ph_L(self):
         # return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        # plt.plot(1/np.sort(self.FFp.h_denominator(self.Lnemp).flatten()))
+        # plt.show()
         return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaL(self):
         
         # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        overall_coef=1#/np.sqrt(self.w_ph_L())
+        overall_coef=1/np.sqrt(self.w_ph_L())
+        
         
         Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
         Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
@@ -547,10 +556,10 @@ class ep_Bubble:
         return [Omega_FFp,Omega_FFm]
 
     def w_ph_T(self):
-        return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
+        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
         
     def OmegaT(self):
-        overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_T())
+        overall_coef=1/np.sqrt(self.w_ph_T())
         Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
         Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
 
@@ -906,11 +915,11 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q1,q3]=l.q
     q=la.norm(q1)
-    umkl=1
+    umkl=0
     VV=lq.boundary()
     [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
-    # [KQX, KQY, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
-
+    [KQX, KQY, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
+    
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV

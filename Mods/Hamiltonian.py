@@ -937,18 +937,22 @@ class FormFactors():
         self.cpsi=np.conj(psi)
         self.xi=xi
         self.Nu=int(np.shape(self.psi)[1]/4) #4, 2 for sublattice and 2 for layer
-        if umklapp<1:
-            [KX,KY]=lat.Generate_lattice()
-            [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_lattice( KX, KY)
-            self.kx=KX
-            self.ky=KY
-        else:
-            [KX,KY]=lat.Generate_lattice()
-            [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
+
+        
+        [KX,KY]=lat.Generate_lattice()
+        [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
+        
+        self.kx=KXu
+        self.ky=KYu
+        [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
+    
+        #momentum transfer lattice
+        kqx1, kqx2=np.meshgrid(self.KQX,self.KQX)
+        kqy1, kqy2=np.meshgrid(self.KQY,self.KQY)
+        self.qx=kqx1-kqx2
+        self.qy=kqy1-kqy2
+        self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
             
-            self.kx=KXu
-            self.ky=KYu
-            [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
 
     def __repr__(self):
         return "Form factors for valley {xi}".format( xi=self.xi)
@@ -1015,114 +1019,51 @@ class FormFactors():
                         harr[k_i, i, k_ip, j]=q
         return harr
 
-    ########### Functions for the nematic form factors
-    # def f(self, FF ):
-    #     qx=self.KQX[1]-self.KQX[0]
-    #     qy=self.KQY[1]-self.KQY[0]
-    #     qmin=np.sqrt(qx**2+qy**2)
-    #     farr= np.ones(np.shape(FF))
-    #     for k_i in range(np.size(self.KQX)):
-    #         for k_ip in range(np.size(self.KQX)):
-    #             qx=self.KQX[k_i]-self.KQX[k_ip]
-    #             qy=self.KQY[k_i]-self.KQY[k_ip]
-    #             q=np.sqrt(qx**2+qy**2)
-    #             # if q<0.01*qmin:
-    #             #     q=qmin
-    #             for i in range(np.shape(FF)[1]):
-    #                 for j in range(np.shape(FF)[1]):
-    #                     farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
-    #     return farr
 
-    # def g(self,FF):
-    #     qx=self.KQX[1]-self.KQX[0]
-    #     qy=self.KQY[1]-self.KQY[0]
-    #     qmin=np.sqrt(qx**2+qy**2)
-    #     garr= np.ones(np.shape(FF))
-    #     for k_i in range(np.size(self.KQX)):
-    #         for k_ip in range(np.size(self.KQX)):
-    #             qx=self.KQX[k_i]-self.KQX[k_ip]
-    #             qy=self.KQY[k_i]-self.KQY[k_ip]
-    #             q=np.sqrt(qx**2+qy**2)
-    #             # if q<0.01*qmin:
-    #             #     q=qmin
-    #             for i in range(np.shape(FF)[1]):
-    #                 for j in range(np.shape(FF)[1]):
-    #                     garr[k_i, i, k_ip, j]=2*(qx*qy)/q
-    #     return garr 
-
-
-
-    # def h(self,FF):
-
-    #     harr= np.ones(np.shape(FF))
-    #     for k_i in range(np.size(self.KQX)):
-    #         for k_ip in range(np.size(self.KQX)):
-    #             qx=self.KQX[k_i]-self.KQX[k_ip]
-    #             qy=self.KQY[k_i]-self.KQY[k_ip]
-    #             q=np.sqrt(qx**2+qy**2)+1e-17
-    #             for i in range(np.shape(FF)[1]):
-    #                 for j in range(np.shape(FF)[1]):
-    #                     harr[k_i, i, k_ip, j]=q
-    #     return harr
-
-
-    #######third round
+    #######fourth round
     def fq(self, FF ):
+
         farr= np.ones(np.shape(FF))
-        for k_i in range(np.size(self.KQX)):
-            for k_ip in range(np.size(self.KQX)):
-                qx=self.KQX[k_i]-self.KQX[k_ip]
-                qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
-                for i in range(np.shape(FF)[1]):
-                    for j in range(np.shape(FF)[1]):
-                        farr[k_i, i, k_ip, j]=(qx**2-qy**2)/q
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                farr[:, i, :, j]=(self.qx**2-self.qy**2)/self.q
+                        
         return farr
 
     def gq(self,FF):
         garr= np.ones(np.shape(FF))
-        for k_i in range(np.size(self.KQX)):
-            for k_ip in range(np.size(self.KQX)):
-                qx=self.KQX[k_i]-self.KQX[k_ip]
-                qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
-                for i in range(np.shape(FF)[1]):
-                    for j in range(np.shape(FF)[1]):
-                        garr[k_i, i, k_ip, j]=2*(qx*qy)/q
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                garr[:, i, :, j]=2*(self.qx*self.qy)/self.q
+                        
         return garr 
 
 
-
     def hq(self,FF):
-
         harr= np.ones(np.shape(FF))
-        for k_i in range(np.size(self.KQX)):
-            for k_ip in range(np.size(self.KQX)):
-                qx=self.KQX[k_i]-self.KQX[k_ip]
-                qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)+1e-17
-                for i in range(np.shape(FF)[1]):
-                    for j in range(np.shape(FF)[1]):
-                        harr[k_i, i, k_ip, j]=q
-        return harr
-
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=self.q
+                        
+        return harr 
 
     def h_denominator(self,FF):
         qx=self.KQX[1]-self.KQX[0]
         qy=self.KQY[1]-self.KQY[0]
         qmin=np.sqrt(qx**2+qy**2)
         harr= np.ones(np.shape(FF))
-        for k_i in range(np.size(self.KQX)):
-            for k_ip in range(np.size(self.KQX)):
-                qx=self.KQX[k_i]-self.KQX[k_ip]
-                qy=self.KQY[k_i]-self.KQY[k_ip]
-                q=np.sqrt(qx**2+qy**2)
-                if q<0.01*qmin:
-                    q=qmin
-                for i in range(np.shape(FF)[1]):
-                    for j in range(np.shape(FF)[1]):
-                        harr[k_i, i, k_ip, j]=q
+        qcut=np.array(self.q)
+        qanom=qcut[np.where(qcut<0.01*qmin)]
+        qcut[np.where(qcut<0.01*qmin)]=np.ones(np.shape(qanom))*qmin
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=qcut
+                        
         return harr
+
 
     ########### Anti-symmetric displacement of the layers
     def denFF_a(self):

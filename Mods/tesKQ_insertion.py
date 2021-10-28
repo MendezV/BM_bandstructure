@@ -775,9 +775,9 @@ plt.show()
 
 print(np.shape(psi_plus),np.shape(psi_plusc3))
 
-FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
+FFp=Hamiltonian.FormFactors(psi_plus, 1, lq,0)
 L00p=FFp.NemqFFL_a()
-FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq)
+FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq,0)
 L00m=FFc3.NemqFFL_a()
 print(np.shape(L00p),np.shape(L00m) )
 
@@ -876,9 +876,9 @@ Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi,nbands])
 
 print(np.shape(psi_plus),np.shape(psi_plusc3))
 
-FFp=Hamiltonian.FormFactors(psi_plus, 1, lq)
+FFp=Hamiltonian.FormFactors(psi_plus, 1, lq,0)
 L00p=FFp.NemFFL_a()
-FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq)
+FFc3=Hamiltonian.FormFactors(psi_plusc3, 1, lq,0)
 L00m=FFc3.NemFFL_a()
 print(np.shape(L00p),np.shape(L00m) )
 

@@ -227,35 +227,40 @@ class MoireTriangLattice:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
 
-    def Generate_Umklapp_lattice(self, KX, KY, numklapps):
-        Npoi=np.size(KX)
-        [GM1,GM2]=self.GMvec
-        if numklapps==1:
-            GSu=self.MGS_1
-        elif numklapps==2:
-            GSu=self.MGS_2
-        elif numklapps==3:
-            GSu=self.MGS_3
-        else:
-            GSu=[[0,0]]
-        K_um=[]
-        #adding original samples
-        for i in range(Npoi):
-            K_um.append([round(KX[i], 8),round(KY[i], 8)])
+    def Generate_Umklapp_lattice(self, KX, KY, numklaps):
+        if numklaps>=0.9:
+            Npoi=np.size(KX)
+            [GM1,GM2]=self.GMvec
+            if numklaps==1:
+                GSu=self.MGS_1
+            elif numklaps==2:
+                GSu=self.MGS_2
+            elif numklaps==3:
+                GSu=self.MGS_3
+            else:
+                GSu=[]
 
-        #extending for different moire lattice vectors
-        for mg in GSu:
+            K_um=[]
+            #adding original samples
             for i in range(Npoi):
-                K_um.append([round(KX[i]+mg[0]*GM1[0]+mg[1]*GM2[0], 8),round(KY[i]+mg[0]*GM1[1]+mg[1]*GM2[1], 8)])
+                K_um.append([round(KX[i], 8),round(KY[i], 8)])
 
-        unique_data =np.array( [list(i) for i in set(tuple(i) for i in K_um)])
-        print("K umkplapp unique grid ",np.shape(unique_data))
-        KumX=unique_data[:,0]
-        KumY=unique_data[:,1]
-        # plt.scatter(KumX,KumY)
-        # plt.scatter(KX,KY)
-        # plt.show()
-        return [KumX,KumY]
+            #extending for different moire lattice vectors
+            for mg in GSu:
+                for i in range(Npoi):
+                    K_um.append([round(KX[i]+mg[0]*GM1[0]+mg[1]*GM2[0], 8),round(KY[i]+mg[0]*GM1[1]+mg[1]*GM2[1], 8)])
+
+            unique_data =np.array( [list(i) for i in set(tuple(i) for i in K_um)])
+            print("K umkplapp unique grid ",np.shape(unique_data))
+            KumX=unique_data[:,0]
+            KumY=unique_data[:,1]
+            # plt.scatter(KumX,KumY)
+            # plt.scatter(KX,KY)
+            # plt.show()
+            
+            return [KumX,KumY]
+        else:
+            return [KX,KY]
 
     
     #returns the lattice vectors that span the sampling lattice when multiplied by integers                                              

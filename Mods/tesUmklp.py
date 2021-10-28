@@ -731,7 +731,7 @@ rot_C2z=lq.C2z
 rot_C3z=lq.C3z
 
 [KQX, KQY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
-umkl=3
+umkl=0
 [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
 [KQXu, KQYu, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
 Npoi_u=np.size(KXu)
