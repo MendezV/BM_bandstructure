@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 import time
 import MoireLattice
+from scipy.interpolate import interp1d
   
 
 class Ham_BM_p():
@@ -17,6 +18,7 @@ class Ham_BM_p():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
+        self.gap=1e-8 #artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -126,9 +128,10 @@ class Ham_BM_p():
 
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
         return [H1,H2]
 
 
@@ -465,27 +468,44 @@ class Ham_BM_p():
         return  mat@psi
 
     ###########DOS FOR DEBUGGING
-    def DOS(self,Ene_valley_plus,Ene_valley_min):
+    def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre*1000,Ene_valley_min_pre*1000]
         nbands=np.shape(Ene_valley_plus)[1]
         print(nbands)
-        eps=np.mean( np.abs( np.diff( Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
+        eps_l=[]
+        for i in range(nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)*3
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
-        NN=int((mmax-mmin)/eps)
+        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
         binn=np.linspace(mmin,mmax,NN+1)
         valt=np.zeros(NN)
-        val,bins=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
-        valt=valt+val
 
-        val,bins=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
-        valt=valt+val
-        plt.plot(bins[:-1],valt)
-        plt.scatter(bins[:-1],valt)
-        plt.show()
+        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val_p
+
+        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val_m
         
+        bins=(binn[:-1]+binn[1:])/2
+        
+        # plt.plot(bins,valt)
+        # plt.scatter(bins,valt, s=1)
+        # plt.ylim([0,8])
+        # plt.show()
+    
+        f2 = interp1d(binn[:-1],valt, kind='cubic')
+        
+        # xnew = np.linspace(np.min(binn[:-1]), np.max(binn[:-1]), num=1000, endpoint=True)
+        # plt.plot(binn[:-1],valt, 'o',  xnew, f2(xnew), '--')
+        # plt.legend(['data', 'cubic'], loc='best')
+        # plt.show()
 
-        return [binn,valt]
+        return [bins,valt,f2 ]
 
 class Ham_BM_m():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
@@ -498,6 +518,7 @@ class Ham_BM_m():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
+        self.gap=1e-8
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -607,9 +628,10 @@ class Ham_BM_m():
 
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) #+np.kron(pauliz,gap*np.eye(N)) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
         return [H1,H2]
 
 
@@ -945,26 +967,32 @@ class Ham_BM_m():
         return  mat@psi
 
     ###########DOS FOR DEBUGGING
-    def DOS(self,Ene_valley_plus,Ene_valley_min):
+    def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre*1000,Ene_valley_min_pre*1000]
         nbands=np.shape(Ene_valley_plus)[1]
-        eps=np.mean( np.abs( np.diff( Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
+        print(nbands)
+        eps_l=[]
+        for i in range(nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)*3
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
-        NN=int((mmax-mmin)/eps)
+        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
         binn=np.linspace(mmin,mmax,NN+1)
         valt=np.zeros(NN)
-        val,bins=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
-        valt=valt+val
+        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val_p
 
-        val,bins=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
-        valt=valt+val
-        plt.plot(bins[:-1],valt)
-        plt.scatter(bins[:-1],valt)
-        plt.show()
+        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val_m
         
+        bins=(binn[:-1]+binn[1:])/2
+        f2 = interp1d(binn[:-1],valt, kind='cubic')
 
-        return [binn,valt]
+        return [bins,valt,f2 ]
     
     
 
