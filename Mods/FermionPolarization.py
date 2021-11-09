@@ -915,13 +915,16 @@ class ee_Bubble_2:
         [bins,valt, f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
 
         # #########
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi_dirac()
+        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl)
         self.name="ee"
-        self.L00p=self.FFp.denqFF_s()
-        self.L00m=self.FFm.denqFF_s()
+        # self.L00p=self.FFp.denqFF_s()
+        # self.L00m=self.FFm.denqFF_s()
+        self.L00p=self.FFp.Fdirac()
+        self.L00m=self.FFm.Fdirac()
         
 
         self.dS_in=latt.VolMBZ/self.Npoi
@@ -976,7 +979,6 @@ class ee_Bubble_2:
             plt.show()
 
             fig = plt.figure()
-            ax = plt.axes(projection='3d')
             ax = plt.axes(projection='3d')
             ax.scatter3D(K,KP,cos1, c=cos1);
             plt.show()
@@ -1061,22 +1063,7 @@ class ee_Bubble_2:
         Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoidos,self.nbands])
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoidos,self.nbands])
         
-        plt.scatter(self.KXdos,self.KYdos,c=Ene_valley_plus[:,0])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KXdos,self.KYdos,c=Ene_valley_plus[:,1])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KXdos,self.KYdos,c=Ene_valley_min[:,0])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KXdos,self.KYdos,c=Ene_valley_min[:,1])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
+        
 
         return [Ene_valley_plus,Ene_valley_min]
 
@@ -1112,6 +1099,63 @@ class ee_Bubble_2:
 
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+    
+    def precompute_E_psi_dirac(self):
+
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+
+
+        print("starting dispersion ..........")
+        
+        s=time.time()
+        
+        for l in range(self.Npoi_Q):
+            E1,wave1=self.hpl.eigens_dirac3(self.KQX[l],self.KQY[l],self.nbands)
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            psi_plus_a.append(wave1)
+
+
+            E1,wave1=self.hmin.eigens_dirac3(self.KQX[l],self.KQY[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            psi_min_a.append(wave1)
+
+            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi_Q,self.nbands])
+        # fig = plt.figure()
+        # ax = plt.axes(projection='3d')
+        # ax.scatter3D(self.KQX,self.KQY,Ene_valley_plus[:,0]);
+        # plt.show()
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
+        
+        plt.scatter(self.KQX,self.KQY,c=Ene_valley_plus[:,0])
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
+        plt.scatter(self.KQX,self.KQY,c=Ene_valley_plus[:,1])
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
+        plt.scatter(self.KQX,self.KQY,c=Ene_valley_min[:,0])
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
+        plt.scatter(self.KQX,self.KQY,c=Ene_valley_min[:,1])
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.show()
+
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
@@ -1167,23 +1211,23 @@ class ee_Bubble_2:
         eps=self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-        fac_p=(nfkq-nfk)/(-(edkq-edk))
+        # fac_p=(nfkq-nfk)/(-(edkq-edk))
         return (fac_p)
 
     def deltad(self, x, epsil):
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
     def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
-        eps=self.eta ##SENSITIVE TO DISPERSION
+        eps=0.001*self.eta ##SENSITIVE TO DISPERSION
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
 
         #zero temp
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(1j*1e-17-(edkq-edk))
-        fac_p2=(self.deltad( edk, eps))*np.heaviside(eps-np.abs(edkq-edk), 0.0)
+        deltad_cut=1e-17*np.heaviside(eps-np.abs(edkq-edk), 1.0)
+        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(deltad_cut-(edkq-edk))
+        fac_p2=0.0
 
         return (fac_p+fac_p2)
 
@@ -1236,12 +1280,14 @@ class ee_Bubble_2:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -1257,7 +1303,7 @@ class ee_Bubble_2:
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
-    def Compute_lh(self, mu, omegas, kpath):
+    def Compute_lh2(self, mu, omegas, kpath):
 
         integ=[]
         sb=time.time()
@@ -1375,10 +1421,16 @@ class ee_Bubble_2:
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
         plt.gca().set_aspect('equal', adjustable='box')
+        # plt.clim(0,8000)
         plt.colorbar()
         plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
         plt.close()
         print("the minimum real part is ...", np.min(np.real(integ)))
+        
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.scatter3D(KX,KY,np.real(integ), c=np.real(integ));
+        plt.show()
 
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.imag(integ))
@@ -1506,7 +1558,7 @@ class ee_Bubble_2:
 def main() -> int:
 
     #parameters for the calculation
-    theta=1.05*np.pi/180  # magic angle
+    theta= 1.05*np.pi/180  # magic angle
     fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
     mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 

@@ -18,7 +18,7 @@ class Ham_BM_p():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=1e-8 #artificial gap
+        self.gap=0#1e-8#artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -130,9 +130,35 @@ class Ham_BM_p():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         return [H1,H2]
+    
+    def diracH2(self, kx, ky):
+
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+        tau=self.xi
+        hvkd=self.hvkd
+
+
+
+        ###checking if particle hole symmetric model is chosen
+        
+        # #top layer
+        qx_1 = kx 
+        qy_1 = ky 
+        # #bottom layer
+        qx_2 = kx 
+        qy_2 = ky 
+    
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        H1=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
+        H2=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
+        return [H1,H2]
+
 
 
     def InterlayerU(self):
@@ -216,6 +242,71 @@ class Ham_BM_p():
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+    
+    def eigens_dirac(self, kx,ky, nbands):
+        
+        U=self.U*0
+        Udag=U.H
+        P=self.PH
+        self.PH=True
+        [H1,H2]=self.diracH( kx, ky)
+        self.PH=P
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1p;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+    
+    def eigens_dirac2(self, kx,ky, nbands):
+        
+        [H1,H2]=self.diracH2( kx, ky)
+        
+        Hxi=np.bmat([[H2, H2*0 ], [H2*0, H1]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,:]
+        nbands_D=2
+
+        for nband in range(nbands_D):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
+
+        return Eigvals[1:3]-self.e0, psi[:,1:3]
+    
+    def eigens_dirac3(self, kx,ky, nbands):
+        e1=np.array([np.cos(2*np.pi*1/3), np.sin(2*np.pi*1/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        e2=np.array([np.cos(2*np.pi*2/3), np.sin(2*np.pi*2/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        e3=np.array([np.cos(2*np.pi*0/3), np.sin(2*np.pi*0/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        
+        W3=0.00375/3  #in ev
+        k=np.array([kx,ky])
+        
+        hk=np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3)
+        hk_n=np.abs(W3*hk)
+        # print(k@e1,k@e2,k@e3,hk_n, 2*np.pi*1/3)
+        psi1=np.array([+1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+        psi2=np.array([-1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+
+        return np.array([-hk_n,hk_n]), np.array([psi2,psi1])
+
 
     def parallel_eigens(self,  nbands,q):
         kx,ky=q[0], q[1]
@@ -518,7 +609,7 @@ class Ham_BM_m():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=1e-8
+        self.gap=0#1e-8#artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -630,8 +721,33 @@ class Ham_BM_m():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(pauliz,self.gap*np.eye(Nb)) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        return [H1,H2]
+    
+    def diracH2(self, kx, ky):
+
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+        tau=self.xi
+        hvkd=self.hvkd
+
+
+
+        ###checking if particle hole symmetric model is chosen
+        
+        # #top layer
+        qx_1 = kx 
+        qy_1 = ky 
+        # #bottom layer
+        qx_2 = kx 
+        qy_2 = ky 
+    
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        H1=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
+        H2=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
         return [H1,H2]
 
 
@@ -717,6 +833,72 @@ class Ham_BM_m():
             
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+    
+    def eigens_dirac(self, kx,ky, nbands):
+        
+        U=self.U*0
+        Udag=U.H
+        P=self.PH
+        self.PH=True
+        [H1,H2]=self.diracH( kx, ky)
+        self.PH=P
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H2, U ], [Udag, H1]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
+
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+    
+    def eigens_dirac2(self, kx,ky, nbands):
+        
+        [H1,H2]=self.diracH2( kx, ky)
+        
+        Hxi=np.bmat([[H2, H2*0 ], [H2*0, H1]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
+
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,:]
+        nbands_D=2
+
+        for nband in range(nbands_D):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
+
+        return Eigvals[1:3]-self.e0, psi[:,1:3]
+    
+    def eigens_dirac3(self, kx,ky, nbands):
+        e1=np.array([np.cos(2*np.pi*1/3), np.sin(2*np.pi*1/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        e2=np.array([np.cos(2*np.pi*2/3), np.sin(2*np.pi*2/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        e3=np.array([np.cos(2*np.pi*0/3), np.sin(2*np.pi*0/3)])*2*2*np.pi*1/3/np.sqrt(3)
+        
+        W3=0.00375/3  #in ev
+        k=np.array([kx,ky])
+        
+        hk=np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3)
+        hk_n=np.abs(W3*hk)
+        # print(k@e1,k@e2,k@e3,hk_n, 2*np.pi*1/3)
+        psi1=np.array([+1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+        psi2=np.array([-1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+
+        return np.array([-hk_n,hk_n]), np.array([psi2,psi1])
+
 
     def parallel_eigens(self,  nbands,q):
         kx,ky=q[0], q[1]
@@ -1231,7 +1413,19 @@ class FormFactors():
         L02=self.calcFormFactor( layer=0, sublattice=2)
         Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
         return Nem_FFT
+    
+    
+    def Fdirac(self):
 
+        phi=np.angle(self.KQX+1j*self.KQY)
+        F=np.zeros([np.size(phi), 2, np.size(phi), 2])
+        phi1, phi2=np.meshgrid(phi,phi)
+        for n in range(2):
+            for n2 in range(2):
+                F[:,n,:,n2]=np.sqrt( ( 1+np.cos(phi1-phi2)*(-1)**(n+n2))/2  +1e-17*1j)
+                
+        return F
+                
 
     
 
