@@ -560,7 +560,7 @@ class Ham_BM_p():
 
     ###########DOS FOR DEBUGGING
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
-        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre*1000,Ene_valley_min_pre*1000]
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
         nbands=np.shape(Ene_valley_plus)[1]
         print(nbands)
         eps_l=[]
@@ -568,7 +568,7 @@ class Ham_BM_p():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)*3
+        eps=np.min(eps_a)*0.5
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
@@ -1150,7 +1150,7 @@ class Ham_BM_m():
 
     ###########DOS FOR DEBUGGING
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
-        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre*1000,Ene_valley_min_pre*1000]
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
         nbands=np.shape(Ene_valley_plus)[1]
         print(nbands)
         eps_l=[]
@@ -1158,7 +1158,7 @@ class Ham_BM_m():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)*3
+        eps=np.min(eps_a)*0.5
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])

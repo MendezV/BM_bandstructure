@@ -670,6 +670,7 @@ class ep_Bubble:
         print("starting bubble.......",np.shape(kpath)[0])
 
         path=np.arange(0,np.shape(kpath)[0])
+        
         for omegas_m_i in omegas:
             sd=[]
             for l in path:  #for calculating only along path in FBZ
@@ -899,8 +900,8 @@ class ee_Bubble_2:
         Ndos=100
 
         ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
-        [self.KXdos, self.KYdos]=ldos.Generate_lattice()
-        self.Npoidos=np.size(self.KXdos)
+        # [self.KXdos, self.KYdos]=ldos.Generate_lattice()
+        # self.Npoidos=np.size(self.KXdos)
         # [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
         # with open('Edisp_'+str(Ndos)+'.npy', 'wb') as f:
         #     np.save(f, self.Ene_valley_plus_dos)
@@ -912,19 +913,21 @@ class ee_Bubble_2:
         with open('Edism_'+str(Ndos)+'.npy', 'rb') as f:
             self.Ene_valley_min_dos=np.load(f)
 
-        [bins,valt, f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
+        [self.bins,self.valt, self.f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
 
         # #########
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi_dirac()
-        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi_noQ()
+        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi_dirac()
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl)
         self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl)
         self.name="ee"
-        # self.L00p=self.FFp.denqFF_s()
-        # self.L00m=self.FFm.denqFF_s()
-        self.L00p=self.FFp.Fdirac()
-        self.L00m=self.FFm.Fdirac()
+        self.L00p=self.FFp.denqFF_s()
+        self.L00m=self.FFm.denqFF_s()
+        # self.L00p=self.FFp.Fdirac()
+        # self.L00m=self.FFm.Fdirac()
         
 
         self.dS_in=latt.VolMBZ/self.Npoi
@@ -1015,12 +1018,12 @@ class ee_Bubble_2:
         s=time.time()
         
         for l in range(self.Npoi):
-            E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
+            E1,wave1=self.hpl.eigens_dirac3(self.KX[l],self.KY[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             psi_plus_a.append(wave1)
 
 
-            E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
+            E1,wave1=self.hmin.eigens_dirac3(self.KX[l],self.KY[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
 
@@ -1034,6 +1037,12 @@ class ee_Bubble_2:
 
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
+
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.scatter3D(self.KX,self.KY,Ene_valley_plus[:,0], c=Ene_valley_plus[:,0]);
+        ax.scatter3D(self.KX,self.KY,Ene_valley_plus[:,1], c=Ene_valley_plus[:,1]);
+        plt.show()
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
@@ -1100,6 +1109,9 @@ class ee_Bubble_2:
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
 
+        
+        
+
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
     def precompute_E_psi_dirac(self):
@@ -1115,12 +1127,12 @@ class ee_Bubble_2:
         s=time.time()
         
         for l in range(self.Npoi_Q):
-            E1,wave1=self.hpl.eigens_dirac3(self.KQX[l],self.KQY[l],self.nbands)
+            E1,wave1=self.hpl.eigens_dirac(self.KQX[l],self.KQY[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             psi_plus_a.append(wave1)
 
 
-            E1,wave1=self.hmin.eigens_dirac3(self.KQX[l],self.KQY[l],self.nbands)
+            E1,wave1=self.hmin.eigens_dirac(self.KQX[l],self.KQY[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
 
@@ -1139,22 +1151,11 @@ class ee_Bubble_2:
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
         
-        plt.scatter(self.KQX,self.KQY,c=Ene_valley_plus[:,0])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KQX,self.KQY,c=Ene_valley_plus[:,1])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KQX,self.KQY,c=Ene_valley_min[:,0])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-        plt.scatter(self.KQX,self.KQY,c=Ene_valley_min[:,1])
-        plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
+        # fig = plt.figure()
+        # ax = plt.axes(projection='3d')
+        # ax.scatter3D(self.KQX,self.KQY,Ene_valley_plus[:,0], c=Ene_valley_plus[:,0]);
+        # ax.scatter3D(self.KQX,self.KQY,Ene_valley_plus[:,1], c=Ene_valley_plus[:,1]);
+        # plt.show()
 
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
@@ -1218,7 +1219,7 @@ class ee_Bubble_2:
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
     def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
-        eps=0.001*self.eta ##SENSITIVE TO DISPERSION
+        eps=self.eta ##SENSITIVE TO DISPERSION
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
 
@@ -1228,6 +1229,9 @@ class ee_Bubble_2:
         deltad_cut=1e-17*np.heaviside(eps-np.abs(edkq-edk), 1.0)
         fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(deltad_cut-(edkq-edk))
         fac_p2=0.0
+
+        # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-eps, 0.0)/(deltad_cut-(edkq-edk))
+        fac_p2=(self.deltad( edk, 3*eps))*np.heaviside(eps-np.abs(edkq-edk), 1.0)
 
         return (fac_p+fac_p2)
 
@@ -1303,61 +1307,6 @@ class ee_Bubble_2:
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
-    def Compute_lh2(self, mu, omegas, kpath):
-
-        integ=[]
-        sb=time.time()
-
-        print("starting bubble.......",np.shape(kpath)[0])
-
-        path=np.arange(0,np.shape(kpath)[0])
-        for omegas_m_i in omegas:
-            sd=[]
-            for l in path:  #for calculating only along path in FBZ
-                bub=0
-                
-                qx=kpath[int(l), 0]
-                qy=kpath[int(l), 1]
-                Ikq=[]
-                for s in range(self.Npoi):
-                    kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
-                    indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
-                    Ikq.append(indmin)
-
-            
-                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-
-
-                integrand_var=0
-                #####all bands for the + and - valley
-                for nband in range(self.nbands):
-                    for mband in range(self.nbands):
-                        
-                        ek_n=self.Ene_valley_plus[:,nband]
-                        ek_m=self.Ene_valley_plus[:,mband]
-                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-
-
-                        ek_n=self.Ene_valley_min[:,nband]
-                        ek_m=self.Ene_valley_min[:,mband]
-                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        
-
-                eb=time.time()
-            
-                bub=bub+np.sum(integrand_var)*self.dS_in
-
-                sd.append( bub )
-
-            integ.append(sd)
-            
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
-        print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
     def Compute(self, mu, omegas, kpath):
 
         integ=[]
@@ -1413,7 +1362,86 @@ class ee_Bubble_2:
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
+    ###########No FORM FACOTR
+    def Compute_lh_noff(self, mu, omegas, kpath):
 
+        integ=[]
+        sb=time.time()
+
+        print("starting bubble.......",np.shape(kpath)[0])
+
+        
+        bub=0
+            
+        qx=0.2#kpath[int(l), 0]
+        qy=0.2#kpath[int(l), 1]
+        Ikq=[]
+        for s in range(self.Npoi):
+            kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
+            indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
+            Ikq.append(indmin)
+    
+        integrand_var=0
+        #####all bands for the + and - valley
+        for nband in range(self.nbands):
+            for mband in range(self.nbands):
+                
+                ek_n=self.Ene_valley_plus[:,nband]
+                ek_m=self.Ene_valley_plus[:,mband]
+                # Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SdWITCH OFF THE FORM FACTORS
+                integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,0,mu)
+                ek_n=self.Ene_valley_min[:,nband]
+                ek_m=self.Ene_valley_min[:,mband]
+                # Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,0,mu)
+                
+        eb=time.time()
+    
+        bub=bub+np.sum(integrand_var)*self.dS_in
+        print("time for bubble...",eb-sb)
+        return bub
+    
+    def Compute_noff(self, mu, omegas, kpath):
+
+        integ=[]
+        sb=time.time()
+
+        print("starting bubble.......",np.shape(kpath)[0])
+
+        
+        bub=0
+            
+        qx=0.2#kpath[int(l), 0]
+        qy=0.2#kpath[int(l), 1]
+        Ikq=[]
+        for s in range(self.Npoi):
+            kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
+            indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
+            Ikq.append(indmin)
+    
+        integrand_var=0
+        #####all bands for the + and - valley
+        for nband in range(self.nbands):
+            for mband in range(self.nbands):
+                
+                ek_n=self.Ene_valley_plus[:,nband]
+                ek_m=self.Ene_valley_plus[:,mband]
+                # Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SdWITCH OFF THE FORM FACTORS
+                integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,0,mu)
+                ek_n=self.Ene_valley_min[:,nband]
+                ek_m=self.Ene_valley_min[:,mband]
+                # Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,0,mu)
+                
+        eb=time.time()
+    
+        bub=bub+np.sum(integrand_var)*self.dS_in
+        print("time for bubble...",eb-sb)
+        return bub
 
     
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, add_tag):
@@ -1468,89 +1496,38 @@ class ee_Bubble_2:
 
 
 
-    def epsilon_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
-        prop_BZ=0.2
-        cs=[]
-        cs_lh=[]
-        rs=[]
-        rs_lh=[]
-
-        for ide in range(np.size(fillings)):
-            mu= mu_values[ide]/1000
-            filling=fillings[ide]
-            omega=[0]
-            kpath=np.array([self.KX,self.KY]).T
-            integ=self.Compute(mu, omega, kpath)
-            integ_lh=self.Compute_lh(mu, omega, kpath)
-
-            plt.plot((abs(integ-integ_lh).flatten())/np.mean(abs(integ_lh).flatten()))
-            plt.savefig("comparison_of_integrands_"+self.name+"_filling_"+str(filling)+".png")
-            plt.close()
-
-            print("the filling is .. " , filling)
-            integ=integ.flatten()*1000 #convertion to mev
-            popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-            print("parameters of the fit...", c)
-            print("residual of the fit...", res)
-            print("original coeff...", c_phonon)
-            self.plot_res( integ, self.KX,self.KY, VV, filling, Nsamp,c, res, "eps")
-            cs.append(c)
-            rs.append(resc)
-
-            integ_lh=integ_lh.flatten()*1000 #convertion to mev
-            popt, res, c, resc=self.extract_cs( integ_lh, prop_BZ)
-            print("parameters of the fit _lh...", c)
-            print("residual of the fit..._lh", res)
-            print("original coeff..._lh",  c_phonon)    
-            self.plot_res( integ_lh, self.KX,self.KY, VV, filling, Nsamp,c, res, "lh")
-            cs_lh.append(c)
-            rs_lh.append(resc)
-
+    def epsilon_sweep(self,fillings, mu_values):
         
-        cep=np.array(cs)/c_phonon
-        clh=np.array(cs_lh)/c_phonon
-        plt.scatter(fillings, cep, c='b', label='eps')
-        plt.plot(fillings, cep, c='k', ls='--')
-        plt.scatter(fillings, clh, c='r', label='lh')
-        plt.plot(fillings, clh, c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$\alpha/ c$"+self.mode)
-        plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.close()
-        # plt.show()
+        
+        scalings=[0.001,0.01,0.1,1,10,100]
+        for e in scalings:
+            cs=[]
+            cs_lh=[]
+            eddy=self.eta
+            self.eta=e*eddy
+            bins2=np.linspace(self.bins[0],self.bins[-1],100)
+            for ide in range(np.size(bins2)):
+                # mu= mu_values[ide]/1000
+                # filling=fillings[ide]
+                omega=[0]
+                kpath=np.array([0,0]).T
+                integ=self.Compute_noff(bins2[ide], omega, kpath)
+                integ_lh=self.Compute_lh_noff(bins2[ide], omega, kpath)
+                cs.append(integ/2)
+                cs_lh.append(integ_lh/2)
+            self.eta=eddy
+            print(e)
 
-        cep=np.array(cs)/c_phonon
-        clh=np.array(cs_lh)/c_phonon
-        plt.scatter(fillings, 1-cep**2, c='b', label='eps')
-        plt.plot(fillings, 1-cep**2, c='k', ls='--')
-        plt.scatter(fillings, 1-clh**2, c='r', label='lh')
-        plt.plot(fillings, 1-clh**2, c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$1-(\alpha/ c)^{2}$, "+self.mode+"-mode")
-        plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+".png")
-        plt.close()
-        # plt.show()
+            print(cs)
+            print(cs_lh)
 
-        rep=np.array(rs)/ c_phonon
-        rlh=np.array(rs_lh)/ c_phonon
-        plt.scatter(fillings, rep, c='b', label='eps')
-        plt.plot(fillings, rep, c='k', ls='--')
-        plt.scatter(fillings, rlh, c='r', label='lh')
-        plt.plot(fillings, rlh, c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"res$ /c$ "+self.mode)
-        plt.yscale('log')
-        plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
-        plt.close()
-        # plt.show()
+            plt.plot(bins2,cs)
+            plt.plot(bins2,cs_lh)
+            plt.plot(self.bins, self.valt)
+            plt.show()
+        
 
-        with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, c)
-        with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, res)
+            
 
 
     
@@ -1674,10 +1651,11 @@ def main() -> int:
     B1=ee_Bubble_2(lq, nbands, hpl, hmin, test_symmetry, umkl, theta)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "")
-    integ=B1.Compute_lh(mu, omega, kpath)
-    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "lh")
+    # integ=B1.Compute(mu, omega, kpath)
+    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
+    # integ=B1.Compute_lh(mu, omega, kpath)
+    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
+    B1.epsilon_sweep(fillings, mu_values)
     
 
     # test_symmetry=True

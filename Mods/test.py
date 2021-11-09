@@ -370,13 +370,13 @@ for l in range(Npoi):
     # h.umklapp_lattice()
     # break
     # E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
-    E1p,wave1p=hpl.eigens_dirac3(kpath[l,0],kpath[l,1],nbands)
+    E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
     psi_plus_a.append(wave1p)
 
 
     # E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
-    E1m,wave1m=hmin.eigens_dirac3(kpath[l,0],kpath[l,1],nbands)
+    E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
     Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
     psi_min_a.append(wave1m)
 
