@@ -725,7 +725,7 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         return self.gamma*integ_arr_no_reshape
     
-    def parCompute(self,  omegas, kpath, VV, Nsamp,  muv, fil,ind):
+    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil,ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -791,11 +791,11 @@ class ep_Bubble:
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
-        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, "eps")
+        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta))
         
         return [integ,res, c]
 
-    def parCompute_lh(self,  omegas, kpath, VV, Nsamp,  muv, fil,ind):
+    def parCompute_lh(self, theta, omegas, kpath, VV, Nsamp,  muv, fil,ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -861,7 +861,7 @@ class ep_Bubble:
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
-        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, "eps")
+        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta))
         
         return [integ,res, c]
 
@@ -936,7 +936,7 @@ class ep_Bubble:
             np.save(f, res)
 
 
-    def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon):
+    def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
         prop_BZ=0.2
         cs=[]
         cs_lh=[]
@@ -951,7 +951,7 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute,  omega, kpath, VV, Nsamp, mu_values/1000,fillings)
+        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
         maxthreads=12
 
         with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -968,7 +968,7 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute_lh,  omega, kpath, VV, Nsamp, mu_values/1000,fillings)
+        calc = functools.partial(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
         maxthreads=12
 
         with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -1023,7 +1023,7 @@ class ep_Bubble:
         plt.legend()
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"$\alpha/ c$"+self.mode)
-        plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+".png")
+        plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
         # plt.close()
         plt.show()
 
@@ -1036,7 +1036,7 @@ class ep_Bubble:
         plt.legend()
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"$1-(\alpha/ c)^{2}$, "+self.mode+"-mode")
-        plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+".png")
+        plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
         # plt.close()
         plt.show()
 
@@ -1050,13 +1050,13 @@ class ep_Bubble:
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"res$ /c$ "+self.mode)
         plt.yscale('log')
-        plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+".png")
+        plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
         plt.close()
         # plt.show()
 
-        with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
+        with open("velocities_V_filling_"+self.name+"_theta_"+str(theta)+".npy", 'wb') as f:
                 np.save(f, cep)
-        with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
+        with open("velocities_res_V_filling_"+self.name+"_theta_"+str(theta)+".npy", 'wb') as f:
                 np.save(f, rep)
 
         
@@ -1720,7 +1720,7 @@ class ee_Bubble_2:
 def main() -> int:
 
     #parameters for the calculation
-    theta= 1.05*np.pi/180  # magic angle
+    theta= 1.04*1.05*np.pi/180  # magic angle
     fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
     mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
@@ -1778,7 +1778,7 @@ def main() -> int:
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
     kappa_p=0.0797/0.0975
-    kappa=modulation
+    kappa=kappa_p*modulation
     up = 0.0975; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -1851,7 +1851,7 @@ def main() -> int:
     # popt, res, c, resc=B1.extract_cs( integ, 1)
     # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     # print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
+    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
 
     
