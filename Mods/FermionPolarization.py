@@ -243,13 +243,14 @@ class ee_Bubble:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        # integrand_var=integrand_var+(Lambda_Tens_plus_k_kq_mn)*(Lambda_Tens_plus_kq_k_nm)*integrand(Ikq,Ik,ek_n,ek_m,omegas_m_i,mu,T)
                         
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -265,6 +266,7 @@ class ee_Bubble:
         print("time for bubble...",e-s)
         return integ_arr_no_reshape
 
+                        
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp):
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.real(integ))
@@ -759,12 +761,14 @@ class ep_Bubble:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -827,12 +831,14 @@ class ep_Bubble:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT_lh(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -1761,7 +1767,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q1,q3]=l.q
     q=la.norm(q1)
-    umkl=1
+    umkl=0
     print(f"taking ${umkl} umklapps")
     VV=lq.boundary()
     # [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
@@ -1772,7 +1778,7 @@ def main() -> int:
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
     kappa_p=0.0797/0.0975
-    kappa=kappa_p
+    kappa=modulation
     up = 0.0975; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -1805,7 +1811,7 @@ def main() -> int:
     mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-13 /1000 #(in eV s)
     alpha_ep=0*2*1# in ev
-    beta_ep=4*modulation #in ev
+    beta_ep=4 #in ev
     c_phonon=21400 #m/s
     gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
     gammap=(q*q*gamma**2/a_graphene**2)/(4*np.pi*np.pi)
@@ -1839,12 +1845,12 @@ def main() -> int:
 
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    omega=[1e-14]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute_lh(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs( integ, 1)
-    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute_lh(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs( integ, 1)
+    # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    # print(np.mean(popt),np.mean(c), resc, c_phonon)
     B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon)
     
 
