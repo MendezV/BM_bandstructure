@@ -1191,6 +1191,25 @@ class FormFactors():
         [KX,KY]=lat.Generate_lattice()
         [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
         
+        #G processes
+        self.MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
+        self.MGS1=self.MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
+        self.MGS_2=self.MGS1+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]] #2G
+        self.MGS2=self.MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]] #2G and possible corners
+        self.MGS_3=self.MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]] #3G
+        
+        if umklapp==1:
+            GSu=self.MGS_1
+        elif umklapp==2:
+            GSu=self.MGS_2
+        elif umklapp==3:
+            GSu=self.MGS_3
+        else:
+            GSu=[]
+
+        
+
+        
         self.kx=KXu
         self.ky=KYu
         [self.KQX, self.KQY, self.Ik]=lat.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
@@ -1427,6 +1446,39 @@ class FormFactors():
         return F
                 
 
+def main() -> int:
+    ##when we use this main, we are exclusively testing the moire hamiltonian symmetries and methods
     
+    
+    #parameters for the calculation
+    theta= 1.04*1.05*np.pi/180  # magic angle
+    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
+    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
-        
+    
+    try:
+        filling_index=int(sys.argv[1]) #0-25
+
+    except (ValueError, IndexError):
+        raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
+
+    try:
+        N_SFs=26 #number of SF's currently implemented
+        a=np.arange(N_SFs)
+        a[filling_index]
+
+    except (IndexError):
+        raise Exception(f"Index has to be between 0 and {N_SFs-1}")
+
+
+    try:
+        Nsamp=int(sys.argv[2])
+
+    except (ValueError, IndexError):
+        raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
+
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main())  # next section explains the use of sys.exit

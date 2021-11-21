@@ -14,7 +14,6 @@ import functools
 #TODO: parameter file that contains Nsamp, Numklaps, kappa, theta, mode, default_filling, alpha, beta, alphamod, betamod
 
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
-#TODO: paralelize when calculating the eigenvalues
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
 
 # Print iterations progress
@@ -87,13 +86,15 @@ class ee_Bubble:
 
         plt.scatter(K,KP,c=cos1)
         plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
-
+        plt.gca().set_aspect('auto', adjustable='box')
+        plt.savefig("cos1.png")
+        plt.close()
+        
         plt.scatter(K,KP,c=cos2)
         plt.colorbar()
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.show()
+        plt.gca().set_aspect('auto', adjustable='box')
+        plt.savefig("cos2.png")
+        plt.close()
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -1159,17 +1160,20 @@ class ee_Bubble_2:
             plt.scatter(K,KP,c=cos1)
             plt.colorbar()
             plt.gca().set_aspect('equal', adjustable='box')
-            plt.show()
+            plt.savefig("cos1scat.png")
+            plt.close()
 
             plt.scatter(K,KP,c=cos2)
             plt.colorbar()
             plt.gca().set_aspect('equal', adjustable='box')
-            plt.show()
+            plt.savefig("cos2scat.png")
+            plt.close()
 
             fig = plt.figure()
             ax = plt.axes(projection='3d')
             ax.scatter3D(K,KP,cos1, c=cos1);
-            plt.show()
+            plt.savefig("cos1.png")
+            plt.close()
 
             print("finished testing symmetry of the form factors...")
 
@@ -1394,7 +1398,7 @@ class ee_Bubble_2:
         #zero temp
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-        eps=0.001*self.eta ##SENSITIVE TO DISPERSION
+        eps=0.1*self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         # fac_p=(nfkq-nfk)/(-(edkq-edk))
@@ -1404,7 +1408,7 @@ class ee_Bubble_2:
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
     def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
-        eps=0.001*self.eta ##SENSITIVE TO DISPERSION
+        eps=0.1*self.eta ##SENSITIVE TO DISPERSION
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
 
@@ -1643,7 +1647,8 @@ class ee_Bubble_2:
         fig = plt.figure()
         ax = plt.axes(projection='3d')
         ax.scatter3D(KX,KY,np.real(integ), c=np.real(integ));
-        plt.show()
+        plt.savefig("3drealinteg.png")
+        plt.close()
 
         plt.plot(VV[:,0],VV[:,1])
         plt.scatter(KX,KY, s=20, c=np.imag(integ))
@@ -1840,18 +1845,30 @@ def main() -> int:
     # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
     # integ=B1.Compute_lh(mu, omega, kpath)
     # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
-    # # B1.epsilon_sweep(fillings, mu_values)
+    # B1.epsilon_sweep(fillings, mu_values)
+    
+    #testing umklapp
+    
+    test_symmetry=True
+    B1=ee_Bubble_2(lq, nbands, hpl, hmin, test_symmetry, umkl, theta)
+    omega=[1e-14]
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
+    integ=B1.Compute_lh(mu, omega, kpath)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
+    # B1.epsilon_sweep(fillings, mu_values)
     
 
-    test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # test_symmetry=True
+    # B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     # omega=[1e-14]
     # kpath=np.array([KX,KY]).T
     # integ=B1.Compute_lh(mu, omega, kpath)
     # popt, res, c, resc=B1.extract_cs( integ, 1)
     # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     # print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
 
     
