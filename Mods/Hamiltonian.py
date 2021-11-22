@@ -5,6 +5,7 @@ from scipy import interpolate
 import time
 import MoireLattice
 from scipy.interpolate import interp1d
+from scipy.linalg import circulant
   
 
 class Ham_BM_p():
@@ -90,6 +91,16 @@ class Ham_BM_p():
         qx_b_p= rot[0,0]*qx_b + rot[0,1]*qy_b
         qy_b_p= rot[1,0]*qx_b + rot[1,1]*qy_b
         return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
+    def umklapp_lattice_trans(self,trans):
+        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
+        G0xb_p= G0xb + trans[0]
+        G0yb_p= G0yb + trans[1]
+        qx_t_p= qx_t + trans[0]
+        qy_t_p= qy_t +trans[1]
+        qx_b_p= qx_b + trans[0]
+        qy_b_p= qy_b +trans[1]
+        return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
+    
 
 
     def diracH(self, kx, ky):
@@ -236,7 +247,7 @@ class Ham_BM_p():
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
-            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)[0]
             # print("wave1p;",psi_p[maxisind])
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
@@ -468,6 +479,50 @@ class Ham_BM_p():
         
         [q1,q2,q3]=self.latt.q
 
+        
+
+        matGGp1=np.zeros([Nb,Nb])
+        matGGp2=np.zeros([Nb,Nb])
+        matGGp3=np.zeros([Nb,Nb])
+        matGGp4=np.zeros([Nb,Nb])
+        tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
+
+        for i in range(Nb):
+
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp1[i,indi1]=1
+                # print(i, indi1, "a")
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp2[i,indi1]=1 #indi1+1=i
+                # print(i, indi1, "b")
+    
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp3[i,indi1]=1
+                # print(i, indi1, "c")
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp4[i,indi1]=1 #indi1+1=i
+                # print(i, indi1, "d")
+        
+        
+        block_tt=matGGp1
+        block_tb=matGGp3
+        block_bt=matGGp4
+        block_bb=matGGp2
+        return [block_tt,block_tb,block_bt, block_bb]
+        # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
+    
+    def trans_WF(self, trans):
+        [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]=self.umklapp_lattice_trans( trans)
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+        
+        [q1,q2,q3]=self.latt.q
+
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
@@ -500,31 +555,96 @@ class Ham_BM_p():
             if np.size(indi1)>0:
                 matGGp4[i,indi1]=1 #indi1+1=i
                 # print(i, indi1, "d")
-        
-        block_tt=matGGp1
-        block_tb=matGGp3
-        block_bt=matGGp4
-        block_bb=matGGp2
+        sig0=np.eye(2)
+        block_tt=np.kron(matGGp1, sig0)
+        block_tb=np.kron(matGGp3, sig0)
+        block_bt=np.kron(matGGp4, sig0)
+        block_bb=np.kron(matGGp2, sig0)
         return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
-    def Op_rot_psi(self, psi, rot):
-
+    #untested
+    def c2x_psi(self, psi):
+        rot=self.latt.C2x
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
-
-        rot_mat = self.rot_WF(rot)
-        mat=np.kron(rot_mat,paulix)
-        # print("determinant ", np.linalg.det(rot_mat))
-        # plt.imshow(mat)
-        # plt.show()
         
+        submat=paulix
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
 
 
         return mat@psi
         # return rot2@psi
+        
+    
+    def c2z_psi(self, psi):
+        rot=self.latt.C2z
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        submat=paulix
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+
+
+        return mat@psi
+        
+    def c3z_psi(self, psi):
+        rot=self.latt.C3z
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        submat=pauli0*np.cos(2*np.pi/3)+1j*self.xi*pauliz*np.sin(2*np.pi/3)
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+
+
+        return mat@psi
+
+        
+    #enduntested
+        
+    def trans_psi(self, psi, dirGM1,dirGM2):
+        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
+        veccirc1=np.roll(np.eye(Nb,1).flatten(), -dirGM1)
+        veccirc2=np.roll(np.eye(Nb,1).flatten(), dirGM1)
+        sig0=np.eye(2)
+        matt=np.kron(circulant(veccirc1), sig0)
+        matb=np.kron(circulant(veccirc2), sig0)
+        mat=np.bmat([[matt,matt*0], [matt*0, matb]])
+
+
+
+        return mat@psi
+    
+    def trans_psi2(self, psi, dirGM1,dirGM2):
+        
+        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+        Trans=dirGM1*GM1+dirGM2*GM2
+        mat = self.trans_WF(Trans)
+        
+
+        return mat@psi
+
 
     def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
         pauli0=np.array([[1,0],[0,1]])
@@ -1060,6 +1180,50 @@ class Ham_BM_m():
         
         [q1,q2,q3]=self.latt.q
 
+        
+
+        matGGp1=np.zeros([Nb,Nb])
+        matGGp2=np.zeros([Nb,Nb])
+        matGGp3=np.zeros([Nb,Nb])
+        matGGp4=np.zeros([Nb,Nb])
+        tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
+
+        for i in range(Nb):
+
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp1[i,indi1]=1
+                # print(i, indi1, "a")
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp2[i,indi1]=1 #indi1+1=i
+                # print(i, indi1, "b")
+    
+            indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
+            if np.size(indi1)>0:
+                matGGp3[i,indi1]=1
+                # print(i, indi1, "c")
+
+            indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
+            if np.size(indi1)>0:
+                matGGp4[i,indi1]=1 #indi1+1=i
+                # print(i, indi1, "d")
+        
+        
+        block_tt=matGGp1
+        block_tb=matGGp3
+        block_bt=matGGp4
+        block_bb=matGGp2
+        return [block_tt,block_tb,block_bt, block_bb]
+        # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
+    
+    def trans_WF(self, trans):
+        [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]=self.umklapp_lattice_trans( trans)
+        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
+        
+        [q1,q2,q3]=self.latt.q
+
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
@@ -1092,31 +1256,95 @@ class Ham_BM_m():
             if np.size(indi1)>0:
                 matGGp4[i,indi1]=1 #indi1+1=i
                 # print(i, indi1, "d")
-        
-        block_tt=matGGp1
-        block_tb=matGGp3
-        block_bt=matGGp4
-        block_bb=matGGp2
+        sig0=np.eye(2)
+        block_tt=np.kron(matGGp1, sig0)
+        block_tb=np.kron(matGGp3, sig0)
+        block_bt=np.kron(matGGp4, sig0)
+        block_bb=np.kron(matGGp2, sig0)
         return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
-    def Op_rot_psi(self, psi, rot):
-
+    #untested
+    def c2x_psi(self, psi):
+        rot=self.latt.C2x
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
-
-        rot_mat = self.rot_WF(rot)
-        mat=np.kron(rot_mat,pauli0)
-        # print("determinant ", np.linalg.det(rot_mat))
-        # plt.imshow(mat)
-        # plt.show()
         
+        submat=paulix
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
 
 
         return mat@psi
         # return rot2@psi
+        
+    
+    def c2z_psi(self, psi):
+        rot=self.latt.C2z
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        submat=paulix
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+
+
+        return mat@psi
+        
+    def c3z_psi(self, psi):
+        rot=self.latt.C3z
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        submat=pauli0*np.cos(2*np.pi/3)+1j*self.xi*pauliz*np.sin(2*np.pi/3)
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+
+
+        return mat@psi
+
+        
+    #enduntested
+        
+    def trans_psi(self, psi, dirGM1,dirGM2):
+        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
+        veccirc1=np.roll(np.eye(Nb,1).flatten(), -dirGM1)
+        veccirc2=np.roll(np.eye(Nb,1).flatten(), dirGM1)
+        sig0=np.eye(2)
+        matt=np.kron(circulant(veccirc1), sig0)
+        matb=np.kron(circulant(veccirc2), sig0)
+        mat=np.bmat([[matt,matt*0], [matt*0, matb]])
+
+
+
+        return mat@psi
+    
+    def trans_psi2(self, psi, dirGM1,dirGM2):
+        
+        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+        Trans=dirGM1*GM1+dirGM2*GM2
+        mat = self.trans_WF(Trans)
+        
+
+        return mat@psi
 
     def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
         pauli0=np.array([[1,0],[0,1]])
@@ -1448,6 +1676,8 @@ class FormFactors():
 
 def main() -> int:
     ##when we use this main, we are exclusively testing the moire hamiltonian symmetries and methods
+    from scipy import linalg as la
+    
     
     
     #parameters for the calculation
@@ -1476,6 +1706,264 @@ def main() -> int:
 
     except (ValueError, IndexError):
         raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
+
+
+
+    filling_index=int(sys.argv[1]) #0-25
+    mu=mu_values[filling_index]/1000
+    ##########################################
+    #parameters energy calculation
+    ##########################################
+    a_graphene=2.46*(1e-10) #in meters
+    hbvf=0.003404*0.1973269804*1e-6 /a_graphene #ev*m
+    # hbvf = 2.1354; # eV
+    theta=1.05*np.pi/180  #1.05*np.pi/180 #twist Angle
+    nbands=4 #Number of bands 
+    Nsamp=int(sys.argv[2])
+    kappa_p=0.0797/0.0975;
+    kappa=kappa_p;
+    up = 0.0975; # eV
+    u = kappa*up; # eV
+
+
+
+    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
+    ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
+    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
+    [KX,KY]=lq.Generate_lattice()
+    # plt.scatter(KX,KY)
+    # plt.show()
+    Npoi=np.size(KX)
+    [q1,q1,q3]=l.q
+    q=la.norm(q1)
+    [GM1,GM2]=lq.GMvec
+
+    hvkd=hbvf*q
+    Kvec=(2*lq.b[0,:]+lq.b[1,:])/3 
+    K=la.norm(Kvec)
+    GG=la.norm(l.b[0,:])
+    print(q , 2*K*np.sin(theta/2))
+
+
+    #Various alpha values
+    hvfK_andrei=19.81
+    #andreis params
+    w=0.110 #in ev
+    hvfkd_andrei=hvfK_andrei*np.sin(theta/2) #wrong missing 1/sqrt3
+    alpha_andrei=w/hvfkd_andrei
+    alpha=w/hvkd
+    alpha_andrei_corrected=(np.sqrt(3)/2)*w/hvfkd_andrei
+    #magic angles
+    amag1=0.5695
+    amag2=0.605
+    amag3=0.65
+    #angle with flat band in the chiral limit
+    alph2= 0.5856
+    PH=True
+
+
+
+    xi=1
+    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
+    hbvf = 2.1354; # eV
+    hvkd=hbvf*q
+    kappa_p=0.0797/0.0975
+    kappa=kappa_p
+    up = 0.0975; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
+    
+        
+    # # #################################
+    # # #################################
+    # # #################################
+    # # # Form factors C3
+    # # #################################
+    # # #################################
+    # # #################################
+
+    Ene_valley_plus_a=np.empty((0))
+    Ene_valley_plus_ac3=np.empty((0))
+    psi_plus_a=[]
+    psi_plus_ac3=[]
+
+    rot_C2z=lq.C2z
+    rot_C3z=lq.C3z
+
+    [KQX, KQY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
+    umkl=1
+    [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
+    [KQXu, KQYu, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
+    Npoi_u=np.size(KXu)
+    plt.scatter(KQX, KQY)
+    plt.scatter(KXu, KYu)
+    plt.scatter(KX, KY)
+    plt.savefig("fig0.png")
+    plt.close()
+
+    [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
+    # print("starting dispersion ..........")
+    # # for l in range(Nsamp*Nsamp):
+    s=time.time()
+    hpl=Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+    overlaps=[]
+    nbands=2
+    l=35
+    shi1=int(0)
+    shi2=int(3)
+    vecT=shi1*GM1 +shi2*GM2
+    
+    plt.scatter(KXu,KYu)
+    plt.scatter(KX,KY)
+    plt.scatter(KX[l],KY[l])
+    plt.scatter(KX[l]+vecT[0],KY[l]+vecT[1])
+    plt.savefig("latpoint.png")
+    plt.close()
+    
+    print("the first umklapp vector is ",GM1)
+    print("the second umklapp vector is ",GM2)
+    E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
+    E1p2,wave1p2=hpl.eigens(KX[l]+vecT[0],KY[l]+vecT[1],nbands)
+    wave1p3=hpl.trans_psi2(wave1p, shi1,shi2)
+    print(E1p2, E1p, np.shape(wave1p))
+    
+    
+    
+    print("gauge fixing working??")
+    maxind1=np.unravel_index(np.argmax(np.abs(wave1p[:,1]), axis=None), wave1p[:,1].shape)[0]
+    print(wave1p[maxind1,1], maxind1)
+    maxind2=np.unravel_index(np.argmax(np.abs(wave1p2[:,1]), axis=None), wave1p2[:,1].shape)[0]
+    print(wave1p2[maxind2, 1], maxind2)
+    maxind3=np.unravel_index(np.argmax(np.abs(wave1p3[:,1]), axis=None), wave1p3[:,1].shape)[0]
+    print(wave1p3[maxind3, 1], maxind3)
+    
+    
+    # plt.plot(np.real(wave1p[:,1])-np.real(wave1p3[:,1]))
+    plt.plot(np.real(wave1p2[:,1]))
+    plt.plot(np.real(wave1p3[:,1]))
+    plt.savefig("wavesre.png")
+    plt.close()
+    # plt.plot(np.imag(wave1p[:,1])-np.imag(wave1p3[:,1]))
+    plt.plot(np.imag(wave1p2[:,1]))
+    plt.plot(np.imag(wave1p3[:,1]))
+    plt.savefig("wavesim.png")
+    plt.close()
+    # plt.plot(np.abs(wave1p[:,1])-np.abs(wave1p3[:,1]))
+    plt.plot(np.abs(wave1p2[:,1]))
+    plt.plot(np.abs(wave1p3[:,1]))
+    plt.axvline(maxind2)
+    plt.axvline(maxind1)
+    plt.savefig("wavesabs.png")
+    plt.close()
+    
+    plt.plot(np.diag(np.abs( np.conj(wave1p2.T)@wave1p3 )))
+    # plt.ylim(0.5,1.5)
+    # plt.plot(np.abs(wave1p2[:,1]))
+    # plt.plot(np.abs(wave1p3[:,1]))
+    plt.savefig("waveinner.png")
+    plt.close()
+    
+    print("before shift \n", np.conj(wave1p.T)@wave1p2)
+    print("after shift \n",np.conj(wave1p3.T)@wave1p2 ) 
+    print("after shift abs \n",np.abs(np.conj(wave1p3.T)@wave1p2 )) 
+    
+    
+    # for l in range(Npoi_u):
+    #     E1p,wave1p=hpl.eigens(KXu[l],KYu[l],nbands)
+    #     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+    #     psi_plus_a.append(wave1p)
+
+
+    #     E1p_c3z,wave1p_c3z=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
+    #     wave1p_c3z_rot=hpl.Op_rot_psi( wave1p_c3z , rot_C3z)
+    #     Ene_valley_plus_ac3=np.append(Ene_valley_plus_ac3,E1p_c3z)
+    #     psi_plus_ac3.append(wave1p_c3z)
+
+
+    # e=time.time()
+    # print("time to diag over MBZ", e-s)
+    # ##relevant wavefunctions and energies for the + valley
+    # psi_plus=np.array(psi_plus_a)
+    # Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi_u,nbands])
+
+    # psi_plusc3=np.array(psi_plus_ac3)
+    # Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi_u,nbands])
+
+
+    # plt.scatter(KXu,KYu,c=Ene_valley_plus[:,1])
+    # plt.colorbar()
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.savefig("fig1.png")
+    # plt.close()
+
+    # plt.scatter(KXu,KYu,c=Ene_valley_plusc3[:,1])
+    # plt.colorbar()
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.savefig("fig2.png")
+    # plt.close()
+    # print(np.shape(psi_plus),np.shape(psi_plusc3))
+
+    # FFp=FormFactors(psi_plus, 1, lq,umkl)
+    # L00p=FFp.NemFFL_a()
+    # FFc3=FormFactors(psi_plusc3, 1, lq,umkl)
+    # L00m=FFc3.NemFFL_a()
+    # print(np.shape(L00p),np.shape(L00m) )
+
+
+
+    # ind0=np
+    # #####transpose complex conj plus
+
+
+    # diffar=[]
+    # K=[]
+    # KP=[]
+    # cos=[]
+    # cos2=[]
+
+    # kp=np.argmin(KXu**2+KYu**2)
+    # for k in range(Npoi_u):
+    #     # plt.scatter(KX,KY)
+    #     # plt.plot(KX[kp],KY[kp], 'o', c='r' )
+    #     # plt.plot(KX[k],KY[k], 'o' , c='g')
+    #     # plt.plot(KXc3z[k],KYc3z[k], 'o' , c='orange')
+    #     # plt.plot(KX[int(Indc3z[k])],KY[int(Indc3z[k])],'o', c='k' )
+    #     # plt.show()
+    #     undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
+    #     dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+    #     diffar.append( undet - dosdet )
+    #     cos.append(undet)
+    #     cos2.append(dosdet)
+    #     print(undet, dosdet)
+
+    # plt.plot(diffar)
+    # plt.savefig("fig3.png")
+    # plt.close()
+
+    # plt.scatter(KXu,KYu,c=cos)
+    # plt.colorbar()
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.savefig("fig4.png")
+    # plt.close()
+
+    # plt.scatter(KXu,KYu,c=cos2)
+    # plt.colorbar()
+    # plt.gca().set_aspect('equal', adjustable='box')
+    # plt.savefig("fig5.png")
+    # plt.close()
+
+    # fig = plt.figure()
+    # ax = plt.axes(projection='3d')
+    # ax = plt.axes(projection='3d')
+
+    # ax.scatter3D(KXu,KYu,cos, c=cos);
+    # plt.savefig("fig6.png")
+    # plt.close()
+    # #######################
+
+    # ########################
 
 
 
