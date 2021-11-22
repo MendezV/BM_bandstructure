@@ -59,7 +59,8 @@ class Ham_BM_p():
         qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
         qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
-        cutoff=7.*GM*0.7
+        #cutoff=7.*GM*0.7
+        cutoff=9.*GM*0.7
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
 
         #cutoff lattice
@@ -79,7 +80,9 @@ class Ham_BM_p():
 
         # plt.scatter(qx_t ,qy_t,c='k', s=np.arange(Nb)+1 )
         # plt.scatter(qx_b ,qy_b , c='r', s=np.arange(Nb)+1 )
-        # plt.show()
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.savefig("momelat.png")
+        # plt.close()
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t,qx_b, qy_b] 
 
     def umklapp_lattice_rot(self, rot):
@@ -641,8 +644,23 @@ class Ham_BM_p():
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         Trans=dirGM1*GM1+dirGM2*GM2
         mat = self.trans_WF(Trans)
+        ###This is very error prone, I'm assuming two options either a pure wvefunction
+        #or a wavefunction where the first index is k , the second is 4N and the third is band
+        nind=len(np.shape(psi))
+        if nind==2:
+            matmul=mat@psi
+        if nind==3:
+            psimult=[]
+            for i in range(np.shape(psi)[0]):
+                psimult=psimult+[mat@psi[i,:,:]]
+            matmul=np.array(psimult)
+        else:
+            print("not going to work, check umklapp shift")
+            matmul=mat@psi
+                
         
 
+        return matmul
         return mat@psi
 
 
@@ -769,7 +787,7 @@ class Ham_BM_m():
         qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
         qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
-        cutoff=7.*GM*0.7
+        cutoff=9.*GM*0.7
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
 
         #cutoff lattice
@@ -801,6 +819,17 @@ class Ham_BM_m():
         qx_b_p= rot[0,0]*qx_b + rot[0,1]*qy_b
         qy_b_p= rot[1,0]*qx_b + rot[1,1]*qy_b
         return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
+
+    def umklapp_lattice_trans(self,trans):
+        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
+        G0xb_p= G0xb + trans[0]
+        G0yb_p= G0yb + trans[1]
+        qx_t_p= qx_t + trans[0]
+        qy_t_p= qy_t +trans[1]
+        qx_b_p= qx_b + trans[0]
+        qy_b_p= qy_b +trans[1]
+        return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
+    
 
 
     def diracH(self, kx, ky):
@@ -1340,11 +1369,26 @@ class Ham_BM_m():
     def trans_psi2(self, psi, dirGM1,dirGM2):
         
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
-        Trans=dirGM1*GM1+dirGM2*GM2
+        Trans=-dirGM1*GM1-dirGM2*GM2
         mat = self.trans_WF(Trans)
         
+        nind=len(np.shape(psi))
+        ###This is very error prone, I'm assuming two options either a pure wvefunction
+        #or a wavefunction where the first index is k , the second is 4N and the third is band
+        if nind==2:
+            matmul=mat@psi
+        if nind==3:
+            psimult=[]
+            for i in range(np.shape(psi)[0]):
+                psimult=psimult+[mat@psi[i,:,:]]
+            matmul=np.array(psimult)
+        else:
+            print("not going to work, check umklapp shift")
+            matmul=mat@psi
+                
+        
 
-        return mat@psi
+        return matmul
 
     def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
         pauli0=np.array([[1,0],[0,1]])
@@ -1464,7 +1508,14 @@ class FormFactors():
         
 
         mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
-        return  mat@self.psi
+        
+        # print("shapes in all the matrices being mult", np.shape(mat), np.shape(self.psi), np.shape(mat@self.psi))
+        psimult=[]
+        for i in range(np.shape(self.psi)[0]):
+            psimult=psimult+[mat@self.psi[i,:,:]]
+        mult_psi=np.array(psimult)
+
+        return  mult_psi#mat@self.psi
 
     def calcFormFactor(self, layer, sublattice):
         s=time.time()
@@ -1674,6 +1725,167 @@ class FormFactors():
         return F
                 
 
+class FormFactors_umklapp():
+    def __init__(self, psi_p, xi, lat, umklapp, ham):
+        self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
+        self.lat=lat
+        self.cpsi_p=np.conj(psi_p)
+        self.xi=xi
+        self.Nu=int(np.shape(self.psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
+
+        
+        [KX,KY]=lat.Generate_lattice()
+        
+        Gu=lat.Umklapp_List(umklapp)
+        [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
+
+        self.kx=KXu
+        self.ky=KYu
+
+        #momentum transfer lattice
+        kqx1, kqx2=np.meshgrid(self.kx,self.kx)
+        kqy1, kqy2=np.meshgrid(self.ky,self.ky)
+        self.qx=kqx1-kqx2
+        self.qy=kqy1-kqy2
+        self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
+        
+        psilist=[]
+        for GG in Gu:
+            shi1=int(GG[0])
+            shi2=int(GG[1])
+            psishift=ham.trans_psi2(psi_p, shi1, shi2)
+            psilist=psilist+[psishift]
+        self.psi=np.vstack(psilist)
+        self.cpsi=np.conj(self.psi)
+        print(np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
+            
+
+    def __repr__(self):
+        return "Form factors for valley {xi}".format( xi=self.xi)
+
+    def matmult(self, layer, sublattice):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Qmat=np.eye(self.Nu)
+        
+
+        mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        
+        psimult=[]
+        for i in range(np.shape(self.psi)[0]):
+            psimult=psimult+[mat@self.psi[i,:,:]]
+        mult_psi=np.array(psimult)
+
+        return  mult_psi#mat@self.psi
+
+    def calcFormFactor(self, layer, sublattice):
+        s=time.time()
+        print("calculating tensor that stores the overlaps........")
+        mult_psi=self.matmult(layer,sublattice)
+        Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
+        e=time.time()
+        print("finsihed the overlaps..........", e-s)
+        return(Lambda_Tens)
+    
+ 
+
+
+    #######fourth round
+    def fq(self, FF ):
+
+        farr= np.ones(np.shape(FF))
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                farr[:, i, :, j]=(self.qx**2-self.qy**2)/self.q
+                        
+        return farr
+
+    def gq(self,FF):
+        garr= np.ones(np.shape(FF))
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                garr[:, i, :, j]=2*(self.qx*self.qy)/self.q
+                        
+        return garr 
+
+
+    def hq(self,FF):
+        harr= np.ones(np.shape(FF))
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=self.q
+                        
+        return harr 
+
+    def h_denominator(self,FF):
+        qx=self.KQX[1]-self.KQX[0]
+        qy=self.KQY[1]-self.KQY[0]
+        qmin=np.sqrt(qx**2+qy**2)
+        harr= np.ones(np.shape(FF))
+        qcut=np.array(self.q)
+        qanom=qcut[np.where(qcut<0.01*qmin)]
+        qcut[np.where(qcut<0.01*qmin)]=np.ones(np.shape(qanom))*qmin
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=qcut
+                        
+        return harr
+
+
+    
+
+    ########### Anti-symmetric displacement of the layers
+    def denqFF_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return L30
+
+    def denqFFL_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return self.hq(L30)*L30
+
+
+    def NemqFFL_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.fq(L31) *L31-self.xi*self.gq(L32)*L32
+        return Nem_FFL
+
+    def NemqFFT_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFT=-self.gq(L31) *L31- self.xi*self.fq(L32)*L32
+        return Nem_FFT
+
+    ########### Symmetric displacement of the layers
+    def denqFF_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return L00
+
+    def denqFFL_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return self.hq(L00)*L00
+
+    def NemqFFL_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFL=self.fq(L01) *L01-self.xi*self.gq(L02)*L02
+        return Nem_FFL
+
+    def NemqFFT_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
+        return Nem_FFT
+    
+    
+
 def main() -> int:
     ##when we use this main, we are exclusively testing the moire hamiltonian symmetries and methods
     from scipy import linalg as la
@@ -1793,7 +2005,7 @@ def main() -> int:
 
     [KQX, KQY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
     umkl=1
-    [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
+    [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
     [KQXu, KQYu, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
     Npoi_u=np.size(KXu)
     plt.scatter(KQX, KQY)
@@ -1807,9 +2019,11 @@ def main() -> int:
     # # for l in range(Nsamp*Nsamp):
     s=time.time()
     hpl=Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-    hmin=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+    # hpl=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
     overlaps=[]
-    nbands=2
+    nbands=2 
+    '''
+    #testing the wavefunction on rotation and translation
     l=35
     shi1=int(0)
     shi2=int(3)
@@ -1829,7 +2043,7 @@ def main() -> int:
     wave1p3=hpl.trans_psi2(wave1p, shi1,shi2)
     print(E1p2, E1p, np.shape(wave1p))
     
-    
+   
     
     print("gauge fixing working??")
     maxind1=np.unravel_index(np.argmax(np.abs(wave1p[:,1]), axis=None), wave1p[:,1].shape)[0]
@@ -1870,6 +2084,110 @@ def main() -> int:
     print("after shift abs \n",np.abs(np.conj(wave1p3.T)@wave1p2 )) 
     
     
+    MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
+    MGS1=MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
+    MGS_2=MGS1+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]] #2G
+    MGS2=MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]] #2G and possible corners
+    MGS_3=MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]] #3G
+    inner2=[]
+    dist=[]
+    for MG in MGS_3:
+        l=35
+        shi1=int(MG[0])
+        shi2=int(MG[1])
+        vecT=shi1*GM1 +shi2*GM2
+        E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
+        E1p2,wave1p2=hpl.eigens(KX[l]+vecT[0],KY[l]+vecT[1],nbands)
+        wave1p3=hpl.trans_psi2(wave1p, shi1,shi2)
+        print(MG)
+        # print("before shift \n", np.conj(wave1p.T)@wave1p2)
+        # print("after shift \n",np.conj(wave1p3.T)@wave1p2 ) 
+        inner=np.abs(np.conj(wave1p3.T)@wave1p2 )
+        inner2.append(inner[0,0])
+        inner2.append(inner[1,1])
+        dist.append(np.sqrt(shi1**2+shi2**2))
+        dist.append(np.sqrt(shi1**2+shi2**2))
+        print("after shift abs \n",inner) 
+        
+    plt.scatter(dist,inner2)
+    plt.savefig("umklapp_overlaps_"+str(KX[l])+"_"+str(KY[l])+".png")
+    plt.close()
+    FFp=FormFactors_umklapp(wave1p2, 1, lq,umkl, hpl)
+    '''
+    
+    
+    umkl=4
+    [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
+    [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
+    Npoi_u=np.size(KXu)
+    
+    
+    
+    
+    for l in range(Npoi):
+        E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
+        Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+        psi_plus_a.append(wave1p)
+
+    e=time.time()
+    print("time to diag over MBZ", e-s)
+    ##relevant wavefunctions and energies for the + valley
+    psi_plus=np.array(psi_plus_a)
+    Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+
+    plt.scatter(KX,KY,c=Ene_valley_plus[:,1])
+    plt.colorbar()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig("fig1.png")
+    plt.close()
+
+
+    FFp=FormFactors_umklapp(psi_plus, 1, lq,umkl, hpl)
+    L00p=FFp.NemqFFL_a()
+
+    print(np.shape(L00p) )
+    
+    
+    diffar=[]
+    K=[]
+    KP=[]
+    cos=[]
+    cos2=[]
+
+    kp=np.argmin(KXu**2+KYu**2)
+    for k in range(Npoi_u):
+        undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
+        dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+        diffar.append( undet - dosdet )
+        cos.append(undet)
+        cos2.append(dosdet)
+        print(undet, dosdet)
+
+    plt.plot(diffar)
+    plt.savefig("fig3.png")
+    plt.close()
+
+    plt.scatter(KXu,KYu,c=cos)
+    plt.colorbar()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig("fig4.png")
+    plt.close()
+
+    plt.scatter(KXu,KYu,c=cos2)
+    plt.colorbar()
+    plt.gca().set_aspect('equal', adjustable='box')
+    plt.savefig("fig5.png")
+    plt.close()
+
+    fig = plt.figure()
+    ax = plt.axes(projection='3d')
+    ax = plt.axes(projection='3d')
+
+    ax.scatter3D(KXu,KYu,cos, c=cos);
+    plt.savefig("fig6.png")
+    plt.close()
+
+    
     # for l in range(Npoi_u):
     #     E1p,wave1p=hpl.eigens(KXu[l],KYu[l],nbands)
     #     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
@@ -1877,7 +2195,7 @@ def main() -> int:
 
 
     #     E1p_c3z,wave1p_c3z=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
-    #     wave1p_c3z_rot=hpl.Op_rot_psi( wave1p_c3z , rot_C3z)
+    #     wave1p_c3z_rot=hpl.c3z_psi( wave1p_c3z)
     #     Ene_valley_plus_ac3=np.append(Ene_valley_plus_ac3,E1p_c3z)
     #     psi_plus_ac3.append(wave1p_c3z)
 
@@ -1961,9 +2279,9 @@ def main() -> int:
     # ax.scatter3D(KXu,KYu,cos, c=cos);
     # plt.savefig("fig6.png")
     # plt.close()
-    # #######################
+    #######################
 
-    # ########################
+    ########################
 
 
 

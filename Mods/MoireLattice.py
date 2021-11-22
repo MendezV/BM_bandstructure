@@ -631,3 +631,40 @@ class MoireTriangLattice:
         K=np.sqrt(KX**2+KY**2)
         ind=np.where(K<k_window_sizex*thres)
         return [KX[ind],KY[ind], ind]
+    
+    def Umklapp_List(self, umklapps):
+        #G processes
+        G=self.GMs
+        Gu=[]
+        [GM1, GM2]=self.GMvec
+        for i in range(-10,10):
+            for j in range(-10,10):
+                Gp=i*GM1+j*GM2
+                Gpn=np.sqrt(Gp.T@Gp)
+                if  Gpn<=G*(umklapps+0.1):
+                    Gu=Gu+[[i,j]]
+        #             plt.scatter(Gp[0], Gp[1], c='r')
+        #         else:
+        #             plt.scatter(Gp[0], Gp[1], c='b')
+
+        # thetas=np.linspace(0,2*np.pi, 100)
+        # xx=umklapps*G*np.cos(thetas)
+        # yy=umklapps*G*np.sin(thetas)
+        # plt.plot(xx,yy)
+        # plt.savefig("ulat.png")
+        # plt.close()
+        return Gu
+    
+    def Generate_Umklapp_lattice2(self, KX, KY, numklaps):
+        Gu=self.Umklapp_List(numklaps)
+        [GM1, GM2]=self.GMvec
+        KXu=[]
+        KYu=[]
+        
+        for GG in Gu:
+            KXu=KXu+[KX+GG[0]*GM1[0]+GG[1]*GM2[0]]
+            KYu=KYu+[KY+GG[0]*GM1[1]+GG[1]*GM2[1]]
+        
+        KXum=np.concatenate( KXu )
+        KYum=np.concatenate( KYu )
+        return [KXum, KYum]
