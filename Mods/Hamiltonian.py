@@ -735,6 +735,16 @@ class Ham_BM_p():
         # plt.show()
 
         return [bins,valt,f2 ]
+    
+    def ExtendE(self,E_k , umklapp):
+        Gu=self.latt.Umklapp_List(umklapp)
+        
+        Elist=[]
+        for GG in Gu:
+            Elist=Elist+[E_k]
+            
+        return np.vstack(Elist)
+
 
 class Ham_BM_m():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
@@ -1448,6 +1458,14 @@ class Ham_BM_m():
 
         return [bins,valt,f2 ]
     
+    def ExtendE(self,E_k , umklapp):
+        Gu=self.latt.Umklapp_List(umklapp)
+        
+        Elist=[]
+        for GG in Gu:
+            Elist=Elist+[E_k]
+            
+        return np.vstack(Elist)
     
 
 
@@ -2116,7 +2134,7 @@ def main() -> int:
     '''
     
     
-    umkl=4
+    umkl=2
     [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
     [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
     Npoi_u=np.size(KXu)

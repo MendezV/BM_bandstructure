@@ -830,13 +830,28 @@ class ee_Bubble:
         self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
         
+        EpK=self.hpl.ExtendE(self.Ene_valley_plus , self.umkl)
+        EmK=self.hmin.ExtendE(self.Ene_valley_min , self.umkl)
+        # plt.scatter(self.KX1bz,self.KY1bz, c=self.Ene_valley_plus[:,0])
+        # plt.colorbar()
+        # plt.savefig("1bzplusdisp.png")
+        # plt.close()
+        # plt.scatter(self.KX,self.KY, c=EpK[:,0], s=1)
+        # plt.colorbar()
+        # plt.savefig("plusdisp.png")
+        # plt.close()
+        # plt.scatter(self.KX,self.KY, c=EmK[:,0], s=1)
+        # plt.colorbar()
+        # plt.savefig("mindisp.png")
+        # plt.close()
+        
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         self.name="ee"
         self.L00p=self.FFp.denqFF_s()
         self.L00m=self.FFm.denqFF_s()
-  
+        
         
 
         self.dS_in=latt.VolMBZ/self.Npoi
