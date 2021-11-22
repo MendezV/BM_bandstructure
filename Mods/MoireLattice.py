@@ -668,3 +668,11 @@ class MoireTriangLattice:
         KXum=np.concatenate( KXu )
         KYum=np.concatenate( KYu )
         return [KXum, KYum]
+    def insertion_index(self, KX,KY, KQX,KQY):
+        #list of size Npoi that has the index of K in KQ
+        Npoi=np.size(KX)
+        Ik=[]
+        for j in range(Npoi):
+            indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
+            Ik.append(indmin)
+        return Ik

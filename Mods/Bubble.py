@@ -823,27 +823,17 @@ class ee_Bubble:
         self.Npoi1bz=np.size(self.KX1bz)
         [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
         [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
+        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
         self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=self.precompute_E_psi()
+        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
-        EpK=self.hpl.ExtendE(self.Ene_valley_plus , self.umkl)
-        EmK=self.hmin.ExtendE(self.Ene_valley_min , self.umkl)
-        # plt.scatter(self.KX1bz,self.KY1bz, c=self.Ene_valley_plus[:,0])
-        # plt.colorbar()
-        # plt.savefig("1bzplusdisp.png")
-        # plt.close()
-        # plt.scatter(self.KX,self.KY, c=EpK[:,0], s=1)
-        # plt.colorbar()
-        # plt.savefig("plusdisp.png")
-        # plt.close()
-        # plt.scatter(self.KX,self.KY, c=EmK[:,0], s=1)
-        # plt.colorbar()
-        # plt.savefig("mindisp.png")
-        # plt.close()
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
+        
         
         self.eta=np.mean( np.abs( np.diff( self.Ene_valley_plus[:,int(nbands/2)].flatten() )  ) )/2
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
@@ -982,7 +972,7 @@ class ee_Bubble:
         #zero temp
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-        eps=0.1*self.eta ##SENSITIVE TO DISPERSION
+        eps=0.5*self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         # fac_p=(nfkq-nfk)/(-(edkq-edk))
@@ -992,7 +982,7 @@ class ee_Bubble:
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
     def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
-        eps=0.1*self.eta ##SENSITIVE TO DISPERSION
+        eps=0.5*self.eta ##SENSITIVE TO DISPERSION
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
 
@@ -1037,11 +1027,8 @@ class ee_Bubble:
                 
                 qx=kpath[int(l), 0]
                 qy=kpath[int(l), 1]
-                Ikq=[]
-                for s in range(self.Npoi):
-                    kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
-                    indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
-                    Ikq.append(indmin)
+
+                Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
@@ -1095,11 +1082,8 @@ class ee_Bubble:
                 
                 qx=kpath[int(l), 0]
                 qy=kpath[int(l), 1]
-                Ikq=[]
-                for s in range(self.Npoi):
-                    kxq,kyq=self.KX[s]+qx,self.KY[s]+qy
-                    indmin=np.argmin(np.sqrt((self.KQX-kxq)**2+(self.KQY-kyq)**2))
-                    Ikq.append(indmin)
+                
+                Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
@@ -1435,12 +1419,12 @@ def main() -> int:
     
     test_symmetry=True
     B1=ee_Bubble(lq, nbands, hpl, hmin, test_symmetry, umkl, theta)
-    # omega=[1e-14]
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
-    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
-    # integ=B1.Compute_lh(mu, omega, kpath)
-    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
+    omega=[1e-14]
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
+    integ=B1.Compute_lh(mu, omega, kpath)
+    B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
     # B1.epsilon_sweep(fillings, mu_values)
     
 
