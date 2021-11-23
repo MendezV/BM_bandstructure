@@ -767,8 +767,11 @@ class Ham_BM_p():
         # plt.ylim([0,8])
         plt.savefig("dos.png")
         plt.close()
-    
+        
+        
+        valt=2*valt
         f2 = interp1d(binn[:-1],valt, kind='cubic')
+        print("sum of the hist, normed?", np.sum(valt)*(bins[1]-bins[0]))
         
         # xnew = np.linspace(np.min(binn[:-1]), np.max(binn[:-1]), num=1000, endpoint=True)
         # plt.plot(binn[:-1],valt, 'o',  xnew, f2(xnew), '--')
@@ -794,23 +797,31 @@ class Ham_BM_p():
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
         NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
-        binn=np.linspace(mmin,mmax,NN+1)
-        valt=np.zeros(NN)
-        epsil=eps*2
-        earr=np.linspace(mmin,mmax, int(NN/2))
+        earr=np.linspace(mmin,mmax,NN+1)
+        epsil=eps/100
         de=earr[1]-earr[0]
         dosl=[]
         print("the volume element is ",dS_in)
         
         for i in range(np.size(earr)):
-            predos=self.deltados(Ene_valley_plus.flatten()-earr[i], epsil)+self.deltados(Ene_valley_min.flatten()-earr[i], epsil)
+            predos=0
+            for j in range(nbands):
+                
+                predos_plus=self.deltados(Ene_valley_plus[:,j]-earr[i], epsil)
+                predos_min=self.deltados(Ene_valley_min[:,j]-earr[i], epsil)
+                predos=predos+predos_plus+predos_min
+                # print(np.sum(predos_plus  )*dS_in)
+                # print(np.sum(predos_min  )*dS_in)
+                # print("sum of the hist, normed?", np.sum(predos)*dS_in)
+            # print("4 real sum of the hist, normed?", np.sum(predos)*dS_in)
             dosl.append( np.sum(predos  )*dS_in )
-            print(np.sum(self.deltados(earr, epsil)*de))
+            # print(np.sum(self.deltados(earr, epsil)*de))
 
         dosarr=np.array(dosl)
         f2 = interp1d(earr,dosarr, kind='cubic')
+        print("sum of the hist, normed?", np.sum(dosarr)*de)
+    
         
-        print("")
         
         return [earr,dosarr,f2 ]
     

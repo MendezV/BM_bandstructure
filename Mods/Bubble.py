@@ -841,8 +841,14 @@ class ee_Bubble:
             eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_min_1bz[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
         eps=np.min(eps_a)
+        
+        # self.eta=eps
+        # self.eta_dirac_delta=eps/2
+        # self.eta_cutoff=eps*0.1
+        # self.eta_small_imag=eps*0.1
+        
         self.eta=eps
-        self.eta_dirac_delta=2*eps
+        self.eta_dirac_delta=eps/4
         self.eta_cutoff=eps
         self.eta_small_imag=eps
         
@@ -918,7 +924,7 @@ class ee_Bubble:
             print("finished testing symmetry of the form factors...")
             
             ###DOS
-            Ndos=100
+            Ndos=100#latt.Npoints
             ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
             [self.KXdos, self.KYdos]=ldos.Generate_lattice()
             self.Npoidos=np.size(self.KXdos)
@@ -927,7 +933,7 @@ class ee_Bubble:
             #     np.save(f, self.Ene_valley_plus_dos)
             # with open('Edism_'+str(Ndos)+'.npy', 'wb') as f:
             #     np.save(f, self.Ene_valley_min_dos)
-            print("Loading  ..........")
+            # print("Loading  ..........")
             
             with open('Edisp_'+str(Ndos)+'.npy', 'rb') as f:
                 self.Ene_valley_plus_dos=np.load(f)
@@ -952,7 +958,7 @@ class ee_Bubble:
             plt.close()
 
             [self.bins,self.valt, self.f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
-            [self.earr,self.dosarr,self.f2 ]=hpl.DOS2(self.Ene_valley_plus_dos,self.Ene_valley_min_dos,ldos.VolMBZ/np.size(self.KXdos))
+            [self.earr,self.dosarr,self.f2 ]=hpl.DOS2(self.Ene_valley_plus_dos,self.Ene_valley_min_dos,1/np.size(self.KXdos))
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -1344,13 +1350,21 @@ class ee_Bubble:
     def epsilon_sweep(self,fillings, mu_values):
         
         
-        scalings=[0.001,0.01,0.1,1,2,5]
+        scalings=[1e-8,0.001,0.01,0.1,1,2,5, 100]
         for e in scalings:
             cs=[]
             cs_lh=[]
-            eddy=self.eta_small_imag
-            self.eta_small_imag=e*eddy
-            bins2=np.linspace(self.bins[0],self.bins[-1],500)
+            eddy=self.eta_cutoff
+            self.eta_cutoff=e*eddy
+            
+            #have to divide by the vlume of the MBZ to get the same normalization
+            Vol=self.lq.VolMBZ
+            
+            mmin=np.min([np.min(self.Ene_valley_plus),np.min(self.Ene_valley_min)])
+            mmax=np.max([np.max(self.Ene_valley_plus),np.max(self.Ene_valley_min)])
+            NN=int((mmax-mmin)/self.eta)+int((int((mmax-mmin)/self.eta)+1)%2) #making sure there is a bin at zero energy
+
+            bins2=np.linspace(self.bins[0],self.bins[-1],NN)
             for ide in range(np.size(bins2)):
                 # mu= mu_values[ide]/1000
                 # filling=fillings[ide]
@@ -1358,23 +1372,35 @@ class ee_Bubble:
                 kpath=np.array([0,0]).T
                 integ=self.Compute_noff(bins2[ide], omega, kpath)
                 integ_lh=self.Compute_lh_noff(bins2[ide], omega, kpath)
-                cs.append(integ/2)
-                cs_lh.append(integ_lh/2)
-            self.eta_small_imag=eddy
+                cs.append(np.real(integ)/Vol)
+                cs_lh.append(integ_lh/Vol)
+            self.eta_cutoff=eddy
             # print(e)
 
             # print(cs)
             # print(cs_lh)
-
-            plt.plot(self.bins, self.valt)
-            plt.plot(self.earr,self.dosarr)
-            
+            plt.title("scaling fact cutoff "+str(e))
+            plt.plot(self.bins, self.valt, label="hist")
+            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.legend()
             plt.savefig("comparedos"+str(e)+".png")
             plt.close()
-            plt.plot(bins2,cs)
-            plt.plot(bins2,cs_lh)
-            plt.plot(self.bins, self.valt)
+            plt.title("scaling fact cutoff"+str(e))
+            plt.plot(bins2,cs, label="ieps")
+            plt.plot(bins2,cs_lh, label="derivative")
+            plt.plot(self.bins, self.valt, label="hist")
+            plt.legend()
+            plt.title("scaling fact cutoff "+str(e))
+            print("normalizations ", e , np.sum(cs)*(bins2[1]-bins2[0]),np.sum(cs_lh)*(bins2[1]-bins2[0]))
             plt.savefig("scaling"+str(e)+".png")
+            plt.close()
+            
+            plt.plot(bins2,cs, label="ieps")
+            plt.plot(bins2,cs_lh, label="derivative")
+            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.title("scaling fact "+str(e))
+            plt.legend()
+            plt.savefig("scaling_2_"+str(e)+".png")
             plt.close()
         
 
