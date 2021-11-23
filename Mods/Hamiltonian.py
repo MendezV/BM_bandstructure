@@ -736,6 +736,84 @@ class Ham_BM_p():
 
         return [bins,valt,f2 ]
     
+    def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
+        nbands=np.shape(Ene_valley_plus)[1]
+        print("number of bands in density of states calculation," ,nbands)
+        eps_l=[]
+        for i in range(nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)*1.5
+        
+        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
+        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
+        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
+        binn=np.linspace(mmin,mmax,NN+1)
+        valt=np.zeros(NN)
+
+        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val_p
+
+        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val_m
+        
+        bins=(binn[:-1]+binn[1:])/2
+        
+        plt.plot(bins,valt)
+        plt.scatter(bins,valt, s=1)
+        
+        # plt.ylim([0,8])
+        plt.savefig("dos.png")
+        plt.close()
+    
+        f2 = interp1d(binn[:-1],valt, kind='cubic')
+        
+        # xnew = np.linspace(np.min(binn[:-1]), np.max(binn[:-1]), num=1000, endpoint=True)
+        # plt.plot(binn[:-1],valt, 'o',  xnew, f2(xnew), '--')
+        # plt.legend(['data', 'cubic'], loc='best')
+        # plt.show()
+
+        return [bins,valt,f2 ]
+    def deltados(self, x, epsil):
+        return (1/(np.pi*epsil))/(1+(x/epsil)**2)
+    
+    def DOS2(self,Ene_valley_plus_pre,Ene_valley_min_pre,dS_in):
+        
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
+        nbands=np.shape(Ene_valley_plus)[1]
+        print(nbands)
+        eps_l=[]
+        for i in range(nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)
+        
+        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
+        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
+        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
+        binn=np.linspace(mmin,mmax,NN+1)
+        valt=np.zeros(NN)
+        epsil=eps*2
+        earr=np.linspace(mmin,mmax, int(NN/2))
+        de=earr[1]-earr[0]
+        dosl=[]
+        print("the volume element is ",dS_in)
+        
+        for i in range(np.size(earr)):
+            predos=self.deltados(Ene_valley_plus.flatten()-earr[i], epsil)+self.deltados(Ene_valley_min.flatten()-earr[i], epsil)
+            dosl.append( np.sum(predos  )*dS_in )
+            print(np.sum(self.deltados(earr, epsil)*de))
+
+        dosarr=np.array(dosl)
+        f2 = interp1d(earr,dosarr, kind='cubic')
+        
+        print("")
+        
+        return [earr,dosarr,f2 ]
+    
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp)
         
@@ -2004,6 +2082,12 @@ def main() -> int:
     alpha=up/hvkd
     alph=alpha
     
+    print("hbvf is ..",hbvf )
+    print("q is...", q)
+    print("hvkd is...", hvkd)
+    print("kappa is..", kappa)
+    print("alpha is..", alph)
+    
         
     # # #################################
     # # #################################
@@ -2134,6 +2218,10 @@ def main() -> int:
     '''
     
     
+    
+    '''
+    #testing umklapp form factors
+    
     umkl=2
     [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
     [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
@@ -2204,6 +2292,7 @@ def main() -> int:
     ax.scatter3D(KXu,KYu,cos, c=cos);
     plt.savefig("fig6.png")
     plt.close()
+    '''
 
     
     # for l in range(Npoi_u):
@@ -2300,7 +2389,58 @@ def main() -> int:
     #######################
 
     ########################
+    
+    # #################################
+    # #################################
+    # #################################
+    # # Disp cut along high symmetry directions
+    # #################################
+    # #################################
+    # #################################
 
+    Ene_valley_plus_a=np.empty((0))
+    Ene_valley_min_a=np.empty((0))
+    psi_plus_a=[]
+    psi_min_a=[]
+    rot_C2z=lq.C2z
+    rot_C3z=lq.C3z
+
+    nbands=14 #Number of bands 
+    kpath=lq.High_symmetry_path()
+
+    Npoi=np.shape(kpath)[0]
+    hpl=Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
+    print("kappa is..", kappa)
+    print("alpha is..", alph)
+    Edif=[]
+    overlaps=[]
+    for l in range(Npoi):
+        # h.umklapp_lattice()
+        # break
+        E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
+        Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+        psi_plus_a.append(wave1p)
+
+
+        E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
+        Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
+        psi_min_a.append(wave1m)
+
+    Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+    Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
+ 
+
+    print(np.shape(Ene_valley_plus_a))
+    qa=np.linspace(0,1,Npoi)
+    for i in range(nbands):
+        plt.plot(qa,Ene_valley_plus[:,i] , c='b')
+        plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+    plt.xlim([0,1])
+    plt.ylim([-0.004,0.004])
+    plt.savefig("highsym.png")
+    plt.show()
 
 
 if __name__ == '__main__':
