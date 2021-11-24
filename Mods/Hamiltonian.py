@@ -798,7 +798,7 @@ class Ham_BM_p():
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
         NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
         earr=np.linspace(mmin,mmax,NN+1)
-        epsil=eps/100
+        epsil=eps/4
         de=earr[1]-earr[0]
         dosl=[]
         print("the volume element is ",dS_in)

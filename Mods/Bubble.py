@@ -842,15 +842,11 @@ class ee_Bubble:
         eps_a=np.array(eps_l)
         eps=np.min(eps_a)
         
-        # self.eta=eps
-        # self.eta_dirac_delta=eps/2
-        # self.eta_cutoff=eps*0.1
-        # self.eta_small_imag=eps*0.1
         
         self.eta=eps
         self.eta_dirac_delta=eps/4
         self.eta_cutoff=eps
-        self.eta_small_imag=eps
+        self.eta_small_imag=0.1*eps
         
         #generating form factors
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
@@ -924,21 +920,21 @@ class ee_Bubble:
             print("finished testing symmetry of the form factors...")
             
             ###DOS
-            Ndos=100#latt.Npoints
+            Ndos=latt.Npoints
             ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
             [self.KXdos, self.KYdos]=ldos.Generate_lattice()
             self.Npoidos=np.size(self.KXdos)
-            # [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
+            [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
             # with open('Edisp_'+str(Ndos)+'.npy', 'wb') as f:
             #     np.save(f, self.Ene_valley_plus_dos)
             # with open('Edism_'+str(Ndos)+'.npy', 'wb') as f:
             #     np.save(f, self.Ene_valley_min_dos)
             # print("Loading  ..........")
             
-            with open('Edisp_'+str(Ndos)+'.npy', 'rb') as f:
-                self.Ene_valley_plus_dos=np.load(f)
-            with open('Edism_'+str(Ndos)+'.npy', 'rb') as f:
-                self.Ene_valley_min_dos=np.load(f)
+            # with open('Edisp_'+str(Ndos)+'.npy', 'rb') as f:
+            #     self.Ene_valley_plus_dos=np.load(f)
+            # with open('Edism_'+str(Ndos)+'.npy', 'rb') as f:
+            #     self.Ene_valley_min_dos=np.load(f)
                 
             plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_plus_dos[:,0])
             plt.colorbar()
@@ -1354,8 +1350,8 @@ class ee_Bubble:
         for e in scalings:
             cs=[]
             cs_lh=[]
-            eddy=self.eta_cutoff
-            self.eta_cutoff=e*eddy
+            eddy=self.eta_small_imag
+            self.eta_small_imag=e*eddy
             
             #have to divide by the vlume of the MBZ to get the same normalization
             Vol=self.lq.VolMBZ
@@ -1374,7 +1370,7 @@ class ee_Bubble:
                 integ_lh=self.Compute_lh_noff(bins2[ide], omega, kpath)
                 cs.append(np.real(integ)/Vol)
                 cs_lh.append(integ_lh/Vol)
-            self.eta_cutoff=eddy
+            self.eta_small_imag=eddy
             # print(e)
 
             # print(cs)
@@ -1412,7 +1408,7 @@ class ee_Bubble:
 def main() -> int:
 
     #parameters for the calculation
-    theta= 1.05*np.pi/180  # magic angle
+    theta=1.05*np.pi/180  # magic angle
     fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
     mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
