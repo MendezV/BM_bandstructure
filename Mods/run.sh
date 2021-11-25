@@ -11,7 +11,7 @@
 #Readibg parameter file
 
 param_arr=$(awk -F= '{print $1}' params)
-jobname="L_modulation_kappa_ukmlp0_correct_norm_full_beta_20"  #JOBNAME importan to declare -has to be descriptive
+jobname="theta_var_kappa_p_full_beta_1.0"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
@@ -39,8 +39,8 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 
-	nohup time python3 -u FermionPolarization.py 0 20 L ${param_val} >> output.out & 
-	nohup time python3 -u FermionPolarization.py 0 20 T ${param_val} >> output.out & 
+	nohup time python3 -u Bubble.py 0 35 L ${param_val} >> output.out 
+	nohup time python3 -u Bubble.py 0 35 T ${param_val} >> output.out
 	
 	cd "../../../Mods"
 	sleep 1

@@ -1856,6 +1856,9 @@ class FormFactors_umklapp():
         self.qy=kqy1-kqy2
         self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
         
+        self.qmin_x=KXu[1]-KXu[0]
+        self.qmin_y=KYu[1]-KYu[0]
+        self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
         psilist=[]
         for GG in Gu:
             shi1=int(GG[0])
@@ -1931,9 +1934,7 @@ class FormFactors_umklapp():
         return harr 
 
     def h_denominator(self,FF):
-        qx=self.KQX[1]-self.KQX[0]
-        qy=self.KQY[1]-self.KQY[0]
-        qmin=np.sqrt(qx**2+qy**2)
+        qmin=self.qmin
         harr= np.ones(np.shape(FF))
         qcut=np.array(self.q)
         qanom=qcut[np.where(qcut<0.01*qmin)]
