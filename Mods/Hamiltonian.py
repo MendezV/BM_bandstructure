@@ -697,44 +697,6 @@ class Ham_BM_p():
         return  mat@psi
 
     ###########DOS FOR DEBUGGING
-    def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
-        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
-        nbands=np.shape(Ene_valley_plus)[1]
-        print(nbands)
-        eps_l=[]
-        for i in range(nbands):
-            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
-            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
-        eps_a=np.array(eps_l)
-        eps=np.min(eps_a)
-        
-        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
-        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
-        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
-        binn=np.linspace(mmin,mmax,NN+1)
-        valt=np.zeros(NN)
-
-        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
-        valt=valt+val_p
-
-        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
-        valt=valt+val_m
-        
-        bins=(binn[:-1]+binn[1:])/2
-        
-        # plt.plot(bins,valt)
-        # plt.scatter(bins,valt, s=1)
-        # plt.ylim([0,8])
-        # plt.show()
-    
-        f2 = interp1d(binn[:-1],valt, kind='cubic')
-        
-        # xnew = np.linspace(np.min(binn[:-1]), np.max(binn[:-1]), num=1000, endpoint=True)
-        # plt.plot(binn[:-1],valt, 'o',  xnew, f2(xnew), '--')
-        # plt.legend(['data', 'cubic'], loc='best')
-        # plt.show()
-
-        return [bins,valt,f2 ]
     
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
         [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
@@ -771,12 +733,9 @@ class Ham_BM_p():
         
         valt=2*valt
         f2 = interp1d(binn[:-1],valt, kind='cubic')
-        print("sum of the hist, normed?", np.sum(valt)*(bins[1]-bins[0]))
+        de=(bins[1]-bins[0])
+        print("sum of the hist, normed?", np.sum(valt)*de)
         
-        # xnew = np.linspace(np.min(binn[:-1]), np.max(binn[:-1]), num=1000, endpoint=True)
-        # plt.plot(binn[:-1],valt, 'o',  xnew, f2(xnew), '--')
-        # plt.legend(['data', 'cubic'], loc='best')
-        # plt.show()
 
         return [bins,valt,f2 ]
     def deltados(self, x, epsil):
@@ -820,10 +779,92 @@ class Ham_BM_p():
         dosarr=np.array(dosl)
         f2 = interp1d(earr,dosarr, kind='cubic')
         print("sum of the hist, normed?", np.sum(dosarr)*de)
+        
+        
     
-        
-        
         return [earr,dosarr,f2 ]
+    
+    def bisection(self,f,a,b,N):
+        '''Approximate solution of f(x)=0 on interval [a,b] by bisection method.
+
+        Parameters
+        ----------
+        f : function
+            The function for which we are trying to approximate a solution f(x)=0.
+        a,b : numbers
+            The interval in which to search for a solution. The function returns
+            None if f(a)*f(b) >= 0 since a solution is not guaranteed.
+        N : (positive) integer
+            The number of iterations to implement.
+
+        Returns
+        -------
+        x_N : number
+            The midpoint of the Nth interval computed by the bisection method. The
+            initial interval [a_0,b_0] is given by [a,b]. If f(m_n) == 0 for some
+            midpoint m_n = (a_n + b_n)/2, then the function returns this solution.
+            If all signs of values f(a_n), f(b_n) and f(m_n) are the same at any
+            iteration, the bisection method fails and return None.
+
+        Examples
+        --------
+        >>> f = lambda x: x**2 - x - 1
+        >>> bisection(f,1,2,25)
+        1.618033990263939
+        >>> f = lambda x: (2*x - 1)*(x - 3)
+        >>> bisection(f,0,1,10)
+        0.5
+        '''
+        if f(a)*f(b) >= 0:
+            print("Bisection method fails.")
+            return None
+        a_n = a
+        b_n = b
+        for n in range(1,N+1):
+            m_n = (a_n + b_n)/2
+            f_m_n = f(m_n)
+            if f(a_n)*f_m_n < 0:
+                a_n = a_n
+                b_n = m_n
+            elif f(b_n)*f_m_n < 0:
+                a_n = m_n
+                b_n = b_n
+            elif f_m_n == 0:
+                print("Found exact solution.")
+                return m_n
+            else:
+                print("Bisection method fails.")
+                return None
+        return (a_n + b_n)/2
+
+    def chem_for_filling(self, fill, f2, earr):
+        
+        NN=10000
+        mine=earr[1]
+        maxe=earr[-2]
+        mus=np.linspace(mine,maxe, NN)
+        dosarr=f2(mus)
+        de=mus[1]-mus[0]
+        
+        #FILLING FOR EACH CHEMICAL POTENTIAL
+        ndens=[]
+        for mu_ind in range(NN):
+            N=np.trapz(dosarr[0:mu_ind])*de
+            ndens.append(N)
+        nn=np.array(ndens)
+        nn=8*(nn/nn[-1])  - 4
+        
+        fn = interp1d(mus,nn-fill, kind='cubic')
+        fn2 = interp1d(mus,nn, kind='cubic')
+        
+        mu=self.bisection(fn,mine,maxe,50)
+        nfil=fn2(mu)
+        if fill==0.0:
+            mu=0.0
+            nfil=0.0
+            
+        return [mu, nfil, mus,nn]
+        
     
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp)
@@ -1520,7 +1561,52 @@ class Ham_BM_m():
         return  mat@psi
 
     ###########DOS FOR DEBUGGING
+    
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
+        [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
+        nbands=np.shape(Ene_valley_plus)[1]
+        print("number of bands in density of states calculation," ,nbands)
+        eps_l=[]
+        for i in range(nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
+            eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)*1.5
+        
+        mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
+        mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
+        NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
+        binn=np.linspace(mmin,mmax,NN+1)
+        valt=np.zeros(NN)
+
+        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        valt=valt+val_p
+
+        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        valt=valt+val_m
+        
+        bins=(binn[:-1]+binn[1:])/2
+        
+        plt.plot(bins,valt)
+        plt.scatter(bins,valt, s=1)
+        
+        # plt.ylim([0,8])
+        plt.savefig("dos.png")
+        plt.close()
+        
+        
+        valt=2*valt
+        f2 = interp1d(binn[:-1],valt, kind='cubic')
+        de=(bins[1]-bins[0])
+        print("sum of the hist, normed?", np.sum(valt)*de)
+        
+
+        return [bins,valt,f2 ]
+    def deltados(self, x, epsil):
+        return (1/(np.pi*epsil))/(1+(x/epsil)**2)
+    
+    def DOS2(self,Ene_valley_plus_pre,Ene_valley_min_pre,dS_in):
+        
         [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
         nbands=np.shape(Ene_valley_plus)[1]
         print(nbands)
@@ -1534,18 +1620,115 @@ class Ham_BM_m():
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
         NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
-        binn=np.linspace(mmin,mmax,NN+1)
-        valt=np.zeros(NN)
-        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
-        valt=valt+val_p
-
-        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
-        valt=valt+val_m
+        earr=np.linspace(mmin,mmax,NN+1)
+        epsil=eps/4
+        de=earr[1]-earr[0]
+        dosl=[]
+        print("the volume element is ",dS_in)
         
-        bins=(binn[:-1]+binn[1:])/2
-        f2 = interp1d(binn[:-1],valt, kind='cubic')
+        for i in range(np.size(earr)):
+            predos=0
+            for j in range(nbands):
+                
+                predos_plus=self.deltados(Ene_valley_plus[:,j]-earr[i], epsil)
+                predos_min=self.deltados(Ene_valley_min[:,j]-earr[i], epsil)
+                predos=predos+predos_plus+predos_min
+                # print(np.sum(predos_plus  )*dS_in)
+                # print(np.sum(predos_min  )*dS_in)
+                # print("sum of the hist, normed?", np.sum(predos)*dS_in)
+            # print("4 real sum of the hist, normed?", np.sum(predos)*dS_in)
+            dosl.append( np.sum(predos  )*dS_in )
+            # print(np.sum(self.deltados(earr, epsil)*de))
 
-        return [bins,valt,f2 ]
+        dosarr=np.array(dosl)
+        f2 = interp1d(earr,dosarr, kind='cubic')
+        print("sum of the hist, normed?", np.sum(dosarr)*de)
+        
+        
+    
+        return [earr,dosarr,f2 ]
+    
+    def bisection(self,f,a,b,N):
+        '''Approximate solution of f(x)=0 on interval [a,b] by bisection method.
+
+        Parameters
+        ----------
+        f : function
+            The function for which we are trying to approximate a solution f(x)=0.
+        a,b : numbers
+            The interval in which to search for a solution. The function returns
+            None if f(a)*f(b) >= 0 since a solution is not guaranteed.
+        N : (positive) integer
+            The number of iterations to implement.
+
+        Returns
+        -------
+        x_N : number
+            The midpoint of the Nth interval computed by the bisection method. The
+            initial interval [a_0,b_0] is given by [a,b]. If f(m_n) == 0 for some
+            midpoint m_n = (a_n + b_n)/2, then the function returns this solution.
+            If all signs of values f(a_n), f(b_n) and f(m_n) are the same at any
+            iteration, the bisection method fails and return None.
+
+        Examples
+        --------
+        >>> f = lambda x: x**2 - x - 1
+        >>> bisection(f,1,2,25)
+        1.618033990263939
+        >>> f = lambda x: (2*x - 1)*(x - 3)
+        >>> bisection(f,0,1,10)
+        0.5
+        '''
+        if f(a)*f(b) >= 0:
+            print("Bisection method fails.")
+            return None
+        a_n = a
+        b_n = b
+        for n in range(1,N+1):
+            m_n = (a_n + b_n)/2
+            f_m_n = f(m_n)
+            if f(a_n)*f_m_n < 0:
+                a_n = a_n
+                b_n = m_n
+            elif f(b_n)*f_m_n < 0:
+                a_n = m_n
+                b_n = b_n
+            elif f_m_n == 0:
+                print("Found exact solution.")
+                return m_n
+            else:
+                print("Bisection method fails.")
+                return None
+        return (a_n + b_n)/2
+
+    def chem_for_filling(self, fill, f2, earr):
+        
+        NN=10000
+        mine=earr[1]
+        maxe=earr[-2]
+        mus=np.linspace(mine,maxe, NN)
+        dosarr=f2(mus)
+        de=mus[1]-mus[0]
+        
+        #FILLING FOR EACH CHEMICAL POTENTIAL
+        ndens=[]
+        for mu_ind in range(NN):
+            N=np.trapz(dosarr[0:mu_ind])*de
+            ndens.append(N)
+        nn=np.array(ndens)
+        nn=8*(nn/nn[-1])  - 4
+        
+        fn = interp1d(mus,nn-fill, kind='cubic')
+        fn2 = interp1d(mus,nn, kind='cubic')
+        
+        mu=self.bisection(fn,mine,maxe,50)
+        nfil=fn2(mu)
+        if fill==0.0:
+            mu=0.0
+            nfil=0.0
+            
+        return [mu, nfil, mus,nn]
+        
     
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp)
@@ -2001,7 +2184,6 @@ def main() -> int:
     
     
     #parameters for the calculation
-    theta= 1.04*1.05*np.pi/180  # magic angle
     fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
     mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
@@ -2093,6 +2275,15 @@ def main() -> int:
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+    
+    #JY params 
+    # hbvf = 2.7; # eV
+    # hvkd=hbvf*q
+    # kappa=0.75
+    # up = 0.105; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -2450,7 +2641,7 @@ def main() -> int:
         plt.plot(qa,Ene_valley_plus[:,i] , c='b')
         plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
     plt.xlim([0,1])
-    plt.ylim([-0.004,0.004])
+    plt.ylim([-0.009,0.009])
     plt.savefig("highsym.png")
     plt.show()
 

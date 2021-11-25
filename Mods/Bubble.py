@@ -1534,10 +1534,6 @@ def main() -> int:
     print("alpha is..", alph)
     print("the twist angle is ..", theta)
 
-    #other electronic params
-    filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]/1000
-    filling=fillings[filling_index]
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
@@ -1571,6 +1567,42 @@ def main() -> int:
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
+    
+    
+    ###DOS
+    Ndos=100
+    ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
+    print("Loading  ..........")
+    #other electronic params
+    filling_index=int(sys.argv[1]) 
+    mup=mu_values[filling_index]/1000
+    filling=fillings[filling_index]
+
+    with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'rb') as f:
+        Ene_valley_plus_dos=np.load(f)
+    with open('dispersions/Edism_'+str(Ndos)+'.npy', 'rb') as f:
+        Ene_valley_min_dos=np.load(f)
+   
+    [earr, dos, f2 ]=hpl.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
+    [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[filling_index], f2,earr)
+    errormu=[]
+    errorn=[]
+    for find in range(1,np.size(fillings)):
+        [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[find], f2,earr)
+        erm=abs(((mu_values[find]/1000)-mu)/(mu_values[find]/1000))
+        ern=abs(nfil-fillings[find])/fillings[find]
+        errormu.append(erm)
+        errorn.append(ern)
+        print("CHEMICAL POTENTIAL", mu_values[find]/1000, mu, nfil, fillings[find])
+        
+    
+    plt.plot(errorn)
+    plt.savefig("dens.png")
+    plt.close()
+
+    [earr, dos, f2 ]=hpl.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
+    [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[filling_index], f2,earr)
+    print("CHEMICAL POTENTIAL", mu_values[find]/1000, mu, nfil, fillings[find])
 
 
     #testing umklapp
