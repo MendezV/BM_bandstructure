@@ -967,15 +967,15 @@ class ee_Bubble:
             [self.KXdos, self.KYdos]=ldos.Generate_lattice()
             self.Npoidos=np.size(self.KXdos)
             [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
-            # with open('Edisp_'+str(Ndos)+'.npy', 'wb') as f:
+            # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'wb') as f:
             #     np.save(f, self.Ene_valley_plus_dos)
-            # with open('Edism_'+str(Ndos)+'.npy', 'wb') as f:
+            # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'wb') as f:
             #     np.save(f, self.Ene_valley_min_dos)
             # print("Loading  ..........")
             
-            # with open('Edisp_'+str(Ndos)+'.npy', 'rb') as f:
+            # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'rb') as f:
             #     self.Ene_valley_plus_dos=np.load(f)
-            # with open('Edism_'+str(Ndos)+'.npy', 'rb') as f:
+            # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'rb') as f:
             #     self.Ene_valley_min_dos=np.load(f)
                 
             plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_plus_dos[:,0])
