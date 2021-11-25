@@ -32,7 +32,7 @@ for param_val in ${param_arr[@]}; do
 	mkdir -vp "${dire}"
 
 
-    cp FermionPolarization.py "${dire}"
+    cp Bubble.py "${dire}"
     cp Hamiltonian.py  "${dire}"
     cp MoireLattice.py  "${dire}"
     cp params  "${dire}"
