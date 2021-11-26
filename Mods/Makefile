@@ -1,2 +1,2 @@
 clean:
-	rm bubb* *png cparams*
+	rm bubb* *png cparams* vel*
