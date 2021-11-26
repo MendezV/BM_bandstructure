@@ -56,7 +56,7 @@ class ep_Bubble:
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
-        self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.dS_in=latt.VolMBZ/self.Npoi1bz
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
@@ -539,13 +539,13 @@ class ep_Bubble:
 
             integ.append(sd)
         
-        prop_BZ=0.2
+        prop_BZ=0.1
         integ_arr_no_reshape=self.gamma*np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " , mu)
-        integ=integ_arr_no_reshape.flatten()*1000 #convertion to mev
+        print("the filling is .. " , fil[ind])
+        integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
@@ -606,13 +606,13 @@ class ep_Bubble:
 
             integ.append(sd)
         
-        prop_BZ=0.2
+        prop_BZ=0.1
         integ_arr_no_reshape=self.gamma*np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " , mu)
-        integ=integ_arr_no_reshape.flatten()*1000 #convertion to mev
+        print("the filling is .. " ,  fil[ind])
+        integ=integ_arr_no_reshape.flatten() #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
@@ -622,13 +622,13 @@ class ep_Bubble:
         return [integ,res, c]
 
     def extract_cs(self, integ, thres):
-        scaling_fac=self.agraph**2 /(self.mass*(self.Gscale**2))
+        scaling_fac=(self.agraph**2) /(self.mass*(self.qscale**2))
         print(scaling_fac)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, thres)
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
         # plt.show()
         id=np.ones(np.shape(KX_m))
-        Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
+        Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
         # plt.scatter(KX_m, KY_m, c=d)
@@ -708,7 +708,7 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
+        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings)
         MAX_WORKERS=25
         
         with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -739,13 +739,13 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
+        calc = functools.partial(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values,fillings)
         MAX_WORKERS=25
         
         
         with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             future_to_file = {
-                executor.submit(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings, qpval): qpval for qpval in qp
+                executor.submit(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values,fillings, qpval): qpval for qpval in qp
             }
 
             for future in concurrent.futures.as_completed(future_to_file):
@@ -768,7 +768,7 @@ class ep_Bubble:
         print("time for sweep delta", e-s)
 
         # for ide in range(np.size(fillings)):
-        #     mu= mu_values[ide]/1000
+        #     mu= mu_values[ide]
         #     filling=fillings[ide]
         #     omega=[0]
         #     kpath=np.array([self.KX,self.KY]).T
@@ -780,7 +780,7 @@ class ep_Bubble:
         #     # plt.close()
 
         #     print("the filling is .. " , filling)
-        #     integ=integ.flatten()*1000 #convertion to mev
+        #     integ=integ.flatten()
         #     popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         #     print("parameters of the fit...", c)
         #     print("residual of the fit...", res)
@@ -789,7 +789,7 @@ class ep_Bubble:
         #     cs.append(c)
         #     rs.append(resc)
 
-        #     # integ_lh=integ_lh.flatten()*1000 #convertion to mev
+        #     # integ_lh=integ_lh.flatten()
         #     # popt, res, c, resc=self.extract_cs( integ_lh, prop_BZ)
         #     # print("parameters of the fit _lh...", c)
         #     # print("residual of the fit..._lh", res)
@@ -869,7 +869,7 @@ class ee_Bubble:
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
-        self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
@@ -1405,7 +1405,7 @@ class ee_Bubble:
 
             bins2=np.linspace(self.bins[0],self.bins[-1],NN)
             for ide in range(np.size(bins2)):
-                # mu= mu_values[ide]/1000
+                # mu= mu_values[ide]
                 # filling=fillings[ide]
                 omega=[0]
                 kpath=np.array([0,0]).T
@@ -1449,11 +1449,6 @@ class ee_Bubble:
     
         
 def main() -> int:
-
-    
-    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
-    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
-
     
     try:
         filling_index=int(sys.argv[1]) #0-25
@@ -1462,12 +1457,12 @@ def main() -> int:
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
 
     try:
-        N_SFs=26 #number of SF's currently implemented
-        a=np.arange(N_SFs)
+        Nfils=26 #number of size of the filling array
+        a=np.arange(Nfils)
         a[filling_index]
 
     except (IndexError):
-        raise Exception(f"Index has to be between 0 and {N_SFs-1}")
+        raise Exception(f"Index has to be between 0 and {Nfils-1}")
 
 
     try:
@@ -1500,11 +1495,9 @@ def main() -> int:
     [q1,q1,q3]=l.q
     q=la.norm(q1)
     umkl=0
-    print(f"taking ${umkl} umklapps")
+    print(f"taking {umkl} umklapps")
     VV=lq.boundary()
-    # [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
-    # [KQX, KQY, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
-    
+
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
@@ -1537,21 +1530,23 @@ def main() -> int:
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
-    a_graphene=2.46*(1e-10) #in meters
+    a_graphene=2.458*(1e-10) #in meters
+    e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
 
     #phonon parameters
     c_light=299792458 #m/s
-    M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
+    M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
-    hhbar=6.582119569e-13 /1000 #(in eV s)
+    hhbar=6.582119569e-16 #(in eV s)
     alpha_ep=0*2# in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
     gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
-    gammap=(q*q*gamma**2/a_graphene**2)/(4*np.pi*np.pi)
-    print("phonon params...", gammap )
+    gammap=((q**2)*(gamma**2)/(a_graphene**2)*((2*np.pi)**2))
+    scaling_fac=( a_graphene**2) /(mass*(q**2))
+    print("phonon params...", gammap /(1e+11), gamma, np.sqrt(gammap*scaling_fac))
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
@@ -1567,43 +1562,16 @@ def main() -> int:
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
-    
-    
-    ###DOS
+    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=100
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
-    print("Loading  ..........")
-    #other electronic params
+    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
+    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
     filling_index=int(sys.argv[1]) 
-    mup=mu_values[filling_index]/1000
+    mu=mu_values[filling_index]
     filling=fillings[filling_index]
-
-    with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'rb') as f:
-        Ene_valley_plus_dos=np.load(f)
-    with open('dispersions/Edism_'+str(Ndos)+'.npy', 'rb') as f:
-        Ene_valley_min_dos=np.load(f)
-   
-    [earr, dos, f2 ]=hpl.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
-    [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[filling_index], f2,earr)
-    errormu=[]
-    errorn=[]
-    for find in range(1,np.size(fillings)):
-        [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[find], f2,earr)
-        erm=abs(((mu_values[find]/1000)-mu)/(mu_values[find]/1000))
-        ern=abs(nfil-fillings[find])/fillings[find]
-        errormu.append(erm)
-        errorn.append(ern)
-        print("CHEMICAL POTENTIAL", mu_values[find]/1000, mu, nfil, fillings[find])
-        
+    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
-    plt.plot(errorn)
-    plt.savefig("dens.png")
-    plt.close()
-
-    [earr, dos, f2 ]=hpl.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
-    [mu, nfil, es,nn]=hpl.chem_for_filling( fillings[filling_index], f2,earr)
-    print("CHEMICAL POTENTIAL", mu_values[find]/1000, mu, nfil, fillings[find])
-
 
     #testing umklapp
     
