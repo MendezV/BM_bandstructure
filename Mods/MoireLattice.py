@@ -52,7 +52,7 @@ class MoireTriangLattice:
             self.GMs=self.GM()/Gnorm
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
             self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
-
+            
         #G processes
         self.MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
         self.MGS1=self.MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
@@ -98,6 +98,15 @@ class MoireTriangLattice:
         zhat=np.array([0,0,1])
         b_1=np.array([GM1[0],GM1[1],0]) # Moire reciprocal lattice vect extended
         b_2=np.array([GM2[0],GM2[1],0]) # Moire reciprocal lattice vect extended
+        Vol_rec=np.cross(b_1,b_2)@zhat
+        return Vol_rec
+    
+    #WZ volume
+    def Vol_WZ(self):
+        [LM1,LM2]=self.LM_vec()
+        zhat=np.array([0,0,1])
+        b_1=np.array([LM1[0],LM1[1],0]) # Moire reciprocal lattice vect extended
+        b_2=np.array([LM2[0],LM2[1],0]) # Moire reciprocal lattice vect extended
         Vol_rec=np.cross(b_1,b_2)@zhat
         return Vol_rec
 

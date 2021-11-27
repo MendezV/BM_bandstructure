@@ -1235,18 +1235,18 @@ class Dispersion():
         
         bins=(binn[:-1]+binn[1:])/2
         
-        plt.plot(bins,valt)
-        plt.scatter(bins,valt, s=1)
-        
-        # plt.ylim([0,8])
-        plt.savefig("dos.png")
-        plt.close()
         
         
-        valt=2*valt
+        
+        valt=2*2*valt
         f2 = interp1d(binn[:-1],valt, kind='cubic')
         de=(bins[1]-bins[0])
         print("sum of the hist, normed?", np.sum(valt)*de)
+        
+        plt.plot(bins,valt)
+        plt.scatter(bins,valt, s=1)
+        plt.savefig("dos.png")
+        plt.close()
         
 
         return [bins,valt,f2 ]
@@ -1288,7 +1288,7 @@ class Dispersion():
             dosl.append( np.sum(predos  )*dS_in )
             # print(np.sum(self.deltados(earr, epsil)*de))
 
-        dosarr=np.array(dosl)
+        dosarr=2*np.array(dosl) #extra 2 for spin
         f2 = interp1d(earr,dosarr, kind='cubic')
         print("sum of the hist, normed?", np.sum(dosarr)*de)
         
@@ -1368,6 +1368,8 @@ class Dispersion():
             
         nn=np.array(ndens)
         nn=8*(nn/nn[-1])  - 4
+
+
 
         
         fn = interp1d(mus,nn-fill, kind='cubic')

@@ -56,7 +56,7 @@ class ep_Bubble:
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
-        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.dS_in=latt.VolMBZ/self.Npoi1bz
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
@@ -431,7 +431,7 @@ class ep_Bubble:
             
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
+        return self.gamma*integ_arr_no_reshape
     
     def Compute(self, mu, omegas, kpath):
 
@@ -485,9 +485,9 @@ class ep_Bubble:
             
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
+        return self.gamma*integ_arr_no_reshape
     
-    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ,ind):
+    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil,ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -539,14 +539,14 @@ class ep_Bubble:
 
             integ.append(sd)
         
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
+        prop_BZ=0.2
+        integ_arr_no_reshape=self.gamma*np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " , fil[ind])
-        integ=integ_arr_no_reshape.flatten()  #in ev
+        print("the filling is .. " , mu)
+        integ=integ_arr_no_reshape.flatten()*1000 #convertion to mev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-        integ=self.gamma*integ
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
@@ -554,7 +554,7 @@ class ep_Bubble:
         
         return [integ,res, c]
 
-    def parCompute_lh(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ,ind):
+    def parCompute_lh(self, theta, omegas, kpath, VV, Nsamp,  muv, fil,ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -606,67 +606,39 @@ class ep_Bubble:
 
             integ.append(sd)
         
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
+        prop_BZ=0.2
+        integ_arr_no_reshape=self.gamma*np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " ,  fil[ind])
-        integ=integ_arr_no_reshape.flatten() #in ev
+        print("the filling is .. " , mu)
+        integ=integ_arr_no_reshape.flatten()*1000 #convertion to mev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-        integ=self.gamma*integ
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
         self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_lh_")
         
-        return [integ, res, c]
+        return [integ,res, c]
 
-    def extract_cs(self, integ, prop_BZ):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
-        print("scalings...",scaling_fac, self.gamma)
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
+    def extract_cs(self, integ, thres):
+        scaling_fac=self.agraph**2 /(self.mass*(self.Gscale**2))
+        print(scaling_fac)
+        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, thres)
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
         # plt.show()
         id=np.ones(np.shape(KX_m))
-        Gmat=np.array([ KX_m**2,KY_m**2]).T
+        Gmat=np.array([id, KX_m,KY_m,KX_m**2,KY_m*KX_m,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
-        plt.scatter(KX_m, KY_m, c=d)
-        plt.colorbar()
-        plt.savefig("fit.png")
-        plt.close()
-        b=Gmat.T@d
-        popt=la.pinv(GTG)@b
-        res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
-        nn=np.sqrt(np.sum((d)**2)) #residual of the least squares procedure
-        print(popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn))
-        return popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn)
-
-    
-    def extract_cs_path(self, integ, kpath):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
-        qx=kpath[:, 0]
-        qy=kpath[:, 1]
-        # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
+        # plt.scatter(KX_m, KY_m, c=d)
         # plt.show()
-        Gmat=np.array([qx**2,qy**2]).T
-        GTG=Gmat.T@Gmat
-        d=np.real(integ)
-        plt.scatter(qx,qy, c=d)
-        plt.colorbar()
-        plt.savefig("fit2.png")
-        plt.close()
         b=Gmat.T@d
         popt=la.pinv(GTG)@b
-        plt.scatter(qx,qy, c=(popt[0]*qx*qx+popt[1]*qy*qy))
-        plt.colorbar()
-        plt.savefig("fit3.png")
-        plt.close()
         res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
         nn=np.sqrt(np.sum((d)**2)) #residual of the least squares procedure
-        print(popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn))
+        print(popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn))
         return popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn)
-
 
     def quad_pi(self, x, y, popt):
         return popt[0]+popt[1]*x+ popt[2]*y+ popt[3]*x**2+popt[4]*x*y+ popt[5]*y**2
@@ -674,20 +646,39 @@ class ep_Bubble:
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.real(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
-        plt.close()
-        print("the minimum real part is ...", np.min(np.real(integ)))
+        # print(type(integ))
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.real(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
+        # plt.close()
+        # print("the minimum real part is ...", np.min(np.real(integ)))
 
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.abs(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
-        plt.close()
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.imag(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_imag_"+identifier+".png")
+        # plt.close()
+        # print("the maximum imaginary part is ...", np.max(np.imag(integ)))
+
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
+        # plt.close()
+
+
+        # print("testing symmetry of the result...")
+        # [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(KX,KY)
+        # intc3=[integ[int(ii)] for ii in Indc3z]
+        # plt.plot(np.abs(integ- intc3)/np.abs(integ), 'ro')
+        # plt.plot(np.abs(integ- intc3)/np.abs(integ), c='k', ls='--')
+        # plt.savefig("Test_C3_symm_bubble_"+identifier+".png")
+        # plt.close()
+        # print("finished testing symmetry of the result...")
 
         print("saving data from the run ...")
 
@@ -704,7 +695,7 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
-        prop_BZ=0.15
+        prop_BZ=0.1
         cs=[]
         cs_lh=[]
         rs=[]
@@ -717,7 +708,7 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
+        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
         MAX_WORKERS=25
         
         with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -748,13 +739,13 @@ class ep_Bubble:
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
+        calc = functools.partial(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings)
         MAX_WORKERS=25
         
         
         with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
             future_to_file = {
-                executor.submit(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval): qpval for qpval in qp
+                executor.submit(self.parCompute_lh, theta, omega, kpath, VV, Nsamp, mu_values/1000,fillings, qpval): qpval for qpval in qp
             }
 
             for future in concurrent.futures.as_completed(future_to_file):
@@ -777,7 +768,7 @@ class ep_Bubble:
         print("time for sweep delta", e-s)
 
         # for ide in range(np.size(fillings)):
-        #     mu= mu_values[ide]
+        #     mu= mu_values[ide]/1000
         #     filling=fillings[ide]
         #     omega=[0]
         #     kpath=np.array([self.KX,self.KY]).T
@@ -789,7 +780,7 @@ class ep_Bubble:
         #     # plt.close()
 
         #     print("the filling is .. " , filling)
-        #     integ=integ.flatten()
+        #     integ=integ.flatten()*1000 #convertion to mev
         #     popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         #     print("parameters of the fit...", c)
         #     print("residual of the fit...", res)
@@ -798,7 +789,7 @@ class ep_Bubble:
         #     cs.append(c)
         #     rs.append(resc)
 
-        #     # integ_lh=integ_lh.flatten()
+        #     # integ_lh=integ_lh.flatten()*1000 #convertion to mev
         #     # popt, res, c, resc=self.extract_cs( integ_lh, prop_BZ)
         #     # print("parameters of the fit _lh...", c)
         #     # print("residual of the fit..._lh", res)
@@ -878,7 +869,7 @@ class ee_Bubble:
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
-        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        self.Gscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
@@ -1414,7 +1405,7 @@ class ee_Bubble:
 
             bins2=np.linspace(self.bins[0],self.bins[-1],NN)
             for ide in range(np.size(bins2)):
-                # mu= mu_values[ide]
+                # mu= mu_values[ide]/1000
                 # filling=fillings[ide]
                 omega=[0]
                 kpath=np.array([0,0]).T
@@ -1458,12 +1449,25 @@ class ee_Bubble:
     
         
 def main() -> int:
+
+    
+    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
+    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
+
     
     try:
         filling_index=int(sys.argv[1]) #0-25
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
+
+    try:
+        N_SFs=26 #number of SF's currently implemented
+        a=np.arange(N_SFs)
+        a[filling_index]
+
+    except (IndexError):
+        raise Exception(f"Index has to be between 0 and {N_SFs-1}")
 
 
     try:
@@ -1496,9 +1500,11 @@ def main() -> int:
     [q1,q1,q3]=l.q
     q=la.norm(q1)
     umkl=0
-    print(f"taking {umkl} umklapps")
+    print(f"taking ${umkl} umklapps")
     VV=lq.boundary()
-
+    # [KXu,KYu]=lq.Generate_Umklapp_lattice(KX,KY,umkl)
+    # [KQX, KQY, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
+    
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
@@ -1531,68 +1537,75 @@ def main() -> int:
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
-    a_graphene=2.458*(1e-10) #in meters
-    e_el=1.6021766*(10**(-19))  #in joule/ev
+    a_graphene=2.46*(1e-10) #in meters
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
 
     #phonon parameters
     c_light=299792458 #m/s
-    M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
+    M=1.99264687992e-26 * 5.6095861672249e+38/1000 # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
-    hhbar=6.582119569e-16 #(in eV s)
+    hhbar=6.582119569e-13 /1000 #(in eV s)
     alpha_ep=0*2# in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
     gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
-    gammap=(q**2)*(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
-    scaling_fac=( a_graphene**2) /(mass*(q**2))
-    print("phonon params...", gammap/1e+11 , gamma, np.sqrt(gammap*scaling_fac),gammap*scaling_fac)
+    gammap= (q**2)*(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
+    print("phonon params...", gammap/1e+11 )
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
+
+
+    # [path,kpath,HSP_index]=lq.embedded_High_symmetry_path(KX,KY)
+    # plt.plot(VV[:,0],VV[:,1])
+    # plt.scatter(kpath[:,0],kpath[:,1], s=30, c='g' )
+    # plt.gca().set_aspect('equal')
+    # plt.show()
+    
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
-    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+    
+    
+    ###DOS
     Ndos=100
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
-    [ Kxp, Kyp]=ldos.Generate_lattice()
-    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=3
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+    ldos=MoireLattice.MoireTriangLattice(Ndos,theta, 2) #this one
+    print("Loading  ..........")
+    #other electronic params
     filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
+    mu=mu_values[filling_index]/1000
     filling=fillings[filling_index]
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+
     
     
-    #BUBBLE CALCULATION
+    #testing umklapp
+    
+    # test_symmetry=True
+    # B1=ee_Bubble(lq, nbands, hpl, hmin, test_symmetry, umkl, theta)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FG")
+    # integ=B1.Compute_lh(mu, omega, kpath)
+    # B1.plot_res( integ, KX,KY, VV, filling, Nsamp, "FGlh")
+    # B1.epsilon_sweep(fillings, mu_values)
+    
+
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
+    integ=B1.Compute_lh(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
     B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
     # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
-    
-    NnarrowSamp=100
-    lnarrowSamp=MoireLattice.MoireTriangLattice(NnarrowSamp,theta,2)
-    [ Kxp, Kyp]=lnarrowSamp.Generate_lattice()
-    
-    [KX_m, KY_m, ind]=lnarrowSamp.mask_KPs( Kxp, Kyp, 0.2)
-    kpath=np.array([KX_m, KY_m]).T
-    integ=B1.Compute_lh(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs_path( integ, kpath)
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.plot_res(integ, KX_m, KY_m, VV, filling, Nsamp, c , res, "small")
     
 
     
     # return 0
 
 if __name__ == '__main__':
-    sys.exit(main())  # next section explains the use of sys.exit
+    sys.exit(main())  # next section explains the use of sys.exi
