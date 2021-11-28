@@ -6,7 +6,7 @@ import time
 import Lattice
 from scipy.interpolate import interp1d
 from scipy.linalg import circulant
-  
+import sys  
 
 class Ham():
     def __init__(self, hbvf, latt):
@@ -22,7 +22,7 @@ class Ham():
     # METHODS FOR CALCULATING THE DISPERSION
     
     def eigens(self, kx,ky):
-        [GM1,GM2]=self.latt.AMvec
+        [GM1,GM2]=self.latt.LMvec
 
         e1=(GM1+GM2)/3
         e2=(-2*GM1+GM2)/3
@@ -32,15 +32,24 @@ class Ham():
         W3=0.00375/3  #in ev
         k=np.array([kx,ky])
         
-        hk=np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3)
-        hk_n=np.abs(W3*hk)
+        hk=W3*(np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3))
+        hk_n=np.abs(hk)
         # print(k@e1,k@e2,k@e3,hk_n, 2*np.pi*1/3)
-        psi1=np.array([+1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
-        psi2=np.array([-1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+        psi2=np.array([+1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+        psi1=np.array([-1*np.exp(1j*np.angle(hk)), 1])/np.sqrt(2)
+        
+        # mat=np.array([[0,hk],[np.conj(hk),0]])
+        # print((mat@psi1)/psi1, -hk_n )
+        # print((mat@psi2)/psi2, hk_n )
+        
+        psi=np.zeros([np.size(psi1), 2])+0*1j
+        psi[:,0]=psi1
+        psi[:,1]=psi2
 
-        return np.array([-hk_n,hk_n]), np.array([psi2,psi1])
+        
+        return np.array([-hk_n,hk_n ]), psi
     
-    def eigens2(self, kx,ky):
+    def eigens_vp(self, kx,ky):
         hbvf = 0.001*2.1354; # eV
         # W3=0.00375/3  #in ev
         kv=np.array([kx,ky])
@@ -48,13 +57,122 @@ class Ham():
         k=kx+1j*ky
         kbar=kx-1j*ky
         
-        psi1=np.array([+np.exp(1j*np.angle(kbar)/2), np.exp(1j*np.angle(k)/2)])/np.sqrt(2)
-        psi2=np.array([-np.exp(1j*np.angle(kbar)/2), np.exp(1j*np.angle(k)/2)])/np.sqrt(2)
+        hk_n=hbvf*knorm
+        
+        psi2=np.array([+1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
+        psi1=np.array([-1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
+    
+        # mat=hbvf*np.array([[0,kbar],[k,0]])
+        # print((mat@psi1)/psi1, -hk_n )
+        # print((mat@psi2)/psi2, hk_n )
+        
+        psi=np.zeros([np.size(psi1), 2])+0*1j
+        psi[:,0]=psi1
+        psi[:,1]=psi2
 
-        return np.array([-hbvf*knorm,hbvf*knorm ]), np.array([psi2,psi1])
+        
+        return np.array([-hk_n,hk_n ]), psi
+    
+    def eigens_vm(self, kx,ky):
+        hbvf = 0.001*2.1354; # eV
+        # W3=0.00375/3  #in ev
+        kv=np.array([kx,ky])
+        knorm=np.sqrt(kv.T@kv)
+        mk=-kx-1j*ky
+        mkbar=-kx+1j*ky
+        
+        hk_n=hbvf*knorm
+        
+        psi2=np.array([+1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
+        psi1=np.array([-1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
+    
+        # mat=hbvf*np.array([[0,mk],[mkbar,0]])
+        # print((mat@psi1)/psi1, -hk_n )
+        # print((mat@psi2)/psi2, hk_n )
+        # print(np.conj(psi1.T)@psi1)
+        
+        psi=np.zeros([np.size(psi1), 2])+0*1j
+        psi[:,0]=psi1
+        psi[:,1]=psi2
+        
+        return np.array([-hk_n,hk_n ]), psi
+
+class Ham_p():
+    def __init__(self, hbvf, latt):
+
+        self.hvkd = hbvf
+        self.latt=latt
+        
+        
+    def __repr__(self):
+        return "Hamiltonian with alpha parameter {alpha} and scale {hvkd}".format( alpha =self.alpha,hvkd=self.hvkd)
 
 
+    # METHODS FOR CALCULATING THE DISPERSION
+    
+    def eigens(self, kx,ky):
+        hbvf = 0.001*2.1354; # eV
+        # W3=0.00375/3  #in ev
+        kv=np.array([kx,ky])
+        knorm=np.sqrt(kv.T@kv)
+        k=kx+1j*ky
+        kbar=kx-1j*ky
+        
+        hk_n=hbvf*knorm
+        
+        psi2=np.array([+1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
+        psi1=np.array([-1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
+    
+        # mat=hbvf*np.array([[0,kbar],[k,0]])
+        # print((mat@psi1)/psi1, -hk_n )
+        # print((mat@psi2)/psi2, hk_n )
+        
+        psi=np.zeros([np.size(psi1), 2])+0*1j
+        psi[:,0]=psi1
+        psi[:,1]=psi2
 
+        
+        return np.array([-hk_n,hk_n ]), psi
+    
+    
+class Ham_m():
+    def __init__(self, hbvf, latt):
+
+        self.hvkd = hbvf
+        self.latt=latt
+        
+        
+    def __repr__(self):
+        return "Hamiltonian with alpha parameter {alpha} and scale {hvkd}".format( alpha =self.alpha,hvkd=self.hvkd)
+
+
+    # METHODS FOR CALCULATING THE DISPERSION
+
+    def eigens(self, kx,ky):
+        hbvf = 0.001*2.1354; # eV
+        # W3=0.00375/3  #in ev
+        kv=np.array([kx,ky])
+        knorm=np.sqrt(kv.T@kv)
+        mk=-kx-1j*ky
+        mkbar=-kx+1j*ky
+        
+        hk_n=hbvf*knorm
+        
+        psi2=np.array([+1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
+        psi1=np.array([-1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
+    
+        # mat=hbvf*np.array([[0,mk],[mkbar,0]])
+        # print((mat@psi1)/psi1, -hk_n )
+        # print((mat@psi2)/psi2, hk_n )
+        # print(np.conj(psi1.T)@psi1)
+        
+        psi=np.zeros([np.size(psi1), 2])+0*1j
+        psi[:,0]=psi1
+        psi[:,1]=psi2
+        
+        return np.array([-hk_n,hk_n ]), psi
+    
+    
 
 
 class Dispersion():
@@ -87,12 +205,12 @@ class Dispersion():
         s=time.time()
         
         for l in range(self.Npoi1bz):
-            E1,wave1=self.hpl.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
+            E1,wave1=self.hpl.eigens(self.KX1bz[l],self.KY1bz[l])
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             psi_plus_a.append(wave1)
 
 
-            E1,wave1=self.hmin.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
+            E1,wave1=self.hmin.eigens(self.KX1bz[l],self.KY1bz[l])
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
 
@@ -112,6 +230,47 @@ class Dispersion():
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
+    
+    def precompute_E_psi_u(self, KXu,KYu):
+
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+        
+        Npoiu=np.size(KXu)
+
+
+        print("starting dispersion ..........")
+        
+        s=time.time()
+        
+        for l in range(Npoiu):
+            E1,wave1=self.hpl.eigens(KXu[l],KYu[l])
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            psi_plus_a.append(wave1)
+
+
+            E1,wave1=self.hmin.eigens(KXu[l],KYu[l])
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            psi_min_a.append(wave1)
+
+            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoiu,self.nbands])
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoiu,self.nbands])
+
+        
+        
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+    
     ###########DOS FOR DEBUGGING
     
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
@@ -123,7 +282,7 @@ class Dispersion():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)*1.5
+        eps=np.min(eps_a)*7
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
@@ -149,7 +308,7 @@ class Dispersion():
         
         plt.plot(bins,valt)
         plt.scatter(bins,valt, s=1)
-        plt.savefig("dos.png")
+        plt.savefig("dos1.png")
         plt.close()
         
 
@@ -297,19 +456,19 @@ class Dispersion():
         fillings=np.linspace(0,3.9,Nfil)
         
         if calculate:
-            [Ene_valley_plus_dos,Ene_valley_min_dos]=self.precompute_E_psi()
+            [psi_plus,Ene_valley_plus_dos,psi_min,Ene_valley_min_dos]=self.precompute_E_psi()
         if read:
             print("Loading  ..........")
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
                 Ene_valley_plus_dos=np.load(f)
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
                 Ene_valley_min_dos=np.load(f)
     
         if write:
             print("saving  ..........")
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'wb') as f:
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
                 np.save(f, Ene_valley_plus_dos)
-            with open('dispersions/Edism_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'wb') as f:
+            with open('dispersions/dirEdism_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
                 np.save(f, Ene_valley_min_dos)
                 
         
@@ -485,63 +644,48 @@ class Dispersion():
         plt.xlim([0,1])
         plt.ylim([-0.009,0.009])
         plt.savefig("highsym.png")
-        plt.show()
+        plt.close()
         return [Ene_valley_plus, Ene_valley_min]
     
 
-class FormFactors_umklapp():
-    def __init__(self, psi_p, xi, lat, umklapp, ham):
-        self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
+
+class FormFactors():
+    def __init__(self, psi, xi, lat, umklapp):
+        self.psi = psi #has dimension #kpoints, 4*N, nbands
         self.lat=lat
-        self.cpsi_p=np.conj(psi_p)
+        self.cpsi=np.conj(psi)
         self.xi=xi
-        self.Nu=int(np.shape(self.psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
 
         
         [KX,KY]=lat.Generate_lattice()
+        [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
         
-        Gu=lat.Umklapp_List(umklapp)
-        [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
-
         self.kx=KXu
         self.ky=KYu
-
+       
         #momentum transfer lattice
         kqx1, kqx2=np.meshgrid(self.kx,self.kx)
         kqy1, kqy2=np.meshgrid(self.ky,self.ky)
         self.qx=kqx1-kqx2
         self.qy=kqy1-kqy2
         self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
-        
-        self.qmin_x=KXu[1]-KXu[0]
-        self.qmin_y=KYu[1]-KYu[0]
-        self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
-        psilist=[]
-        for GG in Gu:
-            shi1=int(GG[0])
-            shi2=int(GG[1])
-            psishift=ham.trans_psi2(psi_p, shi1, shi2)
-            psilist=psilist+[psishift]
-        self.psi=np.vstack(psilist)
-        self.cpsi=np.conj(self.psi)
-        print(np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
             
 
     def __repr__(self):
         return "Form factors for valley {xi}".format( xi=self.xi)
 
-    def matmult(self, layer, sublattice):
+    def matmult(self, sublattice):
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
 
         pau=[pauli0,paulix,pauliy,pauliz]
-        Qmat=np.eye(self.Nu)
         
 
-        mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        mat=pau[sublattice]
         
+        # print("shapes in all the matrices being mult", np.shape(mat), np.shape(self.psi), np.shape(mat@self.psi))
         psimult=[]
         for i in range(np.shape(self.psi)[0]):
             psimult=psimult+[mat@self.psi[i,:,:]]
@@ -549,17 +693,15 @@ class FormFactors_umklapp():
 
         return  mult_psi#mat@self.psi
 
-    def calcFormFactor(self, layer, sublattice):
+    def calcFormFactor(self,  sublattice):
         s=time.time()
         print("calculating tensor that stores the overlaps........")
-        mult_psi=self.matmult(layer,sublattice)
+        mult_psi=self.matmult(sublattice)
         Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
         e=time.time()
         print("finsihed the overlaps..........", e-s)
         return(Lambda_Tens)
     
- 
-
 
     #######fourth round
     def fq(self, FF ):
@@ -591,7 +733,9 @@ class FormFactors_umklapp():
         return harr 
 
     def h_denominator(self,FF):
-        qmin=self.qmin
+        qx=self.kx[1]-self.kx[0]
+        qy=self.ky[1]-self.ky[0]
+        qmin=np.sqrt(qx**2+qy**2)
         harr= np.ones(np.shape(FF))
         qcut=np.array(self.q)
         qanom=qcut[np.where(qcut<0.01*qmin)]
@@ -603,78 +747,80 @@ class FormFactors_umklapp():
                         
         return harr
 
-
     
 
     ########### Anti-symmetric displacement of the layers
-    def denqFF_a(self):
-        L30=self.calcFormFactor( layer=3, sublattice=0)
+    def denqFF(self):
+        L30=self.calcFormFactor(sublattice=0)
         return L30
 
-    def denqFFL_a(self):
-        L30=self.calcFormFactor( layer=3, sublattice=0)
+    def denqFFL(self):
+        L30=self.calcFormFactor( sublattice=0)
         return self.hq(L30)*L30
 
 
-    def NemqFFL_a(self):
-        L31=self.calcFormFactor( layer=3, sublattice=1)
-        L32=self.calcFormFactor( layer=3, sublattice=2)
+    def NemqFFL(self):
+        L31=self.calcFormFactor( sublattice=1)
+        L32=self.calcFormFactor(  sublattice=2)
         Nem_FFL=self.fq(L31) *L31-self.xi*self.gq(L32)*L32
         return Nem_FFL
+    
 
-    def NemqFFT_a(self):
-        L31=self.calcFormFactor( layer=3, sublattice=1)
-        L32=self.calcFormFactor( layer=3, sublattice=2)
+    def NemqFFT(self):
+        L31=self.calcFormFactor(sublattice=1)
+        L32=self.calcFormFactor(sublattice=2)
         Nem_FFT=-self.gq(L31) *L31- self.xi*self.fq(L32)*L32
         return Nem_FFT
 
-    ########### Symmetric displacement of the layers
-    def denqFF_s(self):
-        L00=self.calcFormFactor( layer=0, sublattice=0)
-        return L00
 
-    def denqFFL_s(self):
-        L00=self.calcFormFactor( layer=0, sublattice=0)
-        return self.hq(L00)*L00
+    def Fdirac(self):
 
-    def NemqFFL_s(self):
-        L01=self.calcFormFactor( layer=0, sublattice=1)
-        L02=self.calcFormFactor( layer=0, sublattice=2)
-        Nem_FFL=self.fq(L01) *L01-self.xi*self.gq(L02)*L02
-        return Nem_FFL
-
-    def NemqFFT_s(self):
-        L01=self.calcFormFactor( layer=0, sublattice=1)
-        L02=self.calcFormFactor( layer=0, sublattice=2)
-        Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
-        return Nem_FFT
+        phi=np.angle(self.xi*self.kx-1j*self.ky)
+        F=np.zeros([np.size(phi), 2, np.size(phi), 2]) +0*1j
+        phi1, phi2=np.meshgrid(phi,phi)
+        for n in range(2):
+            for n2 in range(2):
+                s1=(-1)**n
+                s2=(-1)**n2
+                F[:,n,:,n2]= ( 1+s1*s2*np.exp(1j*(phi1-phi2)) )/2  
+                
+        return F
     
+    def F_tb(self):
+        [GM1,GM2]=self.lat.LMvec
+
+        e1=(GM1+GM2)/3
+        e2=(-2*GM1+GM2)/3
+        e3=(-2*GM2+GM1)/3
+
+        k=np.array([self.kx,self.ky]).T
+        
+        hk=(np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3))
+
+        phi=np.angle(hk)
+        F=np.zeros([np.size(phi), 2, np.size(phi), 2])+0*1j
+        phi1, phi2=np.meshgrid(phi,phi)
+        for n in range(2):
+            for n2 in range(2):
+                s1=(-1)**n
+                s2=(-1)**n2
+                F[:,n,:,n2]= ( 1+s1*s2*np.exp(1j*(phi1-phi2)) )/2  
+                
+        return F
+                
     
 
 def main() -> int:
     ##when we use this main, we are exclusively testing the moire hamiltonian symmetries and methods
     from scipy import linalg as la
     
-    
-    
-    #parameters for the calculation
-    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
-    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
 
     
     try:
-        filling_index=int(sys.argv[1]) #0-25
+        filling_index=int(sys.argv[1]) 
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
-
-    try:
-        N_SFs=26 #number of SF's currently implemented
-        a=np.arange(N_SFs)
-        a[filling_index]
-
-    except (IndexError):
-        raise Exception(f"Index has to be between 0 and {N_SFs-1}")
 
 
     try:
@@ -684,13 +830,11 @@ def main() -> int:
         raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
 
 
-
-    filling_index=int(sys.argv[1]) #0-25
-    mu=mu_values[filling_index]/1000
     ##########################################
     #parameters energy calculation
     ##########################################
     a_graphene=2.46*(1e-10) #in meters
+    nbands=2 
     #hbvf=0.003404*0.1973269804*1e-6 /a_graphene #ev*m
 
     Nsamp=int(sys.argv[2])
@@ -698,37 +842,146 @@ def main() -> int:
 
 
 
-    l=Lattice.TriangLattice(Nsamp,0)
-    [KX,KY]=l.Generate_lattice()
+    latt=Lattice.TriangLattice(Nsamp,0)
+    [KX,KY]=latt.Generate_lattice()
     plt.scatter(KX,KY)
     plt.savefig("trave.png")
+    plt.close()
     
     xi=1
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
     print("hbvf is ..",hbvf )
-
-
-
-    Ene_valley_plus_a=np.empty((0))
-    Ene_valley_plus_ac3=np.empty((0))
-    psi_plus_a=[]
-    psi_plus_ac3=[]
-
+    
     umkl=1
-    [KXu,KYu]=l.Generate_Umklapp_lattice(KX,KY,umkl)
+    [KXu,KYu]=latt.Generate_Umklapp_lattice(KX,KY,umkl)
     Npoi_u=np.size(KXu)
     plt.scatter(KXu, KYu)
     plt.scatter(KX, KY)
-    plt.savefig("fig0.png")
+    
+
+    [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KXu,KYu)
+
+    h=Ham(hbvf, latt)
+    disp=Dispersion( latt, nbands, h,h)
+    [psi,Ene,psi,Ene]=disp.precompute_E_psi_u(KXu, KYu)
+
+    hpl=Ham_p(hbvf, latt)
+    hmin=Ham_m(hbvf, latt)
+    # [GM1, GM2]=l.GMvec
+    # n,m=1,0
+    # K=n*GM1+GM2*m
+    # kx=3
+    # ky=0.
+    # kxu=kx+K[0]
+    # kyu=ky+K[1]
+    # plt.scatter([kx],[ky],s=30)
+    # plt.scatter([kxu],[kyu],s=30)
+    # plt.savefig("fig0.png")
+    # plt.close()
+    
+    
+    
+    # [E1,psi1]=hpl.eigens(kx,ky)
+    # [E2,psi2]=hpl.eigens(kxu,kyu)
+    # print("energy", E1,E2)
+    # print("overlap",np.conj(psi1[:,0]).T@psi1[:,0],np.conj(psi2[:,0]).T@psi2[:,0],np.abs(np.conj(psi1[:,0]).T@psi2[:,0]))
+    # print("overlap",np.conj(psi1[:,0]).T@psi1[:,1],np.abs(np.conj(psi1[:,1]).T@psi2[:,1]))
+
+    disp=Dispersion( latt, nbands, hpl, hmin)
+    [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi_u(KXu, KYu)
+
+    plt.scatter(KXu,KYu, c=Ene_valley_min[:,1])
+    plt.savefig("dispersion.png")
     plt.close()
-
-    [KXc3z,KYc3z, Indc3z]=l.C3zLatt(KXu,KYu)
-
-    hpl=Ham(hbvf, l)
-    nbands=2 
-    disp=Dispersion( l, nbands, hpl, hpl)
+    
     disp.High_symmetry()
+    
+    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+    Ndos=100
+    ldos=Lattice.TriangLattice(Ndos,0)
+    disp=Dispersion( ldos, nbands, hpl, hpl)
+    Nfils=20
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True)
+    filling_index=int(sys.argv[1]) 
+    mu=mu_values[filling_index]
+    filling=fillings[filling_index]
+    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    
+    umkl=0
+    [KX1bz, KY1bz]=latt.Generate_lattice()
+    Npoi1bz=np.size(KX1bz)
+    [KX,KY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl) #for the integration grid 
+    [KQX,KQY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl+1) #for the momentum transfer lattice
+    Npoi=np.size(KX)
+    NpoiQ=np.size(KQX)
+    
+    print(np.shape(psi_plus))
+    
+    #generating form factors
+    FFp=FormFactors(psi_plus, 1, latt, umkl+1)
+    FFm=FormFactors(psi_min, -1, latt, umkl+1)
+    FF=FormFactors(psi, 1, latt, umkl+1)
+
+    name="ee"
+    # L00=FFp.F_tb()
+    L00p=FF.F_tb()
+    L00m=FF.F_tb()
+
+
+    test= True
+    if test:
+        print("testing symmetry of the form factors...")
+        [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KQX,KQY)
+        diffarp=[]
+        diffarm=[]
+        K=[]
+        KP=[]
+        cos1=[]
+        cos2=[]
+        kp=np.argmin(KQX**2 +KQY**2)
+        for k in range(NpoiQ):
+            K.append(KQX[k]-KQX[kp])
+            KP.append(KQY[k]-KQY[kp])
+            #Regular FF
+            # Plus Valley FF Omega
+            # undet=np.abs(np.linalg.det(Lnemp[k,:,kp,:]))
+            # dosdet=np.abs(np.linalg.det(Lnemp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+            undet=np.linalg.det(np.abs(L00p[k,:,kp,:])**2 )
+            dosdet=np.linalg.det(np.abs(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 )
+            cos1.append(undet)
+            cos2.append(dosdet)
+            diffarp.append( undet   - dosdet   )
+            # Minus Valley FF Omega
+            # undet=np.abs(np.linalg.det(Lnemm[k,:,kp,:]))
+            # dosdet=np.abs(np.linalg.det(Lnemm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+            undet=np.linalg.det(np.abs(L00m[k,:,kp,:])**2 )
+            dosdet=np.linalg.det(np.abs(L00m[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 )
+            diffarm.append( undet   - dosdet   )
+
+        plt.plot(diffarp, label="plus valley")
+        plt.plot(diffarm, label="minsu valley")
+        plt.title("FF- C3 FF")
+        plt.legend()
+        plt.savefig("TestC3_symm"+name+".png")
+        # plt.show()
+        plt.close()  
+        plt.scatter(K,KP,c=cos1)
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.savefig("cos1scat.png")
+        plt.close( ) 
+        plt.scatter(K,KP,c=cos2)
+        plt.colorbar()
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.savefig("cos2scat.png")
+        plt.close(  )
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.scatter3D(K,KP,cos1, c=cos1);
+        plt.savefig("cos1.png")
+        plt.close(  )
+        print("finished testing symmetry of the form factors...")
 
 
 if __name__ == '__main__':

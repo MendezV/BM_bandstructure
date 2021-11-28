@@ -16,7 +16,7 @@ class TriangLattice:
         self.normed=normed
         self.GM=np.sqrt(self.b[0,:].T@self.b[0,:])
         self.GMvec=[self.b[0,:],self.b[1,:]]
-        self.AMvec=[self.a[0,:],self.a[1,:]]
+        self.LMvec=[self.a[0,:],self.a[1,:]]
         #some symmetries:
         #C2z
         th1=np.pi
@@ -284,3 +284,20 @@ class TriangLattice:
             Ik.append(indmin)
         return Ik
 
+    #FBZ volume
+    def Vol_MBZ(self):
+        [GM1,GM2]=self.GMvec
+        zhat=np.array([0,0,1])
+        b_1=np.array([GM1[0],GM1[1],0]) # Moire reciprocal lattice vect extended
+        b_2=np.array([GM2[0],GM2[1],0]) # Moire reciprocal lattice vect extended
+        Vol_rec=np.cross(b_1,b_2)@zhat
+        return Vol_rec
+    
+    #WZ volume
+    def Vol_WZ(self):
+        [LM1,LM2]=self.LMvec
+        zhat=np.array([0,0,1])
+        b_1=np.array([LM1[0],LM1[1],0]) # Moire reciprocal lattice vect extended
+        b_2=np.array([LM2[0],LM2[1],0]) # Moire reciprocal lattice vect extended
+        Vol_rec=np.cross(b_1,b_2)@zhat
+        return Vol_rec

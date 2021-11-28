@@ -666,46 +666,17 @@ def main() -> int:
 
     #lattices with different normalizations
 
-    theta=modulation*1.05*np.pi/180  # magic angle
-    l=Lattice.TriangLattice(Nsamp,theta,0)
-    ln=Lattice.TriangLattice(Nsamp,theta,1)
-    lq=Lattice.TriangLattice(Nsamp,theta,2) #this one
-    [KX,KY]=lq.Generate_lattice()
+    latt=Lattice.TriangLattice(Nsamp,0)
+    [KX,KY]=latt.Generate_lattice()
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
-    [q1,q1,q3]=l.q
-    q=la.norm(q1)
     umkl=0
     print(f"taking {umkl} umklapps")
-    VV=lq.boundary()
+    VV=latt.boundary()
 
 
-    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
-    hvkd=hbvf*q
-    kappa_p=0.0797/0.0975
-    kappa=kappa_p
-    up = 0.0975; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
-    PH=True
-    
-
-    #JY params 
-    # hbvf = 2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=0.75
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
-    
     print("hbvf is ..",hbvf )
-    print("q is...", q)
-    print("hvkd is...", hvkd)
-    print("kappa is..", kappa)
-    print("alpha is..", alph)
-    print("the twist angle is ..", theta)
+
 
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
