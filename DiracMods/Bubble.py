@@ -631,10 +631,6 @@ class ee_Bubble:
             plt.close()
         
 
-            
-
-
-    
         
 def main() -> int:
     
@@ -694,51 +690,51 @@ def main() -> int:
     alpha_ep=0*2# in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
-    gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
-    gammap=(q**2)*(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
-    scaling_fac=( a_graphene**2) /(mass*(q**2))
+    gamma=np.sqrt(hhbar/(a_graphene*mass*c_phonon))
+    gammap=(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
+    scaling_fac=( a_graphene**2) /(mass)
     print("phonon params...", gammap/1e+11 , gamma, np.sqrt(gammap*scaling_fac),gammap*scaling_fac)
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+    h=Hamiltonian.Ham(hbvf, latt)
+    hpl=Hamiltonian.Ham_p(hbvf, latt)
+    hmin=Hamiltonian.Ham_m(hbvf, latt)
+
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=100
-    ldos=Lattice.TriangLattice(Ndos,theta,2)
-    [ Kxp, Kyp]=ldos.Generate_lattice()
-    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=3
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+    ldos=Lattice.TriangLattice(Ndos,0)
+    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hpl)
+    Nfils=20
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True)
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
     print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
+    # #BUBBLE CALCULATION
+    # test_symmetry=True
+    # B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
+    # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    # print(np.mean(popt),np.mean(c), resc, c_phonon)
+    # # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
-    #BUBBLE CALCULATION
-    test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    omega=[1e-14]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
-    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # NnarrowSamp=100
+    # lnarrowSamp=Lattice.TriangLattice(NnarrowSamp,theta,2)
+    # [ Kxp, Kyp]=lnarrowSamp.Generate_lattice()
     
-    NnarrowSamp=100
-    lnarrowSamp=Lattice.TriangLattice(NnarrowSamp,theta,2)
-    [ Kxp, Kyp]=lnarrowSamp.Generate_lattice()
-    
-    [KX_m, KY_m, ind]=lnarrowSamp.mask_KPs( Kxp, Kyp, 0.2)
-    kpath=np.array([KX_m, KY_m]).T
-    integ=B1.Compute_lh(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs_path( integ, kpath)
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.plot_res(integ, KX_m, KY_m, VV, filling, Nsamp, c , res, "small")
+    # [KX_m, KY_m, ind]=lnarrowSamp.mask_KPs( Kxp, Kyp, 0.2)
+    # kpath=np.array([KX_m, KY_m]).T
+    # integ=B1.Compute_lh(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs_path( integ, kpath)
+    # print(np.mean(popt),np.mean(c), resc, c_phonon)
+    # B1.plot_res(integ, KX_m, KY_m, VV, filling, Nsamp, c , res, "small")
     
 
     
