@@ -26,6 +26,7 @@ class TriangLattice:
         self.C3z=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation matrix 
         #C2x inv
         self.C2x=np.array([[1,0],[0,-1]]) #rotation matrix 
+        self.VolMBZ=self.Vol_MBZ()
 
 
    
@@ -131,10 +132,10 @@ class TriangLattice:
         KX=(2*np.pi*nn_1pp/LP)
         KY= (2*(2*np.pi*nn_2pp/LP - np.pi*nn_1pp/LP)/np.sqrt(3))
 
-        #Making the sampling lattice commensurate with the MBZ
-        fact=K[1][0]/np.max(KX)
-        KX=KX*fact
-        KY=KY*fact
+        # #Making the sampling lattice commensurate with the MBZ
+        # fact=K[1][0]/np.max(KX)
+        # KX=KX*fact
+        # KY=KY*fact
         
         return [KX,KY]
 

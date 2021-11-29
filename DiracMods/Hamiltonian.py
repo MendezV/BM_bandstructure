@@ -282,7 +282,8 @@ class Dispersion():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)*7
+        eps=np.min(eps_a)*4
+        print("and epsilon is ...", eps)
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
@@ -290,10 +291,14 @@ class Dispersion():
         binn=np.linspace(mmin,mmax,NN+1)
         valt=np.zeros(NN)
 
-        val_p,bins_p=np.histogram(Ene_valley_plus.flatten(), bins=binn,density=True)
+        val_p,bins_p=np.histogram(Ene_valley_plus[:,0].flatten(), bins=binn,density=True)
+        valt=valt+val_p
+        val_p,bins_p=np.histogram(Ene_valley_plus[:,1].flatten(), bins=binn,density=True)
         valt=valt+val_p
 
-        val_m,bins_m=np.histogram(Ene_valley_min.flatten(), bins=binn,density=True)
+        val_m,bins_m=np.histogram(Ene_valley_min[:,0].flatten(), bins=binn,density=True)
+        valt=valt+val_m
+        val_m,bins_m=np.histogram(Ene_valley_min[:,1].flatten(), bins=binn,density=True)
         valt=valt+val_m
         
         bins=(binn[:-1]+binn[1:])/2
@@ -301,7 +306,7 @@ class Dispersion():
         
         
         
-        valt=2*2*valt
+        valt=2*valt
         f2 = interp1d(binn[:-1],valt, kind='cubic')
         de=(bins[1]-bins[0])
         print("sum of the hist, normed?", np.sum(valt)*de)
@@ -326,16 +331,18 @@ class Dispersion():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)
+        eps=np.min(eps_a)*10
+        
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
         mmax=np.max([np.max(Ene_valley_plus),np.max(Ene_valley_min)])
         NN=int((mmax-mmin)/eps)+int((int((mmax-mmin)/eps)+1)%2) #making sure there is a bin at zero energy
         earr=np.linspace(mmin,mmax,NN+1)
-        epsil=eps/4
+        epsil=eps/10
         de=earr[1]-earr[0]
         dosl=[]
-        print("the volume element is ",dS_in)
+        dos1band=[]
+        print("the volume element is ",dS_in, "and epsilon is ...", epsil)
         
         for i in range(np.size(earr)):
             predos=0
@@ -344,16 +351,19 @@ class Dispersion():
                 predos_plus=self.deltados(Ene_valley_plus[:,j]-earr[i], epsil)
                 predos_min=self.deltados(Ene_valley_min[:,j]-earr[i], epsil)
                 predos=predos+predos_plus+predos_min
+                
                 # print(np.sum(predos_plus  )*dS_in)
                 # print(np.sum(predos_min  )*dS_in)
                 # print("sum of the hist, normed?", np.sum(predos)*dS_in)
             # print("4 real sum of the hist, normed?", np.sum(predos)*dS_in)
+            dos1band.append(np.sum(predos_plus  )*dS_in )
             dosl.append( np.sum(predos  )*dS_in )
             # print(np.sum(self.deltados(earr, epsil)*de))
-
+        dosarr1band=2*np.array(dos1band) 
         dosarr=2*np.array(dosl) #extra 2 for spin
         f2 = interp1d(earr,dosarr, kind='cubic')
         print("sum of the hist, normed?", np.sum(dosarr)*de)
+        print("sum of the hist, normed?", np.sum(dosarr1band)*de)
         
         
     
@@ -483,6 +493,60 @@ class Dispersion():
 
         
         return [fillings,np.array(mu_values)]
+    
+    def dos_filling_array(self, Nfil, read, write, calculate):
+        
+        fillings=np.linspace(0,3.9,Nfil)
+        
+        if calculate:
+            [psi_plus,Ene_valley_plus_dos,psi_min,Ene_valley_min_dos]=self.precompute_E_psi()
+        if read:
+            print("Loading  ..........")
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
+                Ene_valley_plus_dos=np.load(f)
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
+                Ene_valley_min_dos=np.load(f)
+    
+        if write:
+            print("saving  ..........")
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
+                np.save(f, Ene_valley_plus_dos)
+            with open('dispersions/dirEdism_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
+                np.save(f, Ene_valley_min_dos)
+                
+        
+
+        [earr, dos, f2 ]=self.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
+
+
+        
+        return [earr, dos]
+    def dos2_filling_array(self, Nfil, read, write, calculate,dS_in):
+        
+        fillings=np.linspace(0,3.9,Nfil)
+        
+        if calculate:
+            [psi_plus,Ene_valley_plus_dos,psi_min,Ene_valley_min_dos]=self.precompute_E_psi()
+        if read:
+            print("Loading  ..........")
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
+                Ene_valley_plus_dos=np.load(f)
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'rb') as f:
+                Ene_valley_min_dos=np.load(f)
+    
+        if write:
+            print("saving  ..........")
+            with open('dispersions/dirEdisp_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
+                np.save(f, Ene_valley_plus_dos)
+            with open('dispersions/dirEdism_'+str(self.lq.Npoints)+'.npy', 'wb') as f:
+                np.save(f, Ene_valley_min_dos)
+                
+        
+
+        [earr, dos, f2 ]=self.DOS2(Ene_valley_plus_dos,Ene_valley_min_dos,dS_in)
+
+        
+        return [earr, dos]
     
     ### FERMI SURFACE ANALYSIS
 

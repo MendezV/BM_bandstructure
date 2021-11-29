@@ -39,7 +39,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
         
 class ee_Bubble:
 
-    def __init__(self, latt, nbands, hpl, hmin, test, umkl, theta):
+    def __init__(self, latt, nbands, hpl, hmin, test, umkl):
 
         #changes to eliominate arg KX KY put KX1bz first, then call umklapp lattice and put slef in KX, KY
         #change to implement dos 
@@ -50,19 +50,17 @@ class ee_Bubble:
         self.umkl=umkl
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
         self.Npoi1bz=np.size(self.KX1bz)
-        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
-        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
+        [self.KX,self.KY]=latt.Generate_Umklapp_lattice(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
+        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
         self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
         self.latt=latt
-        [q1,q2,q3]=latt.qvect()
-        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
-        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
-        
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
-        
+        self.qscale=1 #necessary for rescaling since we where working with a normalized lattice 
+        disp=Hamiltonian.Dispersion( latt, nbands, hpl, hmin)
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_u(self.KQX, self.KQY)
+        [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi_u(self.KX1bz, self.KY1bz)
+
         ###selecting eta
         eps_l=[]
         for i in range(nbands):
@@ -78,12 +76,12 @@ class ee_Bubble:
         self.eta_small_imag=0.1*eps
         
         #generating form factors
-        self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
-        
+        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl+1)
+        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl+1)
+
         self.name="ee"
-        self.L00p=self.FFp.denqFF_s()
-        self.L00m=self.FFm.denqFF_s()
+        self.L00p=self.FFp.denqFF()
+        self.L00m=self.FFm.denqFF()
         
         
 
@@ -108,8 +106,8 @@ class ee_Bubble:
                 # Plus Valley FF Omega
                 # undet=np.abs(np.linalg.det(self.Lnemp[k,:,kp,:]))
                 # dosdet=np.abs(np.linalg.det(self.Lnemp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                undet=np.abs(np.linalg.det(self.L00p[k,:,kp,:]))
-                dosdet=np.abs(np.linalg.det(self.L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                undet=np.abs(np.linalg.det(   np.abs(self.L00p[k,:,kp,:])**2   ))
+                dosdet=np.abs(np.linalg.det(   np.abs(self.L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2  ))
                 cos1.append(undet)
                 cos2.append(dosdet)
                 diffarp.append( undet   - dosdet   )
@@ -149,42 +147,46 @@ class ee_Bubble:
 
             print("finished testing symmetry of the form factors...")
             
-            ###DOS
-            Ndos=latt.Npoints
-            ldos=Lattice.TriangLattice(Ndos,theta, 2) #this one
-            [self.KXdos, self.KYdos]=ldos.Generate_lattice()
-            self.Npoidos=np.size(self.KXdos)
-            [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
-            # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'wb') as f:
-            #     np.save(f, self.Ene_valley_plus_dos)
-            # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'wb') as f:
-            #     np.save(f, self.Ene_valley_min_dos)
-            # print("Loading  ..........")
+            # ###DOS
+            # Ndos=latt.Npoints
+            # ldos=Lattice.TriangLattice(Ndos, 0) #this one
+            # [self.KXdos, self.KYdos]=ldos.Generate_lattice()
+            # self.Npoidos=np.size(self.KXdos)
+            # [self.Ene_valley_plus_dos,self.Ene_valley_min_dos]=self.precompute_E_psi_dos()
+            # # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'wb') as f:
+            # #     np.save(f, self.Ene_valley_plus_dos)
+            # # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'wb') as f:
+            # #     np.save(f, self.Ene_valley_min_dos)
+            # # print("Loading  ..........")
             
-            # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'rb') as f:
-            #     self.Ene_valley_plus_dos=np.load(f)
-            # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'rb') as f:
-            #     self.Ene_valley_min_dos=np.load(f)
+            # # with open('dispersions/Edisp_'+str(Ndos)+'.npy', 'rb') as f:
+            # #     self.Ene_valley_plus_dos=np.load(f)
+            # # with open('dispersions/Edism_'+str(Ndos)+'.npy', 'rb') as f:
+            # #     self.Ene_valley_min_dos=np.load(f)
                 
-            plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_plus_dos[:,0])
-            plt.colorbar()
-            plt.savefig("energydisp0.png")
-            plt.close()
-            plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_plus_dos[:,1])
-            plt.colorbar()
-            plt.savefig("energydisp1.png")
-            plt.close()
-            plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_min_dos[:,0])
-            plt.colorbar()
-            plt.savefig("energydism0.png")
-            plt.close()
-            plt.scatter(self.KXdos, self.KYdos, c=self.Ene_valley_min_dos[:,1])
-            plt.colorbar()
-            plt.savefig("energydism1.png")
-            plt.close()
+            # plt.scatter(self.KQX, self.KQY, c=self.Ene_valley_plus[:,0])
+            # plt.colorbar()
+            # plt.savefig("energydisp0.png")
+            # plt.close()
+            # plt.scatter(self.KQX, self.KQY, c=self.Ene_valley_plus[:,1])
+            # plt.colorbar()
+            # plt.savefig("energydisp1.png")
+            # plt.close()
+            # fig = plt.figure()
+            # ax = plt.axes(projection='3d')
+            # ax.scatter3D(self.KQX, self.KQY,self.Ene_valley_plus[:,1], c=self.Ene_valley_plus[:,1]);
+            # ax.scatter3D(self.KQX, self.KQY,self.Ene_valley_plus[:,0], c=self.Ene_valley_plus[:,1]);
 
-            [self.bins,self.valt, self.f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
-            [self.earr,self.dosarr,self.f2 ]=hpl.DOS2(self.Ene_valley_plus_dos,self.Ene_valley_min_dos,1/np.size(self.KXdos))
+            # plt.savefig("ene.png")
+            # plt.close()
+            # ind0=np.where(self.KQY==0)
+            # plt.plot(self.KQX[ind0], self.Ene_valley_plus[ind0,1].flatten())
+            # plt.plot(self.KQX[ind0], self.Ene_valley_plus[ind0,0].flatten())
+            # plt.savefig("eneri.png")
+            # plt.close()
+
+            # [self.bins,self.valt, self.f2 ]=hpl.DOS(self.Ene_valley_plus_dos,self.Ene_valley_min_dos)
+            # [self.earr,self.dosarr,self.f2 ]=hpl.DOS2(self.Ene_valley_plus_dos,self.Ene_valley_min_dos,1/np.size(self.KXdos))
 
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
@@ -355,12 +357,12 @@ class ee_Bubble:
                 qy=kpath[int(l), 1]
                 # print(qx,qy)
 
-                Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
+                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_plus_kq_k=np.array([self.L00p[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
+                Lambda_Tens_min_kq_k=np.array([self.L00m[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
 
 
                 integrand_var=0
@@ -426,12 +428,14 @@ class ee_Bubble:
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
                         Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTOR
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -446,7 +450,8 @@ class ee_Bubble:
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
-    ###########No FORM FACOTR
+    
+        ###########No FORM FACOTR
     def Compute_lh_noff(self, mu, omegas, kpath):
 
         integ=[]
@@ -519,8 +524,6 @@ class ee_Bubble:
         bub=bub+np.sum(integrand_var)*self.dS_in
         # print("time for bubble...",eb-sb)
         return bub
-
-    
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         plt.plot(VV[:,0],VV[:,1])
@@ -574,7 +577,7 @@ class ee_Bubble:
 
 
 
-    def epsilon_sweep(self,fillings, mu_values):
+    def epsilon_sweep(self,fillings, mu_values,earr, dos):
         
         
         scalings=[1e-8,0.001,0.01,0.1,1,2,5, 100]
@@ -591,7 +594,7 @@ class ee_Bubble:
             mmax=np.max([np.max(self.Ene_valley_plus),np.max(self.Ene_valley_min)])
             NN=int((mmax-mmin)/self.eta)+int((int((mmax-mmin)/self.eta)+1)%2) #making sure there is a bin at zero energy
 
-            bins2=np.linspace(self.bins[0],self.bins[-1],NN)
+            bins2=np.linspace(earr[0],earr[-1],NN)
             for ide in range(np.size(bins2)):
                 # mu= mu_values[ide]
                 # filling=fillings[ide]
@@ -607,15 +610,15 @@ class ee_Bubble:
             # print(cs)
             # print(cs_lh)
             plt.title("scaling fact cutoff "+str(e))
-            plt.plot(self.bins, self.valt, label="hist")
-            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.plot(earr, dos, label="hist")
+            plt.plot(earr, dos, label="integ")
             plt.legend()
             plt.savefig("comparedos"+str(e)+".png")
             plt.close()
             plt.title("scaling fact cutoff"+str(e))
             plt.plot(bins2,cs, label="ieps")
             plt.plot(bins2,cs_lh, label="derivative")
-            plt.plot(self.bins, self.valt, label="hist")
+            plt.plot(earr, dos, label="hist")
             plt.legend()
             plt.title("scaling fact cutoff "+str(e))
             print("normalizations ", e , np.sum(cs)*(bins2[1]-bins2[0]),np.sum(cs_lh)*(bins2[1]-bins2[0]))
@@ -624,7 +627,7 @@ class ee_Bubble:
             
             plt.plot(bins2,cs, label="ieps")
             plt.plot(bins2,cs_lh, label="derivative")
-            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.plot(earr, dos, label="integ")
             plt.title("scaling fact "+str(e))
             plt.legend()
             plt.savefig("scaling_2_"+str(e)+".png")
@@ -668,6 +671,8 @@ def main() -> int:
     umkl=0
     print(f"taking {umkl} umklapps")
     VV=latt.boundary()
+    dS_in=latt.VolMBZ/Npoi
+    print(dS_in)
 
 
     hbvf = 2.1354; # eV
@@ -713,6 +718,24 @@ def main() -> int:
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
     print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    [earr, dos]=disp.dos_filling_array(Nfils, False, True, True)
+    [earr2, dos2]=disp.dos2_filling_array(Nfils, False, True, True, dS_in)
+    
+    plt.plot(earr, dos)
+    plt.plot(earr2, dos2)
+    plt.savefig("comparingdos.png")
+    plt.close()
+    
+    #BUBBLE CALCULATION
+    # test_symmetry=True
+    # B1=ee_Bubble(latt, nbands, hpl, hmin,test_symmetry, umkl)
+    # omega=[0]
+    # [KX,KY]=latt.Generate_Umklapp_lattice(KX, KY,2) #for the integration grid 
+
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, "")
+    # B1.epsilon_sweep(fillings, mu_values,earr, dos)
     
     # #BUBBLE CALCULATION
     # test_symmetry=True
