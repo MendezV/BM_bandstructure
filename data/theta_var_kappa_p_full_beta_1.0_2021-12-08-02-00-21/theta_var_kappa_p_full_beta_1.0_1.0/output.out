@@ -1,0 +1,358 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.02553701400756836  s
+397 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.1354
+q is... 0.07676251561000431
+hvkd is... 0.16391867583360323
+kappa is.. 0.8174358974358973
+alpha is.. 0.5948071475331707
+the twist angle is .. 0.01832595714594046
+phonon params... 1.9079819362199868 0.00878819485239851 3.9660650192402236 15.729671736840956 9.914164960369977 5603.069445261928 5603.069445261927
+phonon params2 1.9505839032362585e+20 0.028478526185195918
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.6398353576660156  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5501499176025391  s
+Loading  ..........
+number of bands in density of states calculation, 2
+sum of the hist, normed? 7.99999999999991
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.027396202087402344  s
+starting dispersion ..........
+time to diag over MBZ 2504.30397772789
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.021113872528076172  s
+(2779, 564, 2) (397, 564, 2) (2779,)
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.039952993392944336  s
+(2779, 564, 2) (397, 564, 2) (2779,)
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 11.77507734298706
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 9.83017086982727
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 11.277108669281006
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 7.639875650405884
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 10.194415092468262
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 10.04738450050354
+testing symmetry of the form factors...
+finished testing symmetry of the form factors...
+starting bubble....... 397
+time for bubble... 5.161621332168579
+scalings... 128647106.81216723 1.5604671225890068e+18
+[31588.2309267  31197.19677077] 57.66643631192308 2009622.305713746 1920.9255998878687
+the minimum real part is ... 0.0
+saving data from the run ...
+31392.71384873671 2009622.305713746 1920.9255998878687 21400
+starting bubble....... 397
+time for bubble... 4.387069225311279
+the filling is ..  0.0
+scalings... 128647106.81216723 1.5604671225890068e+18
+[29024.92197639 28676.00543423] 3.7500328734869792 1926532.814638159 908.8444549751223
+parameters of the fit... 1926532.814638159
+residual of the fit... 0.00642065153120805
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.576629400253296
+the filling is ..  0.65
+scalings... 128647106.81216723 1.5604671225890068e+18
+[37958.50960783 37958.50960787] 5.4651067378428915e-11 2209808.236013102 0.0030248206734637363
+parameters of the fit... 2209808.236013102
+residual of the fit... 7.11212271564918e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.924872636795044
+the filling is ..  1.3
+scalings... 128647106.81216723 1.5604671225890068e+18
+[32533.34003711 32533.3400371 ] 1.0662707237494334e-10 2045805.4821292881 0.004563775795738614
+parameters of the fit... 2045805.4821292881
+residual of the fit... 1.6190064456078179e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.237123250961304
+the filling is ..  1.9500000000000002
+scalings... 128647106.81216723 1.5604671225890068e+18
+[18655.60240953 18655.60240952] 2.946495216723855e-11 1549189.8772661048 0.0031681308892288276
+parameters of the fit... 1549189.8772661048
+residual of the fit... 7.802004708850986e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.001845836639404
+the filling is ..  2.6
+scalings... 128647106.81216723 1.5604671225890068e+18
+[8000.63770423 8000.63770423] 4.769557477959426e-12 1014523.9737438477 0.0019463978918762082
+parameters of the fit... 1014523.9737438477
+residual of the fit... 2.9448503331144025e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.524538040161133
+the filling is ..  3.25
+scalings... 128647106.81216723 1.5604671225890068e+18
+[2609.66050309 2609.66050309] 8.07001238643597e-12 579418.0472549676 0.004433022940491767
+parameters of the fit... 579418.0472549676
+residual of the fit... 1.5275658254498456e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.388075351715088
+the filling is ..  3.9
+scalings... 128647106.81216723 1.5604671225890068e+18
+[137.50844765 137.50844765] 2.4769431485645035e-13 133003.9997612704 0.003383360027650889
+parameters of the fit... 133003.9997612704
+residual of the fit... 8.898082017047876e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+time for sweep ieps 88.43329954147339
+starting bubble....... 397
+time for bubble... 4.96956205368042
+the filling is ..  0.0
+scalings... 128647106.81216723 1.5604671225890068e+18
+[32417.73444629 31145.69479206] 11.40440960643788 2022035.0232591091 1509.8951333920184
+parameters of the fit... 2022035.0232591091
+residual of the fit... 0.01772121713681075
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.913642168045044
+the filling is ..  0.65
+scalings... 128647106.81216723 1.5604671225890068e+18
+[38284.05783807 38284.05783807] 4.721381760438301e-10 2219264.129818214 0.008852796099574426
+parameters of the fit... 2219264.129818214
+residual of the fit... 6.092014093645197e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.32175087928772
+the filling is ..  1.3
+scalings... 128647106.81216723 1.5604671225890068e+18
+[32184.3874995  32184.38749949] 2.632110372808453e-10 2034804.250126264 0.007209154092679932
+parameters of the fit... 2034804.250126264
+residual of the fit... 4.0398811928111226e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.816680669784546
+the filling is ..  1.9500000000000002
+scalings... 128647106.81216723 1.5604671225890068e+18
+[18845.86575616 18845.86575616] 1.9314533028766523e-11 1557069.7174181857 0.0025520486203227904
+parameters of the fit... 1557069.7174181857
+residual of the fit... 5.062649539410765e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.5440216064453125
+the filling is ..  2.6
+scalings... 128647106.81216723 1.5604671225890068e+18
+[8567.18642897 8567.18642896] 1.641441074050532e-11 1049830.34229676 0.0034893812566862293
+parameters of the fit... 1049830.34229676
+residual of the fit... 9.464481445580092e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.295632600784302
+the filling is ..  3.25
+scalings... 128647106.81216723 1.5604671225890068e+18
+[2838.84239853 2838.84239853] 1.2114162900495554e-11 604325.12877344 0.005207520012908905
+parameters of the fit... 604325.12877344
+residual of the fit... 2.1079576025321047e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.09447979927063
+the filling is ..  3.9
+scalings... 128647106.81216723 1.5604671225890068e+18
+[143.74190813 143.74190813] 1.04158092372437e-13 135985.22202109793 0.002145901039842291
+parameters of the fit... 135985.22202109793
+residual of the fit... 3.579475191400653e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+time for sweep delta 92.0825080871582
+37989.12user 2685.41system 46:27.62elapsed 1459%CPU (0avgtext+0avgdata 11118636maxresident)k
+2304inputs+7976outputs (111major+75876007minor)pagefaults 0swaps
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.024609088897705078  s
+397 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.1354
+q is... 0.07676251561000431
+hvkd is... 0.16391867583360323
+kappa is.. 0.8174358974358973
+alpha is.. 0.5948071475331707
+the twist angle is .. 0.01832595714594046
+phonon params... 1.9079819362199868 0.00878819485239851 3.9660650192402236 15.729671736840956 9.914164960369977 5603.069445261928 5603.069445261927
+phonon params2 1.9505839032362585e+20 0.028478526185195918
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.7276902198791504  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5621271133422852  s
+Loading  ..........
+number of bands in density of states calculation, 2
+sum of the hist, normed? 7.99999999999991
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.021242618560791016  s
+starting dispersion ..........
+time to diag over MBZ 2274.5444695949554
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.02677631378173828  s
+(2779, 564, 2) (397, 564, 2) (2779,)
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.037389516830444336  s
+(2779, 564, 2) (397, 564, 2) (2779,)
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 13.814861536026001
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 4.638447999954224
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 12.993194818496704
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 8.247957944869995
+testing symmetry of the form factors...
+finished testing symmetry of the form factors...
+starting bubble....... 397
+time for bubble... 4.746570110321045
+scalings... 128647106.81216723 1.5604671225890068e+18
+[26192.23965456 26173.79163806] 122.77577328409657 1835311.7475009898 3065.634648353946
+the minimum real part is ... 0.0
+saving data from the run ...
+26183.01564630727 1835311.7475009898 3065.634648353946 21400
+starting bubble....... 397
+time for bubble... 4.6172590255737305
+the filling is ..  0.0
+scalings... 128647106.81216723 1.5604671225890068e+18
+[31957.52743226 31851.64293851] 6.865985501509054 2025939.9246132935 1169.4114867429498
+parameters of the fit... 2025939.9246132935
+residual of the fit... 0.010630034823270651
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.734987497329712
+the filling is ..  0.65
+scalings... 128647106.81216723 1.5604671225890068e+18
+[37855.45783449 37855.45783454] 3.8247765052613255e-11 2206806.5450917687 0.0025339244632302336
+parameters of the fit... 2206806.5450917687
+residual of the fit... 4.990996956294831e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.365549564361572
+the filling is ..  1.3
+scalings... 128647106.81216723 1.5604671225890068e+18
+[28576.79331345 28576.79331345] 1.1136317778015387e-10 1917373.6677405734 0.004976441981017662
+parameters of the fit... 1917373.6677405734
+residual of the fit... 1.925031615875621e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.434705495834351
+the filling is ..  1.9500000000000002
+scalings... 128647106.81216723 1.5604671225890068e+18
+[17858.27081279 17858.2708128 ] 9.696719208009699e-12 1515722.5579683778 0.0018575802800781477
+parameters of the fit... 1515722.5579683778
+residual of the fit... 2.6822247172439767e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.319224834442139
+the filling is ..  2.6
+scalings... 128647106.81216723 1.5604671225890068e+18
+[7939.81330217 7939.81330217] 1.0878351271372308e-11 1010660.1852021149 0.0029507422719631166
+parameters of the fit... 1010660.1852021149
+residual of the fit... 6.768034020588308e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.506080150604248
+the filling is ..  3.25
+scalings... 128647106.81216723 1.5604671225890068e+18
+[2597.87840637 2597.87840637] 4.7002912183633674e-12 578108.5891325183 0.0033908443721704156
+parameters of the fit... 578108.5891325183
+residual of the fit... 8.937492526021063e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.185466527938843
+the filling is ..  3.9
+scalings... 128647106.81216723 1.5604671225890068e+18
+[74.68783055 74.68783055] 6.295307201726246e-14 98022.31029058622 0.0023144000284298465
+parameters of the fit... 98022.31029058622
+residual of the fit... 4.163675052107328e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+time for sweep ieps 69.49927306175232
+starting bubble....... 397
+time for bubble... 4.758435487747192
+the filling is ..  0.0
+scalings... 128647106.81216723 1.5604671225890068e+18
+[34305.46695753 35326.39575317] 9.153087426061749 2116357.4461409543 1292.4677155465677
+parameters of the fit... 2116357.4461409543
+residual of the fit... 0.012984923152365624
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.262223720550537
+the filling is ..  0.65
+scalings... 128647106.81216723 1.5604671225890068e+18
+[40629.9235162 40629.9235162] 1.8519305833000293e-10 2286246.29258494 0.005382006697838663
+parameters of the fit... 2286246.29258494
+residual of the fit... 2.251585504979322e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.724823713302612
+the filling is ..  1.3
+scalings... 128647106.81216723 1.5604671225890068e+18
+[31124.58106981 31124.58106982] 8.671133305070959e-11 2001021.5654441845 0.00420766406062756
+parameters of the fit... 2001021.5654441845
+residual of the fit... 1.3762017106957867e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.951900482177734
+the filling is ..  1.9500000000000002
+scalings... 128647106.81216723 1.5604671225890068e+18
+[18474.87607378 18474.8760738 ] 2.2825081126405877e-10 1541667.7189348943 0.00886074589776787
+parameters of the fit... 1541667.7189348943
+residual of the fit... 6.102960246081845e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.64345645904541
+the filling is ..  2.6
+scalings... 128647106.81216723 1.5604671225890068e+18
+[8726.92362939 8726.92362939] 2.6037892601207632e-11 1059572.308194345 0.004354388881211376
+parameters of the fit... 1059572.308194345
+residual of the fit... 1.4738537848737685e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 4.902833700180054
+the filling is ..  3.25
+scalings... 128647106.81216723 1.5604671225890068e+18
+[2674.46715511 2674.46715511] 2.5533212573693204e-12 586568.3777437411 0.0024631393392980645
+parameters of the fit... 586568.3777437411
+residual of the fit... 4.716044966060515e-14
+the minimum real part is ... 0.0
+saving data from the run ...
+starting bubble....... 397
+time for bubble... 5.042206525802612
+the filling is ..  3.9
+scalings... 128647106.81216723 1.5604671225890068e+18
+[82.11466783 82.11466783] 2.0729210722164616e-13 102780.41857595401 0.004005307809269448
+parameters of the fit... 102780.41857595401
+residual of the fit... 1.2470152687085188e-13
+the minimum real part is ... 0.0
+saving data from the run ...
+time for sweep delta 69.0293219089508
+36485.95user 2327.98system 41:37.85elapsed 1553%CPU (0avgtext+0avgdata 9188364maxresident)k
+0inputs+7904outputs (66major+54796034minor)pagefaults 0swaps

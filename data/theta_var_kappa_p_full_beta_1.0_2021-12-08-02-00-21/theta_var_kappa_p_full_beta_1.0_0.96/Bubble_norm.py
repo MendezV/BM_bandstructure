@@ -57,7 +57,7 @@ class ep_Bubble:
         self.latt=latt
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
-        self.dS_in=latt.VolMBZ/self.Npoi1bz
+        self.dS_in=1/self.Npoi1bz
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
@@ -308,30 +308,21 @@ class ep_Bubble:
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
-    def w_ph_L(self):
-        # return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
-        # plt.plot(1/np.sort(self.FFp.h_denominator(self.Lnemp).flatten()))
-        # plt.show()
-        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
-        
+
     def OmegaL(self):
         
-        # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        overall_coef=1/np.sqrt(self.w_ph_L())
+
         
         
-        Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
-        Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
+        Omega_FFp=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
+        Omega_FFm=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
                 
         return [Omega_FFp,Omega_FFm]
 
-    def w_ph_T(self):
-        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
-        
     def OmegaT(self):
-        overall_coef=1/np.sqrt(self.w_ph_T())
-        Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
-        Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
+
+        Omega_FFp=(self.beta_ep*self.Lnemp)
+        Omega_FFm=(self.beta_ep*self.Lnemm)
 
         return [Omega_FFp,Omega_FFm]
 
@@ -622,7 +613,9 @@ class ep_Bubble:
         return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
+        qq=self.qscale/self.agraph
+        scaling_fac=self.gamma/(qq*qq*self.mass)
+        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
         print("scalings...",scaling_fac, self.gamma)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
@@ -644,7 +637,10 @@ class ep_Bubble:
 
     
     def extract_cs_path(self, integ, kpath):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
+        qq=self.qscale/self.agraph
+        scaling_fac=self.gamma/(qq*qq*self.mass)
+
+        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
         qx=kpath[:, 0]
         qy=kpath[:, 1]
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
@@ -1554,11 +1550,12 @@ def main() -> int:
     qq=q/a_graphene
     ctilde22=((2*np.pi)**2)*qq*(mass**2)*(c_phonon**3)*W/(hhbar*(beta_ep**2)*A1bz)
     upsilon2=(beta_ep**2)*qq*qq/W
+    upsilon2_T=(beta_ep**2)*qq*qq
     ctildeCor=qq*qq*(mass)*(c_phonon**2)/upsilon2
     print("phonon params...", gammap/1e+11 , gamma, np.sqrt(gammap*scaling_fac),gammap*scaling_fac, upsilon/1e+14 , ctilde2,ctilde22 )
     print("phonon params2", upsilon2,ctildeCor)
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep, beta_ep, upsilon2_T, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)

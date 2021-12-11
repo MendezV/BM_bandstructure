@@ -1,0 +1,56 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.024095535278320312  s
+397 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.1354
+q is... 0.0782977216577428
+hvkd is... 0.167196954827944
+kappa is.. 0.8174358974358973
+alpha is.. 0.5831445919594261
+the twist angle is .. 0.01869247628885927
+phonon params... 2.0247622605617983 0.008875639222253217 4.005528192535204 16.04425610119434 10.520973325623162 5493.208443994657 5493.208443994658
+phonon params2 2.0293851983604017e+20 0.02847852618519591
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5827999114990234  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5834288597106934  s
+Loading  ..........
+Traceback (most recent call last):
+  File "Bubble_norm.py", line 1604, in <module>
+    sys.exit(main())  # next section explains the use of sys.exit
+  File "Bubble_norm.py", line 1570, in main
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+  File "/home/jfm343/Documents/Moire_phonon/BM_bandstructure/temp/temp_theta_var_kappa_p_full_beta_1.0_2021-12-08-00-31-01/theta_var_kappa_p_full_beta_1.0_1.02/Hamiltonian.py", line 1399, in mu_filling_array
+    with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'dispersions/Edisp_100_theta_0.01869247628885927.npy'
+Command exited with non-zero status 1
+109.57user 8.57system 0:11.42elapsed 1033%CPU (0avgtext+0avgdata 154484maxresident)k
+0inputs+152outputs (33major+61607minor)pagefaults 0swaps
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.025029659271240234  s
+397 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.1354
+q is... 0.0782977216577428
+hvkd is... 0.167196954827944
+kappa is.. 0.8174358974358973
+alpha is.. 0.5831445919594261
+the twist angle is .. 0.01869247628885927
+phonon params... 2.0247622605617983 0.008875639222253217 4.005528192535204 16.04425610119434 10.520973325623162 5493.208443994657 5493.208443994658
+phonon params2 2.0293851983604017e+20 0.02847852618519591
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.7627513408660889  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5702700614929199  s
+Loading  ..........
+Traceback (most recent call last):
+  File "Bubble_norm.py", line 1604, in <module>
+    sys.exit(main())  # next section explains the use of sys.exit
+  File "Bubble_norm.py", line 1570, in main
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+  File "/home/jfm343/Documents/Moire_phonon/BM_bandstructure/temp/temp_theta_var_kappa_p_full_beta_1.0_2021-12-08-00-31-01/theta_var_kappa_p_full_beta_1.0_1.02/Hamiltonian.py", line 1399, in mu_filling_array
+    with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'dispersions/Edisp_100_theta_0.01869247628885927.npy'
+Command exited with non-zero status 1
+48.69user 4.06system 0:06.59elapsed 800%CPU (0avgtext+0avgdata 154572maxresident)k
+0inputs+0outputs (16major+48775minor)pagefaults 0swaps
