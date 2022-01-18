@@ -1454,13 +1454,32 @@ class ee_Bubble:
     
         
 def main() -> int:
+
+    """[summary]
+    Calculates the polarization bubble for the electron phonon interaction vertex in TBG
+    
+    In:
+        integer that picks the chemical potential for the calculation
+        integer linear number of samples to be used 
+        str L or T calculate the bubble for the longitudinal or transverse mode
+        double additional scale to the Hamiltonian
+        
+    Out: 
+
+    
+    
+    Raises:
+        Exception: ValueError, IndexError Input integer in the firs argument to choose chemical potential for desired filling
+        Exception: ValueError, IndexError Input int for the number of k-point samples total kpoints =(arg[2])**2
+        Exception: ValueError, IndexError third arg has to be the mode that one wants to simulate either L or T
+        Exception: ValueError, IndexError Fourth argument is a modulation factor from 0 to 1 to change the interaction strength
+    """
     
     try:
         filling_index=int(sys.argv[1]) #0-25
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
-
 
     try:
         Nsamp=int(sys.argv[2])
@@ -1481,15 +1500,14 @@ def main() -> int:
     except (ValueError, IndexError):
         raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
 
+    #Lattice parameters 
     #lattices with different normalizations
-
     theta=modulation*1.05*np.pi/180  # magic angle
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
-    ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
     [KX,KY]=lq.Generate_lattice()
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
-    [q1,q1,q3]=l.q
+    [q1,q2,q3]=l.q
     q=la.norm(q1)
     umkl=0
     print(f"taking {umkl} umklapps")
@@ -1524,10 +1542,11 @@ def main() -> int:
     print("alpha is..", alph)
     print("the twist angle is ..", theta)
 
+    #electron parameters
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
-    a_graphene=2.458*(1e-10) #in meters
+    a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
     e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
@@ -1540,23 +1559,23 @@ def main() -> int:
     alpha_ep=0*2# in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
-    gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
-    gammap=(q**2)*(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
-    scaling_fac=( a_graphene**2) /(mass*(q**2))
-    W=0.008
-    upsilon=gammap*beta_ep*beta_ep*lq.VolMBZ/W
-    ctilde2=((q**2)/(a_graphene**2))*mass*c_phonon*c_phonon/upsilon 
-    A1bz=lq.VolMBZ*((q**2)/(a_graphene**2))
-    A1bz_graphene=np.sqrt(3)*a_graphene*a_graphene/2
+    
+    #calculating effective coupling
+    A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
+    AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
+    A1bz=(2*np.pi)**2 / AWZ_graphene
+    alpha_ep_effective=np.sqrt(A1mbz/A1bz)*alpha_ep
+    beta_ep_effective=np.sqrt(A1mbz/A1bz)*beta_ep
+    
+    #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
-    ctilde22=((2*np.pi)**2)*qq*(mass**2)*(c_phonon**3)*W/(hhbar*(beta_ep**2)*A1bz)
-    upsilon2=(beta_ep**2)*qq*qq/W
-    upsilon2_T=(beta_ep**2)*qq*qq
-    ctildeCor=qq*qq*(mass)*(c_phonon**2)/upsilon2
-    print("phonon params...", gammap/1e+11 , gamma, np.sqrt(gammap*scaling_fac),gammap*scaling_fac, upsilon/1e+14 , ctilde2,ctilde22 )
-    print("phonon params2", upsilon2,ctildeCor)
+    upsilon=(beta_ep_effective**2)*qq*qq
+    ctilde=(qq**2)*(mass)*(c_phonon**2)/upsilon
+    print("phonon params", upsilon,ctilde)
+    
+    #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep, upsilon2_T, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective,beta_ep_effective, upsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
@@ -1582,7 +1601,7 @@ def main() -> int:
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
     # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     

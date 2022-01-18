@@ -11,7 +11,6 @@ import concurrent.futures
 import functools
 
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
-#TODO: cyprians calculation along momentum cut (in ee bubble method)
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -727,13 +726,17 @@ def main() -> int:
     plt.close()
     
     #BUBBLE CALCULATION
-    # test_symmetry=True
-    # B1=ee_Bubble(latt, nbands, hpl, hmin,test_symmetry, umkl)
-    # omega=[0]
-    # [KX,KY]=latt.Generate_Umklapp_lattice(KX, KY,2) #for the integration grid 
+    test_symmetry=True
+    B1=ee_Bubble(latt, nbands, hpl, hmin,test_symmetry, umkl)
+    omega=[0]
+    [KX,KY]=latt.Generate_Umklapp_lattice(KX, KY,2) #for the integration grid 
 
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
+    kpath=np.array([KX,KY]).T
+    integ=B1.Compute(mu, omega, kpath)
+    print(integ)
+    np.save("Pol.npy",integ)
+    np.save("X.npy",KX)
+    np.save("Y.npy",KY)
     # B1.plot_res(integ, KX,KY, VV, filling, Nsamp, "")
     # B1.epsilon_sweep(fillings, mu_values,earr, dos)
     
