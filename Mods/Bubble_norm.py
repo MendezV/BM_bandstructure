@@ -1569,13 +1569,14 @@ def main() -> int:
     
     #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
-    upsilon=(beta_ep_effective**2)*qq*qq
-    ctilde=(qq**2)*(mass)*(c_phonon**2)/upsilon
-    print("phonon params", upsilon,ctilde)
+    Wupsilon=(beta_ep_effective**2)*qq*qq
+    W=0.008
+    ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
+    print("phonon params", Wupsilon,ctilde)
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective,beta_ep_effective, upsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective,beta_ep_effective, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
