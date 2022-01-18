@@ -126,7 +126,7 @@ class ep_Bubble:
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
         
-        [self.alpha_ep, self.beta_ep, self.gamma, self.agraph, self.mass ]=cons
+        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons
         self.mode=mode
         self.symmetric=symmetric
         self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.hpl.kappa)+"_theta_"+str(self.latt.theta)
@@ -210,8 +210,6 @@ class ep_Bubble:
                 np.save("TestC3_symm_KP"+self.name+".npy",KP)
                 np.save("TestC3_symm_det"+self.name+".npy",cos2)
 
-
-
             print("finished testing symmetry of the form factors...")
 
 
@@ -223,6 +221,18 @@ class ep_Bubble:
     ################################
     
     def nf(self, e, T):
+        
+        """[summary]
+        fermi occupation function with a truncation if the argument exceeds 
+        double precission
+
+        Args:
+            e ([double]): [description] energy
+            T ([double]): [description] temperature
+
+        Returns:
+            [double]: [description] value of the fermi function 
+        """
         rat=np.abs(np.max(e/T))
         if rat<700:
             return 1/(1+np.exp( e/T ))
@@ -231,6 +241,17 @@ class ep_Bubble:
 
 
     def nb(self, e, T):
+        """[summary]
+        bose occupation function with a truncation if the argument exceeds 
+        double precission
+
+        Args:
+            e ([double]): [description] energy
+            T ([double]): [description] temperature
+
+        Returns:
+            [double]: [description] value of the fermi function 
+        """
         rat=np.abs(np.max(e/T))
         if rat<700:
             return 1/(np.exp( e/T )-1)
@@ -506,7 +527,7 @@ class ep_Bubble:
         print("the filling is .. " , fil[ind])
         integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-        integ=self.gamma*integ
+        integ= self.Wupsilon*integ
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
@@ -573,7 +594,7 @@ class ep_Bubble:
         print("the filling is .. " ,  fil[ind])
         integ=integ_arr_no_reshape.flatten() #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-        integ=self.gamma*integ
+        integ= self.Wupsilon*integ
         print("parameters of the fit...", c)
         print("residual of the fit...", res)
 
@@ -583,9 +604,9 @@ class ep_Bubble:
 
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
-        scaling_fac=self.gamma/(qq*qq*self.mass)
-        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
-        print("scalings...",scaling_fac, self.gamma)
+        scaling_fac= self.Wupsilon/(qq*qq*self.mass)
+        # scaling_fac= self.Wupsilon*(self.agraph**2) /(self.mass*(self.qscale**2))
+        print("scalings...",scaling_fac,  self.Wupsilon)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
         # plt.show()
@@ -607,9 +628,9 @@ class ep_Bubble:
     
     def extract_cs_path(self, integ, kpath):
         qq=self.qscale/self.agraph
-        scaling_fac=self.gamma/(qq*qq*self.mass)
+        scaling_fac= self.Wupsilon/(qq*qq*self.mass)
 
-        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
+        # scaling_fac= self.Wupsilon*(self.agraph**2) /(self.mass*(self.qscale**2))
         qx=kpath[:, 0]
         qy=kpath[:, 1]
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
