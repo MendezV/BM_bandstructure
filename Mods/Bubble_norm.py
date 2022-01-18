@@ -1547,6 +1547,7 @@ def main() -> int:
     upsilon=gammap*beta_ep*beta_ep*lq.VolMBZ/W
     ctilde2=((q**2)/(a_graphene**2))*mass*c_phonon*c_phonon/upsilon 
     A1bz=lq.VolMBZ*((q**2)/(a_graphene**2))
+    A1bz_graphene=np.sqrt(3)*a_graphene*a_graphene/2
     qq=q/a_graphene
     ctilde22=((2*np.pi)**2)*qq*(mass**2)*(c_phonon**3)*W/(hhbar*(beta_ep**2)*A1bz)
     upsilon2=(beta_ep**2)*qq*qq/W
@@ -1583,7 +1584,7 @@ def main() -> int:
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
     B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
     # NnarrowSamp=100
     # lnarrowSamp=MoireLattice.MoireTriangLattice(NnarrowSamp,theta,2)
