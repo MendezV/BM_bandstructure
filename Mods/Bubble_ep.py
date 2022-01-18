@@ -39,31 +39,72 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 
         
 class ep_Bubble:
+    """
+    A class used to represent electron phonon bubbles
 
+    ...
+
+    Attributes
+    ----------
+    
+    number of bands
+    hpl hmin hamiltonians for minus and plus valleys
+    
+    lattice
+    umkl number of umklap processes to sum over
+    KX1bz, KY1bz kpoints in the first bz
+    KX KY K points including umklapps
+    KQX KQY kpoints with an umkl+1 umklapps to account for momentum transfers
+    NpoiXX number of points in each of the three latices above
+    
+    Methods
+    -------
+    
+    
+    """
+
+    ################################
+    """
+    CONSTRUCTOR for the ep_Bubble class 
+    """
+    ################################
+    
     def __init__(self, latt, nbands, hpl, hmin, symmetric, mode, cons , test, umkl):
 
-        self.lq=latt
-        self.nbands=nbands
-        self.hpl=hpl
-        self.hmin=hmin
+        
+        ################################
+        #lattice attributes
+        ################################
+        self.latt=latt
         self.umkl=umkl
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
-        self.Npoi1bz=np.size(self.KX1bz)
         [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
         [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
-        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
+        self.Npoi1bz=np.size(self.KX1bz)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
-        self.latt=latt
+        
+        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.dS_in=1/self.Npoi1bz
+        
+        
+        ################################
+        #dispersion attributes
+        ################################
+        self.nbands=nbands
+        self.hpl=hpl
+        self.hmin=hmin
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
         self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
+        
+        ################################
         ###selecting eta
+        ################################
         eps_l=[]
         for i in range(nbands):
             eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_plus_1bz[:,i].flatten() )  ) )/2)
@@ -77,7 +118,10 @@ class ep_Bubble:
         self.eta_cutoff=eps
         self.eta_small_imag=0.1*eps
         
+        
+        ################################
         #generating form factors
+        ################################
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
@@ -114,6 +158,9 @@ class ep_Bubble:
 
 
         
+        ################################
+        #testing form factors for symmetry
+        ################################
         if test:
             print("testing symmetry of the form factors...")
             [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
@@ -172,6 +219,13 @@ class ep_Bubble:
             print("finished testing symmetry of the form factors...")
 
 
+
+    ################################
+    """
+    METHODS for the ep_Bubble class 
+    """
+    ################################
+    
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
         if rat<700:
@@ -187,45 +241,6 @@ class ep_Bubble:
         else:
             return -np.heaviside(-e,0.5)
 
-
-    def precompute_E_psi_noQ(self):
-
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print("starting dispersion ..........")
-        
-        s=time.time()
-        
-        for l in range(self.Npoi):
-            E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            psi_plus_a.append(wave1)
-
-
-            E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            psi_min_a.append(wave1)
-
-            printProgressBar(l + 1, self.Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-        e=time.time()
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
-
-        plt.scatter(self.KX, self.KY, c=Ene_valley_min[:,-1])
-        plt.show()
-
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
     
     def precompute_E_psi(self):
@@ -263,48 +278,6 @@ class ep_Bubble:
 
         
         
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
-    
-
-    def parallel_precompute_E_psi(self):
-        Mac_maxthreads=6
-        Desk_maxthreads=12
-
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print("starting dispersion ..........")
-        qp=np.array([self.KQX, self.KQY]).T
-        s=time.time()
-        eigplus = functools.partial(self.hpl.parallel_eigens, self.nbands)
-        eigmin = functools.partial(self.hmin.parallel_eigens, self.nbands)
-
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            results_pl = executor.map(eigplus, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
-            results_min = executor.map(eigmin, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
-
-            for result in results_pl:
-                Ene_valley_plus_a=np.append(Ene_valley_plus_a,result[0])
-                psi_plus_a.append(result[1])
-            for result in results_min:
-                Ene_valley_min_a=np.append(Ene_valley_min_a,result[0])
-                psi_min_a.append(result[1])
-
-        e=time.time()
-
-
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi_Q,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
-
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
@@ -860,7 +833,7 @@ class ee_Bubble:
 
         #changes to eliominate arg KX KY put KX1bz first, then call umklapp lattice and put slef in KX, KY
         #change to implement dos 
-        self.lq=latt
+        self.latt=latt
         self.nbands=nbands
         self.hpl=hpl
         self.hmin=hmin
@@ -872,7 +845,6 @@ class ee_Bubble:
         self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
-        self.latt=latt
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
@@ -1402,7 +1374,7 @@ class ee_Bubble:
             self.eta_small_imag=e*eddy
             
             #have to divide by the vlume of the MBZ to get the same normalization
-            Vol=self.lq.VolMBZ
+            Vol= self.latt.VolMBZ
             
             mmin=np.min([np.min(self.Ene_valley_plus),np.min(self.Ene_valley_min)])
             mmax=np.max([np.max(self.Ene_valley_plus),np.max(self.Ene_valley_min)])

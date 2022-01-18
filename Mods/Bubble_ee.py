@@ -39,31 +39,72 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 
         
 class ep_Bubble:
+    """
+    A class used to represent electron phonon bubbles
 
+    ...
+
+    Attributes
+    ----------
+    
+    number of bands
+    hpl hmin hamiltonians for minus and plus valleys
+    
+    lattice
+    umkl number of umklap processes to sum over
+    KX1bz, KY1bz kpoints in the first bz
+    KX KY K points including umklapps
+    KQX KQY kpoints with an umkl+1 umklapps to account for momentum transfers
+    NpoiXX number of points in each of the three latices above
+    
+    Methods
+    -------
+    
+    
+    """
+
+    ################################
+    """
+    CONSTRUCTOR for the ep_Bubble class 
+    """
+    ################################
+    
     def __init__(self, latt, nbands, hpl, hmin, symmetric, mode, cons , test, umkl):
 
-        self.lq=latt
+        
+        ################################
+        #lattice attributes
+        ################################
+        self.latt=latt
+        self.umkl=umkl
+        [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
+        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
+        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
+        self.Npoi1bz=np.size(self.KX1bz)
+        self.Npoi=np.size(self.KX)
+        self.NpoiQ=np.size(self.KQX)
+        
+        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
+        [q1,q2,q3]=latt.qvect()
+        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        self.dS_in=1/self.Npoi1bz
+        
+        
+        ################################
+        #dispersion attributes
+        ################################
         self.nbands=nbands
         self.hpl=hpl
         self.hmin=hmin
-        self.umkl=umkl
-        [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
-        self.Npoi1bz=np.size(self.KX1bz)
-        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
-        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
-        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
-        self.Npoi=np.size(self.KX)
-        self.NpoiQ=np.size(self.KQX)
-        self.latt=latt
-        [q1,q2,q3]=latt.qvect()
-        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
-        self.dS_in=latt.VolMBZ/self.Npoi1bz
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
         self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
+        
+        ################################
         ###selecting eta
+        ################################
         eps_l=[]
         for i in range(nbands):
             eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_plus_1bz[:,i].flatten() )  ) )/2)
@@ -77,7 +118,10 @@ class ep_Bubble:
         self.eta_cutoff=eps
         self.eta_small_imag=0.1*eps
         
+        
+        ################################
         #generating form factors
+        ################################
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
@@ -114,6 +158,9 @@ class ep_Bubble:
 
 
         
+        ################################
+        #testing form factors for symmetry
+        ################################
         if test:
             print("testing symmetry of the form factors...")
             [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
@@ -172,6 +219,13 @@ class ep_Bubble:
             print("finished testing symmetry of the form factors...")
 
 
+
+    ################################
+    """
+    METHODS for the ep_Bubble class 
+    """
+    ################################
+    
     def nf(self, e, T):
         rat=np.abs(np.max(e/T))
         if rat<700:
@@ -187,45 +241,6 @@ class ep_Bubble:
         else:
             return -np.heaviside(-e,0.5)
 
-
-    def precompute_E_psi_noQ(self):
-
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print("starting dispersion ..........")
-        
-        s=time.time()
-        
-        for l in range(self.Npoi):
-            E1,wave1=self.hpl.eigens(self.KX[l],self.KY[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            psi_plus_a.append(wave1)
-
-
-            E1,wave1=self.hmin.eigens(self.KX[l],self.KY[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            psi_min_a.append(wave1)
-
-            printProgressBar(l + 1, self.Npoi, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-        e=time.time()
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi,self.nbands])
-
-        plt.scatter(self.KX, self.KY, c=Ene_valley_min[:,-1])
-        plt.show()
-
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
 
     
     def precompute_E_psi(self):
@@ -267,71 +282,20 @@ class ep_Bubble:
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
 
-    def parallel_precompute_E_psi(self):
-        Mac_maxthreads=6
-        Desk_maxthreads=12
-
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print("starting dispersion ..........")
-        qp=np.array([self.KQX, self.KQY]).T
-        s=time.time()
-        eigplus = functools.partial(self.hpl.parallel_eigens, self.nbands)
-        eigmin = functools.partial(self.hmin.parallel_eigens, self.nbands)
-
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            results_pl = executor.map(eigplus, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
-            results_min = executor.map(eigmin, qp, chunksize=int(np.size(qp)/Mac_maxthreads))
-
-            for result in results_pl:
-                Ene_valley_plus_a=np.append(Ene_valley_plus_a,result[0])
-                psi_plus_a.append(result[1])
-            for result in results_min:
-                Ene_valley_min_a=np.append(Ene_valley_min_a,result[0])
-                psi_min_a.append(result[1])
-
-        e=time.time()
-
-
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi_Q,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi_Q,self.nbands])
-
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
-    
-    def w_ph_L(self):
-        # return self.omegacoef*(self.FFp.h_denominator(self.Lnemp)) #h corresponds to the norm, later will have to code different dispersions
-        # plt.plot(1/np.sort(self.FFp.h_denominator(self.Lnemp).flatten()))
-        # plt.show()
-        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
-        
     def OmegaL(self):
         
-        # overall_coef=self.sqrt_hbar_M/np.sqrt(self.w_ph_L())
-        overall_coef=1/np.sqrt(self.w_ph_L())
+
         
         
-        Omega_FFp=overall_coef*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
-        Omega_FFm=overall_coef*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
+        Omega_FFp=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
+        Omega_FFm=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
                 
         return [Omega_FFp,Omega_FFm]
 
-    def w_ph_T(self):
-        return self.FFp.h_denominator(self.Lnemp) #h corresponds to the norm, later will have to code different dispersions
-        
     def OmegaT(self):
-        overall_coef=1/np.sqrt(self.w_ph_T())
-        Omega_FFp=overall_coef*(self.beta_ep*self.Lnemp)
-        Omega_FFm=overall_coef*(self.beta_ep*self.Lnemm)
+
+        Omega_FFp=(self.beta_ep*self.Lnemp)
+        Omega_FFm=(self.beta_ep*self.Lnemm)
 
         return [Omega_FFp,Omega_FFm]
 
@@ -622,7 +586,9 @@ class ep_Bubble:
         return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
+        qq=self.qscale/self.agraph
+        scaling_fac=self.gamma/(qq*qq*self.mass)
+        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
         print("scalings...",scaling_fac, self.gamma)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
@@ -644,7 +610,10 @@ class ep_Bubble:
 
     
     def extract_cs_path(self, integ, kpath):
-        scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
+        qq=self.qscale/self.agraph
+        scaling_fac=self.gamma/(qq*qq*self.mass)
+
+        # scaling_fac=self.gamma*(self.agraph**2) /(self.mass*(self.qscale**2))
         qx=kpath[:, 0]
         qy=kpath[:, 1]
         # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
@@ -864,7 +833,7 @@ class ee_Bubble:
 
         #changes to eliominate arg KX KY put KX1bz first, then call umklapp lattice and put slef in KX, KY
         #change to implement dos 
-        self.lq=latt
+        self.latt=latt
         self.nbands=nbands
         self.hpl=hpl
         self.hmin=hmin
@@ -876,7 +845,6 @@ class ee_Bubble:
         self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
-        self.latt=latt
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
@@ -1406,7 +1374,7 @@ class ee_Bubble:
             self.eta_small_imag=e*eddy
             
             #have to divide by the vlume of the MBZ to get the same normalization
-            Vol=self.lq.VolMBZ
+            Vol= self.latt.VolMBZ
             
             mmin=np.min([np.min(self.Ene_valley_plus),np.min(self.Ene_valley_min)])
             mmax=np.max([np.max(self.Ene_valley_plus),np.max(self.Ene_valley_min)])
@@ -1458,13 +1426,32 @@ class ee_Bubble:
     
         
 def main() -> int:
+
+    """[summary]
+    Calculates the polarization bubble for the electron phonon interaction vertex in TBG
+    
+    In:
+        integer that picks the chemical potential for the calculation
+        integer linear number of samples to be used 
+        str L or T calculate the bubble for the longitudinal or transverse mode
+        double additional scale to the Hamiltonian
+        
+    Out: 
+
+    
+    
+    Raises:
+        Exception: ValueError, IndexError Input integer in the firs argument to choose chemical potential for desired filling
+        Exception: ValueError, IndexError Input int for the number of k-point samples total kpoints =(arg[2])**2
+        Exception: ValueError, IndexError third arg has to be the mode that one wants to simulate either L or T
+        Exception: ValueError, IndexError Fourth argument is a modulation factor from 0 to 1 to change the interaction strength
+    """
     
     try:
         filling_index=int(sys.argv[1]) #0-25
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
-
 
     try:
         Nsamp=int(sys.argv[2])
@@ -1485,15 +1472,14 @@ def main() -> int:
     except (ValueError, IndexError):
         raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
 
+    #Lattice parameters 
     #lattices with different normalizations
-
     theta=modulation*1.05*np.pi/180  # magic angle
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
-    ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
     [KX,KY]=lq.Generate_lattice()
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
-    [q1,q1,q3]=l.q
+    [q1,q2,q3]=l.q
     q=la.norm(q1)
     umkl=0
     print(f"taking {umkl} umklapps")
@@ -1528,10 +1514,11 @@ def main() -> int:
     print("alpha is..", alph)
     print("the twist angle is ..", theta)
 
+    #electron parameters
     nbands=2
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
-    a_graphene=2.458*(1e-10) #in meters
+    a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
     e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
@@ -1544,21 +1531,24 @@ def main() -> int:
     alpha_ep=0*2# in ev
     beta_ep=4 #in ev
     c_phonon=21400 #m/s
-    gamma=np.sqrt(hhbar*q/(a_graphene*mass*c_phonon))
-    gammap=(q**2)*(gamma**2)/((a_graphene**2)*((2*np.pi)**2)) 
-    scaling_fac=( a_graphene**2) /(mass*(q**2))
-    W=0.008
-    upsilon=gammap*beta_ep*beta_ep*lq.VolMBZ/W
-    ctilde2=((q**2)/(a_graphene**2))*mass*c_phonon*c_phonon/upsilon 
-    A1bz=lq.VolMBZ*((q**2)/(a_graphene**2))
+    
+    #calculating effective coupling
+    A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
+    AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
+    A1bz=(2*np.pi)**2 / AWZ_graphene
+    alpha_ep_effective=np.sqrt(A1mbz/A1bz)*alpha_ep
+    beta_ep_effective=np.sqrt(A1mbz/A1bz)*beta_ep
+    
+    #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
-    ctilde22=((2*np.pi)**2)*qq*(mass**2)*(c_phonon**3)*W/(hhbar*(beta_ep**2)*A1bz)
-    upsilon2=(beta_ep**2)*qq*qq/W
-    ctildeCor=qq*qq*(mass)*(c_phonon**2)/upsilon2
-    print("phonon params...", gammap/1e+11 , gamma, np.sqrt(gammap*scaling_fac),gammap*scaling_fac, upsilon/1e+14 , ctilde2,ctilde22 )
-    print("phonon params2", upsilon2,ctildeCor)
+    Wupsilon=(beta_ep_effective**2)*qq*qq
+    W=0.008
+    ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
+    print("phonon params", Wupsilon,ctilde)
+    
+    #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep, beta_ep, gammap, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective,beta_ep_effective, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
@@ -1584,9 +1574,9 @@ def main() -> int:
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(integ, KX,KY, VV, filling, Nsamp, c , res, "")
+    B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),np.mean(c), resc, c_phonon)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
     # NnarrowSamp=100
     # lnarrowSamp=MoireLattice.MoireTriangLattice(NnarrowSamp,theta,2)
