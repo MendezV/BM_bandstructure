@@ -901,7 +901,7 @@ def main() -> int:
     mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-16 #(in eV s)
     alpha_ep=0*2# in ev
-    beta_ep=4 #in ev
+    beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
     c_phonon=21400 #m/s
     
     #calculating effective coupling
@@ -910,6 +910,8 @@ def main() -> int:
     A1bz=(2*np.pi)**2 / AWZ_graphene
     alpha_ep_effective=np.sqrt(A1mbz/A1bz)*alpha_ep
     beta_ep_effective=np.sqrt(A1mbz/A1bz)*beta_ep
+    alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
+    beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
     
     #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
@@ -921,7 +923,7 @@ def main() -> int:
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective,beta_ep_effective, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
