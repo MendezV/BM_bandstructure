@@ -386,19 +386,6 @@ class Ham_BM_p():
 
         
     #enduntested
-        
-    def trans_psi(self, psi, dirGM1,dirGM2):
-        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
-        veccirc1=np.roll(np.eye(Nb,1).flatten(), -dirGM1)
-        veccirc2=np.roll(np.eye(Nb,1).flatten(), dirGM1)
-        sig0=np.eye(2)
-        matt=np.kron(circulant(veccirc1), sig0)
-        matb=np.kron(circulant(veccirc2), sig0)
-        mat=np.bmat([[matt,matt*0], [matt*0, matb]])
-
-
-
-        return mat@psi
     
     def trans_psi2(self, psi, dirGM1,dirGM2):
         
@@ -422,7 +409,7 @@ class Ham_BM_p():
         
 
         return matmul
-        return mat@psi
+
 
 
     
@@ -812,19 +799,6 @@ class Ham_BM_m():
 
         
     #enduntested
-        
-    def trans_psi(self, psi, dirGM1,dirGM2):
-        [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.umklapp_lattice()
-        veccirc1=np.roll(np.eye(Nb,1).flatten(), -dirGM1)
-        veccirc2=np.roll(np.eye(Nb,1).flatten(), dirGM1)
-        sig0=np.eye(2)
-        matt=np.kron(circulant(veccirc1), sig0)
-        matb=np.kron(circulant(veccirc2), sig0)
-        mat=np.bmat([[matt,matt*0], [matt*0, matb]])
-
-
-
-        return mat@psi
     
     def trans_psi2(self, psi, dirGM1,dirGM2):
         
@@ -1288,7 +1262,7 @@ class Dispersion():
         plt.xlim([0,1])
         plt.ylim([-0.009,0.009])
         plt.savefig("highsym.png")
-        plt.show()
+        plt.close()
         return [Ene_valley_plus, Ene_valley_min]
     
 
@@ -1456,30 +1430,28 @@ class FormFactors_umklapp():
     
 
 def main() -> int:
-    ##when we use this main, we are exclusively testing the moire hamiltonian symmetries and methods
-    from scipy import linalg as la
+    """[summary]
+    Tests different methods in the Hamiltonian module
     
-    
-    
-    #parameters for the calculation
-    fillings = np.array([0.0,0.1341,0.2682,0.4201,0.5720,0.6808,0.7897,0.8994,1.0092,1.1217,1.2341,1.3616,1.4890,1.7107,1.9324,2.0786,2.2248,2.4558,2.6868,2.8436,3.0004,3.1202,3.2400,3.3720,3.5039,3.6269,3.7498])
-    mu_values = np.array([0.0,0.0625,0.1000,0.1266,0.1429,0.1508,0.1587,0.1666,0.1746,0.1843,0.1945,0.2075,0.2222,0.2524,0.2890,0.3171,0.3492,0.4089,0.4830,0.5454,0.6190,0.6860,0.7619,0.8664,1.0000,1.1642,1.4127])
+    In:
+        integer that picks the chemical potential for the calculation
+        integer linear number of samples to be used 
 
+        
+    Out: 
+
+    
+    
+    Raises:
+        Exception: ValueError, IndexError Input integer in the firs argument to choose chemical potential for desired filling
+        Exception: ValueError, IndexError Input int for the number of k-point samples total kpoints =(arg[2])**2
+    """
     
     try:
         filling_index=int(sys.argv[1]) #0-25
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
-
-    try:
-        N_SFs=26 #number of SF's currently implemented
-        a=np.arange(N_SFs)
-        a[filling_index]
-
-    except (IndexError):
-        raise Exception(f"Index has to be between 0 and {N_SFs-1}")
-
 
     try:
         Nsamp=int(sys.argv[2])
@@ -1489,61 +1461,20 @@ def main() -> int:
 
 
 
-    filling_index=int(sys.argv[1]) #0-25
-    mu=mu_values[filling_index]/1000
-    ##########################################
-    #parameters energy calculation
-    ##########################################
-    a_graphene=2.46*(1e-10) #in meters
-    hbvf=0.003404*0.1973269804*1e-6 /a_graphene #ev*m
-    # hbvf = 2.1354; # eV
-    theta=1.05*np.pi/180  #1.05*np.pi/180 #twist Angle
-    nbands=4 #Number of bands 
-    Nsamp=int(sys.argv[2])
-    kappa_p=0.0797/0.0975;
-    kappa=kappa_p;
-    up = 0.0975; # eV
-    u = kappa*up; # eV
-
-
-
+    #Lattice parameters 
+    #lattices with different normalizations
+    theta=1.05*np.pi/180  # magic angle
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
-    ln=MoireLattice.MoireTriangLattice(Nsamp,theta,1)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
     [KX,KY]=lq.Generate_lattice()
-    # plt.scatter(KX,KY)
-    # plt.show()
-    Npoi=np.size(KX)
-    [q1,q1,q3]=l.q
-    q=la.norm(q1)
-    [GM1,GM2]=lq.GMvec
-
-    hvkd=hbvf*q
-    Kvec=(2*lq.b[0,:]+lq.b[1,:])/3 
-    K=la.norm(Kvec)
-    GG=la.norm(l.b[0,:])
-    print(q , 2*K*np.sin(theta/2))
+    Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
+    [q1,q2,q3]=l.q
+    q=np.sqrt(q1@q1)
+    umkl=0
+    print(f"taking {umkl} umklapps")
+    VV=lq.boundary()
 
 
-    #Various alpha values
-    hvfK_andrei=19.81
-    #andreis params
-    w=0.110 #in ev
-    hvfkd_andrei=hvfK_andrei*np.sin(theta/2) #wrong missing 1/sqrt3
-    alpha_andrei=w/hvfkd_andrei
-    alpha=w/hvkd
-    alpha_andrei_corrected=(np.sqrt(3)/2)*w/hvfkd_andrei
-    #magic angles
-    amag1=0.5695
-    amag2=0.605
-    amag3=0.65
-    #angle with flat band in the chiral limit
-    alph2= 0.5856
-    PH=True
-
-
-
-    xi=1
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
@@ -1553,7 +1484,9 @@ def main() -> int:
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+    PH=True
     
+
     #JY params 
     # hbvf = 2.7; # eV
     # hvkd=hbvf*q
@@ -1568,361 +1501,34 @@ def main() -> int:
     print("hvkd is...", hvkd)
     print("kappa is..", kappa)
     print("alpha is..", alph)
+    print("the twist angle is ..", theta)
     
-        
-    # # #################################
-    # # #################################
-    # # #################################
-    # # # Form factors C3
-    # # #################################
-    # # #################################
-    # # #################################
-
-    Ene_valley_plus_a=np.empty((0))
-    Ene_valley_plus_ac3=np.empty((0))
-    psi_plus_a=[]
-    psi_plus_ac3=[]
-
-    rot_C2z=lq.C2z
-    rot_C3z=lq.C3z
-
-    [KQX, KQY, Ik]=lq.Generate_momentum_transfer_lattice( KX, KY)
-    umkl=1
-    [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
-    [KQXu, KQYu, Ik]=lq.Generate_momentum_transfer_umklapp_lattice( KX, KY,  KXu, KYu)
-    Npoi_u=np.size(KXu)
-    plt.scatter(KQX, KQY)
-    plt.scatter(KXu, KYu)
-    plt.scatter(KX, KY)
-    plt.savefig("fig0.png")
-    plt.close()
-
-    [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
-    # print("starting dispersion ..........")
-    # # for l in range(Nsamp*Nsamp):
-    s=time.time()
-    hpl=Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-    # hpl=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
-    overlaps=[]
-    nbands=2 
-    '''
-    #testing the wavefunction on rotation and translation
-    l=35
-    shi1=int(0)
-    shi2=int(3)
-    vecT=shi1*GM1 +shi2*GM2
+    #electron parameters
+    nbands=2
+    hbarc=0.1973269804*1e-6 #ev*m
+    alpha=137.0359895 #fine structure constant
+    a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
+    e_el=1.6021766*(10**(-19))  #in joule/ev
+    ee2=(hbarc/a_graphene)/alpha
+    kappa_di=3.03
     
-    plt.scatter(KXu,KYu)
-    plt.scatter(KX,KY)
-    plt.scatter(KX[l],KY[l])
-    plt.scatter(KX[l]+vecT[0],KY[l]+vecT[1])
-    plt.savefig("latpoint.png")
-    plt.close()
+    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+
+    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+    Ndos=100
+    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
+    [ Kxp, Kyp]=ldos.Generate_lattice()
+    disp=Dispersion( ldos, nbands, hpl, hmin)
+    Nfils=7
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+    filling_index=int(sys.argv[1]) 
+    mu=mu_values[filling_index]
+    filling=fillings[filling_index]
+    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
-    print("the first umklapp vector is ",GM1)
-    print("the second umklapp vector is ",GM2)
-    E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
-    E1p2,wave1p2=hpl.eigens(KX[l]+vecT[0],KY[l]+vecT[1],nbands)
-    wave1p3=hpl.trans_psi2(wave1p, shi1,shi2)
-    print(E1p2, E1p, np.shape(wave1p))
-    
-   
-    
-    print("gauge fixing working??")
-    maxind1=np.unravel_index(np.argmax(np.abs(wave1p[:,1]), axis=None), wave1p[:,1].shape)[0]
-    print(wave1p[maxind1,1], maxind1)
-    maxind2=np.unravel_index(np.argmax(np.abs(wave1p2[:,1]), axis=None), wave1p2[:,1].shape)[0]
-    print(wave1p2[maxind2, 1], maxind2)
-    maxind3=np.unravel_index(np.argmax(np.abs(wave1p3[:,1]), axis=None), wave1p3[:,1].shape)[0]
-    print(wave1p3[maxind3, 1], maxind3)
-    
-    
-    # plt.plot(np.real(wave1p[:,1])-np.real(wave1p3[:,1]))
-    plt.plot(np.real(wave1p2[:,1]))
-    plt.plot(np.real(wave1p3[:,1]))
-    plt.savefig("wavesre.png")
-    plt.close()
-    # plt.plot(np.imag(wave1p[:,1])-np.imag(wave1p3[:,1]))
-    plt.plot(np.imag(wave1p2[:,1]))
-    plt.plot(np.imag(wave1p3[:,1]))
-    plt.savefig("wavesim.png")
-    plt.close()
-    # plt.plot(np.abs(wave1p[:,1])-np.abs(wave1p3[:,1]))
-    plt.plot(np.abs(wave1p2[:,1]))
-    plt.plot(np.abs(wave1p3[:,1]))
-    plt.axvline(maxind2)
-    plt.axvline(maxind1)
-    plt.savefig("wavesabs.png")
-    plt.close()
-    
-    plt.plot(np.diag(np.abs( np.conj(wave1p2.T)@wave1p3 )))
-    # plt.ylim(0.5,1.5)
-    # plt.plot(np.abs(wave1p2[:,1]))
-    # plt.plot(np.abs(wave1p3[:,1]))
-    plt.savefig("waveinner.png")
-    plt.close()
-    
-    print("before shift \n", np.conj(wave1p.T)@wave1p2)
-    print("after shift \n",np.conj(wave1p3.T)@wave1p2 ) 
-    print("after shift abs \n",np.abs(np.conj(wave1p3.T)@wave1p2 )) 
-    
-    
-    MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
-    MGS1=MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
-    MGS_2=MGS1+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]] #2G
-    MGS2=MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]] #2G and possible corners
-    MGS_3=MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]] #3G
-    inner2=[]
-    dist=[]
-    for MG in MGS_3:
-        l=35
-        shi1=int(MG[0])
-        shi2=int(MG[1])
-        vecT=shi1*GM1 +shi2*GM2
-        E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
-        E1p2,wave1p2=hpl.eigens(KX[l]+vecT[0],KY[l]+vecT[1],nbands)
-        wave1p3=hpl.trans_psi2(wave1p, shi1,shi2)
-        print(MG)
-        # print("before shift \n", np.conj(wave1p.T)@wave1p2)
-        # print("after shift \n",np.conj(wave1p3.T)@wave1p2 ) 
-        inner=np.abs(np.conj(wave1p3.T)@wave1p2 )
-        inner2.append(inner[0,0])
-        inner2.append(inner[1,1])
-        dist.append(np.sqrt(shi1**2+shi2**2))
-        dist.append(np.sqrt(shi1**2+shi2**2))
-        print("after shift abs \n",inner) 
-        
-    plt.scatter(dist,inner2)
-    plt.savefig("umklapp_overlaps_"+str(KX[l])+"_"+str(KY[l])+".png")
-    plt.close()
-    FFp=FormFactors_umklapp(wave1p2, 1, lq,umkl, hpl)
-    '''
-    
-    
-    
-    '''
-    #testing umklapp form factors
-    
-    umkl=2
-    [KXu,KYu]=lq.Generate_Umklapp_lattice2(KX,KY,umkl)
-    [KXc3z,KYc3z, Indc3z]=lq.C3zLatt(KXu,KYu)
-    Npoi_u=np.size(KXu)
-    
-    
-    
-    
-    for l in range(Npoi):
-        E1p,wave1p=hpl.eigens(KX[l],KY[l],nbands)
-        Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
-        psi_plus_a.append(wave1p)
-
-    e=time.time()
-    print("time to diag over MBZ", e-s)
-    ##relevant wavefunctions and energies for the + valley
-    psi_plus=np.array(psi_plus_a)
-    Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-
-    plt.scatter(KX,KY,c=Ene_valley_plus[:,1])
-    plt.colorbar()
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.savefig("fig1.png")
-    plt.close()
-
-
-    FFp=FormFactors_umklapp(psi_plus, 1, lq,umkl, hpl)
-    L00p=FFp.NemqFFL_a()
-
-    print(np.shape(L00p) )
-    
-    
-    diffar=[]
-    K=[]
-    KP=[]
-    cos=[]
-    cos2=[]
-
-    kp=np.argmin(KXu**2+KYu**2)
-    for k in range(Npoi_u):
-        undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
-        dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-        diffar.append( undet - dosdet )
-        cos.append(undet)
-        cos2.append(dosdet)
-        print(undet, dosdet)
-
-    plt.plot(diffar)
-    plt.savefig("fig3.png")
-    plt.close()
-
-    plt.scatter(KXu,KYu,c=cos)
-    plt.colorbar()
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.savefig("fig4.png")
-    plt.close()
-
-    plt.scatter(KXu,KYu,c=cos2)
-    plt.colorbar()
-    plt.gca().set_aspect('equal', adjustable='box')
-    plt.savefig("fig5.png")
-    plt.close()
-
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax = plt.axes(projection='3d')
-
-    ax.scatter3D(KXu,KYu,cos, c=cos);
-    plt.savefig("fig6.png")
-    plt.close()
-    '''
-
-    
-    # for l in range(Npoi_u):
-    #     E1p,wave1p=hpl.eigens(KXu[l],KYu[l],nbands)
-    #     Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
-    #     psi_plus_a.append(wave1p)
-
-
-    #     E1p_c3z,wave1p_c3z=hpl.eigens(KXc3z[l],KYc3z[l],nbands)
-    #     wave1p_c3z_rot=hpl.c3z_psi( wave1p_c3z)
-    #     Ene_valley_plus_ac3=np.append(Ene_valley_plus_ac3,E1p_c3z)
-    #     psi_plus_ac3.append(wave1p_c3z)
-
-
-    # e=time.time()
-    # print("time to diag over MBZ", e-s)
-    # ##relevant wavefunctions and energies for the + valley
-    # psi_plus=np.array(psi_plus_a)
-    # Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi_u,nbands])
-
-    # psi_plusc3=np.array(psi_plus_ac3)
-    # Ene_valley_plusc3= np.reshape(Ene_valley_plus_ac3,[Npoi_u,nbands])
-
-
-    # plt.scatter(KXu,KYu,c=Ene_valley_plus[:,1])
-    # plt.colorbar()
-    # plt.gca().set_aspect('equal', adjustable='box')
-    # plt.savefig("fig1.png")
-    # plt.close()
-
-    # plt.scatter(KXu,KYu,c=Ene_valley_plusc3[:,1])
-    # plt.colorbar()
-    # plt.gca().set_aspect('equal', adjustable='box')
-    # plt.savefig("fig2.png")
-    # plt.close()
-    # print(np.shape(psi_plus),np.shape(psi_plusc3))
-
-    # FFp=FormFactors(psi_plus, 1, lq,umkl)
-    # L00p=FFp.NemFFL_a()
-    # FFc3=FormFactors(psi_plusc3, 1, lq,umkl)
-    # L00m=FFc3.NemFFL_a()
-    # print(np.shape(L00p),np.shape(L00m) )
-
-
-
-    # ind0=np
-    # #####transpose complex conj plus
-
-
-    # diffar=[]
-    # K=[]
-    # KP=[]
-    # cos=[]
-    # cos2=[]
-
-    # kp=np.argmin(KXu**2+KYu**2)
-    # for k in range(Npoi_u):
-    #     # plt.scatter(KX,KY)
-    #     # plt.plot(KX[kp],KY[kp], 'o', c='r' )
-    #     # plt.plot(KX[k],KY[k], 'o' , c='g')
-    #     # plt.plot(KXc3z[k],KYc3z[k], 'o' , c='orange')
-    #     # plt.plot(KX[int(Indc3z[k])],KY[int(Indc3z[k])],'o', c='k' )
-    #     # plt.show()
-    #     undet=np.abs(np.linalg.det(L00p[k,:,kp,:]))
-    #     dosdet=np.abs(np.linalg.det(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-    #     diffar.append( undet - dosdet )
-    #     cos.append(undet)
-    #     cos2.append(dosdet)
-    #     print(undet, dosdet)
-
-    # plt.plot(diffar)
-    # plt.savefig("fig3.png")
-    # plt.close()
-
-    # plt.scatter(KXu,KYu,c=cos)
-    # plt.colorbar()
-    # plt.gca().set_aspect('equal', adjustable='box')
-    # plt.savefig("fig4.png")
-    # plt.close()
-
-    # plt.scatter(KXu,KYu,c=cos2)
-    # plt.colorbar()
-    # plt.gca().set_aspect('equal', adjustable='box')
-    # plt.savefig("fig5.png")
-    # plt.close()
-
-    # fig = plt.figure()
-    # ax = plt.axes(projection='3d')
-    # ax = plt.axes(projection='3d')
-
-    # ax.scatter3D(KXu,KYu,cos, c=cos);
-    # plt.savefig("fig6.png")
-    # plt.close()
-    #######################
-
-    ########################
-    
-    # #################################
-    # #################################
-    # #################################
-    # # Disp cut along high symmetry directions
-    # #################################
-    # #################################
-    # #################################
-
-    Ene_valley_plus_a=np.empty((0))
-    Ene_valley_min_a=np.empty((0))
-    psi_plus_a=[]
-    psi_min_a=[]
-    rot_C2z=lq.C2z
-    rot_C3z=lq.C3z
-
-    nbands=14 #Number of bands 
-    kpath=lq.High_symmetry_path()
-
-    Npoi=np.shape(kpath)[0]
-    hpl=Ham_BM_p(hvkd, alph, 1, lq,kappa,PH)
-    hmin=Ham_BM_m(hvkd, alph, -1, lq,kappa,PH)
-    print("kappa is..", kappa)
-    print("alpha is..", alph)
-    Edif=[]
-    overlaps=[]
-    for l in range(Npoi):
-        # h.umklapp_lattice()
-        # break
-        E1p,wave1p=hpl.eigens(kpath[l,0],kpath[l,1],nbands)
-        Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
-        psi_plus_a.append(wave1p)
-
-
-        E1m,wave1m=hmin.eigens(kpath[l,0],kpath[l,1],nbands)
-        Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
-        psi_min_a.append(wave1m)
-
-    Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-    Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
-
- 
-
-    print(np.shape(Ene_valley_plus_a))
-    qa=np.linspace(0,1,Npoi)
-    for i in range(nbands):
-        plt.plot(qa,Ene_valley_plus[:,i] , c='b')
-        plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
-    plt.xlim([0,1])
-    plt.ylim([-0.009,0.009])
-    plt.savefig("highsym.png")
-    plt.show()
-
+    disp=Dispersion( lq, nbands, hpl, hmin)
+    disp.High_symmetry()
 
 if __name__ == '__main__':
     import sys
