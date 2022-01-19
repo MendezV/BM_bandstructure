@@ -148,31 +148,6 @@ class Ham_BM_p():
         H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         return [H1,H2]
     
-    def diracH2(self, kx, ky):
-
-        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
-        tau=self.xi
-        hvkd=self.hvkd
-
-
-
-        ###checking if particle hole symmetric model is chosen
-        
-        # #top layer
-        qx_1 = kx 
-        qy_1 = ky 
-        # #bottom layer
-        qx_2 = kx 
-        qy_2 = ky 
-    
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-        
-        H1=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
-        H2=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
-        return [H1,H2]
-
 
 
     def InterlayerU(self):
@@ -450,39 +425,6 @@ class Ham_BM_p():
         return mat@psi
 
 
-    def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-
-        pau=[pauli0,paulix,pauliy,pauliz]
-        N=self.cuttoff_momentum_lat[3]
-        Um=np.eye(N, k=umkpl)
-
-        mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
-        return  mat@psi
-    
-    
-    def C3unitary(self, psi, sign):
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-
-        pau=[pauli0,paulix,pauliy,pauliz]
-        N=self.cuttoff_momentum_lat[3]
-        Um=np.eye(N)
-        w1=np.exp(sign*1j*(2*np.pi/3)*self.xi)
-        w2=np.exp(-sign*1j*(2*np.pi/3)*self.xi)
-        # Omega=np.array([[w1,0],[0,w2]])
-        Omega=np.array([[0,w2],[w1,0]])
-
-
-        mat=np.kron(pauli0,np.kron(Um, Omega))
-        return  mat@psi
-
-        
     
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp)
@@ -631,32 +573,6 @@ class Ham_BM_m():
         H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         return [H1,H2]
-    
-    def diracH2(self, kx, ky):
-
-        [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
-        tau=self.xi
-        hvkd=self.hvkd
-
-
-
-        ###checking if particle hole symmetric model is chosen
-        
-        # #top layer
-        qx_1 = kx 
-        qy_1 = ky 
-        # #bottom layer
-        qx_2 = kx 
-        qy_2 = ky 
-    
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-        
-        H1=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
-        H2=hvkd*(qx_1*tau*paulix+qy_1*pauliy) +self.gap*pauliz # ARITCFICIAL GAP ADDED
-        return [H1,H2]
-
 
     def InterlayerU(self):
         [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
@@ -934,36 +850,7 @@ class Ham_BM_m():
 
         return matmul
 
-    def Op_mu_N_sig_psi(self, psi, layer, sublattice, umkpl):
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
 
-        pau=[pauli0,paulix,pauliy,pauliz]
-        N=self.cuttoff_momentum_lat[3]
-        Um=np.eye(N, k=umkpl)
-
-        mat=np.kron(pau[layer],np.kron(Um, pau[sublattice]))
-        return  mat@psi
-    
-    def C3unitary(self, psi, sign):
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-
-        pau=[pauli0,paulix,pauliy,pauliz]
-        N=self.cuttoff_momentum_lat[3]
-        Um=np.eye(N)
-        w1=np.exp(sign*1j*(2*np.pi/3)*self.xi)
-        w2=np.exp(-sign*1j*(2*np.pi/3)*self.xi)
-        Omega=np.array([[w1,0],[0,w2]])
-
-
-        mat=np.kron(pauli0,np.kron(Um, Omega))
-        return  mat@psi
-    
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp)
         
