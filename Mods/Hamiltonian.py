@@ -1529,7 +1529,14 @@ def main() -> int:
     
     disp=Dispersion( lq, nbands, hpl, hmin)
     disp.High_symmetry()
-
+    
+    mu=mu_values[int(Nfils/2)]
+    filling=fillings[int(Nfils/2)]
+    [xFS_dense,yFS_dense]=disp.FS_contour(100, mu, hpl)
+    plt.scatter(xFS_dense,yFS_dense)
+    plt.savefig(f"contour_{mu}.png")
+    plt.close()
+    
 if __name__ == '__main__':
     import sys
     sys.exit(main())  # next section explains the use of sys.exit
