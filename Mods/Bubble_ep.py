@@ -123,6 +123,10 @@ class ep_Bubble:
         
         ################################
         #attributes for the name of the object and the extraction of Ctilde
+        #note that the couplings are normalized so that beta_ep is 1 and only the relative value bw them matters
+        #the dimensions of the bubble are carried by Wupsilon
+        #agraph and the mass are used to get the conversion from the normalized bubble to the unitful bubble when doing the fit
+        #to extract the sound velocity
         ################################
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
         self.mode=mode
