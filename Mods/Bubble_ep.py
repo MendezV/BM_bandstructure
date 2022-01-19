@@ -96,7 +96,8 @@ class ep_Bubble:
         self.nbands=nbands
         self.hpl=hpl
         self.hmin=hmin
-        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
+        disp=Hamiltonian.Dispersion( latt, nbands, hpl, hmin)
+        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
         
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
         self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
@@ -119,18 +120,22 @@ class ep_Bubble:
         self.eta_small_imag=0.1*eps
         
         
+        
+        ################################
+        #attributes for the name of the object and the extraction of Ctilde
+        ################################
+        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
+        self.mode=mode
+        self.symmetric=symmetric
+        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.hpl.kappa)+"_theta_"+str(self.latt.theta)
+
+        
         ################################
         #generating form factors
         ################################
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
-        
-        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons
-        self.mode=mode
-        self.symmetric=symmetric
-        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.hpl.kappa)+"_theta_"+str(self.latt.theta)
-
         if symmetric=="s":
             if mode=="L":
                 self.L00p=self.FFp.denqFFL_s()
@@ -153,9 +158,6 @@ class ep_Bubble:
                 self.Lnemp=self.FFp.NemqFFT_a()
                 self.Lnemm=self.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-
-        
-
 
         
         ################################
@@ -186,17 +188,12 @@ class ep_Bubble:
                 cos2.append(undet)
                 diffarm.append( undet   - dosdet   )
             
-            #saving the data for the test
-            np.save("TestC3_symm_diffp"+self.name+".npy",diffarp)
-            np.save("TestC3_symm_diffm"+self.name+".npy",diffarm)
-            np.save("TestC3_symm_K"+self.name+".npy",K)
-            np.save("TestC3_symm_KP"+self.name+".npy",KP)
-            np.save("TestC3_symm_det"+self.name+".npy",cos1)
-
+            
             if np.mean(np.abs(diffarp))<1e-7:
                 print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
             else:
                 print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
+                #saving data for revision
                 np.save("TestC3_symm_diffp"+self.name+".npy",diffarp)
                 np.save("TestC3_symm_K"+self.name+".npy",K)
                 np.save("TestC3_symm_KP"+self.name+".npy",KP)
@@ -205,13 +202,15 @@ class ep_Bubble:
                 print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
             else:
                 print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
+                #saving data for revision
                 np.save("TestC3_symm_diffp"+self.name+".npy",diffarm)
                 np.save("TestC3_symm_K"+self.name+".npy",K)
                 np.save("TestC3_symm_KP"+self.name+".npy",KP)
                 np.save("TestC3_symm_det"+self.name+".npy",cos2)
 
             print("finished testing symmetry of the form factors...")
-
+        
+        
 
 
     ################################
@@ -257,55 +256,12 @@ class ep_Bubble:
             return 1/(np.exp( e/T )-1)
         else:
             return -np.heaviside(-e,0.5)
-
-
-    
-    def precompute_E_psi(self):
-
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print("starting dispersion ..........")
-        
-        s=time.time()
-        
-        for l in range(self.Npoi1bz):
-            E1,wave1=self.hpl.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            psi_plus_a.append(wave1)
-
-
-            E1,wave1=self.hmin.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            psi_min_a.append(wave1)
-
-            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-        e=time.time()
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi1bz,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi1bz,self.nbands])
-
-        
-        
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
 
     def OmegaL(self):
         
-
-        
-        
-        Omega_FFp=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)#/np.sqrt(self.Npoi)
-        Omega_FFm=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)#/np.sqrt(self.Npoi)
+        Omega_FFp=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
                 
         return [Omega_FFp,Omega_FFm]
 
@@ -528,7 +484,7 @@ class ep_Bubble:
         integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         integ= self.Wupsilon*integ
-        print("parameters of the fit...", c)
+        print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
 
         self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_ieps_")
@@ -614,16 +570,13 @@ class ep_Bubble:
         Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
-        plt.scatter(KX_m, KY_m, c=d)
-        plt.colorbar()
-        plt.savefig("fit.png")
-        plt.close()
         b=Gmat.T@d
         popt=la.pinv(GTG)@b
         res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
         nn=np.sqrt(np.sum((d)**2)) #residual of the least squares procedure
-        print(popt, res, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn))
-        return popt, res/nn, np.sqrt(np.mean(popt)*scaling_fac),np.sqrt(res*scaling_fac/nn)
+        effective_c_downrenorm=np.sqrt(np.mean(popt)*scaling_fac)
+
+        return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)
 
     
     def extract_cs_path(self, integ, kpath):
@@ -963,7 +916,8 @@ def main() -> int:
     Wupsilon=(beta_ep_effective**2)*qq*qq
     W=0.008
     ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
-    print("phonon params", Wupsilon,ctilde)
+    print("phonon params", Wupsilon,ctilde, ctilde/W )
+    print("printing stuff", beta_ep_effective/beta_ep)
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
@@ -994,7 +948,9 @@ def main() -> int:
     integ=B1.Compute(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
     B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),np.mean(c), resc, c_phonon)
+    print(np.mean(popt),c, resc, c_phonon)
+    print("effective speed of sound down renormalization...", c)
+    print("residual of the fit...", res)
     # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
     # NnarrowSamp=100
