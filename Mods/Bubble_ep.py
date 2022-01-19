@@ -47,9 +47,6 @@ class ep_Bubble:
     Attributes
     ----------
     
-    number of bands
-    hpl hmin hamiltonians for minus and plus valleys
-    
     lattice
     umkl number of umklap processes to sum over
     KX1bz, KY1bz kpoints in the first bz
@@ -57,9 +54,34 @@ class ep_Bubble:
     KQX KQY kpoints with an umkl+1 umklapps to account for momentum transfers
     NpoiXX number of points in each of the three latices above
     
+        
+    dispersion
+    number of bands
+    hpl hmin hamiltonians for minus and plus valleys
+    psi_plus(min) wavefunctions, unitless, enter the calculation of the form factors
+    Ene_vallyey_plus(min) dispersion as a function of k in ev
+    
+    form factors
+    FFp(m) are form factor objects from the Hamiltonian module
+    they represent the form factors for the plus and minus valley
+    L00p(m) are density form factor arrays
+    Lnemp(m) are the nematic form factors which can be chosen depending on the value of "symmetric" in the constructor
+    Omega_FFp(m) are the form factors that enter the interaction with the normalized coupling constants so that beta_ep=1
+    
+    constants
+    Wupsilon scale of the bubble with units of ev^2 /m^2
+    mass carbon atom in ev *s^2/m^2
+    a_graphene graphene lattice constant (not the cc distance)
+    alpha_ep deformation potential coupling normalized by the gauge coupling
+    beta_ep=1 with the current implementation (sorry for the bad code)
+    
+    
+    
     Methods
     -------
-    
+    nf,nb fermi and bose occupation functions
+    OmegaL(T) form factors for the interaction
+    integrand
     
     """
 
@@ -293,7 +315,6 @@ class ep_Bubble:
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
     def integrand_ZT_lh(self,nkq,nk,ekn,ekm,w,mu):
-        
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
 
@@ -428,7 +449,7 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
-    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ,ind):
+    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -951,7 +972,7 @@ def main() -> int:
     B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     omega=[1e-14]
     kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
+    integ=B1.Compute_lh(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
     B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),c, resc, c_phonon)
