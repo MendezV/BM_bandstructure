@@ -298,10 +298,6 @@ class ep_Bubble:
 
         return [Omega_FFp,Omega_FFm]
 
-
-    def deltad(self, x, epsil):
-        return (1/(np.pi*epsil))/(1+(x/epsil)**2)
-
     def integrand_ZT(self,nkq,nk,ekn,ekm,w,mu):
         edkq=ekn[nkq]-mu
         edk=ekm[nk]-mu
@@ -309,12 +305,11 @@ class ep_Bubble:
         #zero temp
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-        deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-        return (fac_p+fac_p2)
+        eps=self.eta_small_imag
 
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        # fac_p=(nfkq-nfk)/(-(edkq-edk))
+        return (fac_p)
 
     def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
         edkq=ekn[nkq]-mu
@@ -324,12 +319,11 @@ class ep_Bubble:
         nfk= self.nf(edk,T)
         nfkq= self.nf(edkq,T)
 
-        deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-        return (fac_p+fac_p2)
+        eps=0.5*self.eta ##SENSITIVE TO DISPERSION
 
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        return (fac_p)
+ 
     def Compute(self, mu, omegas, kpath):
 
         integ=[]
@@ -338,6 +332,7 @@ class ep_Bubble:
         print("starting bubble.......",np.shape(kpath)[0])
 
         path=np.arange(0,np.shape(kpath)[0])
+        
         for omegas_m_i in omegas:
             sd=[]
             for l in path:  #for calculating only along path in FBZ
@@ -345,7 +340,6 @@ class ep_Bubble:
                 
                 qx=kpath[int(l), 0]
                 qy=kpath[int(l), 1]
-                Ikq=[]
                 
                 Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
 
@@ -384,8 +378,7 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
-
-    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ,ind):
+    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind):
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -441,16 +434,16 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " ,  fil[ind])
-        integ=integ_arr_no_reshape.flatten() #in ev
+        print("the filling is .. " , fil[ind])
+        integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         integ= self.Wupsilon*integ
-        print("parameters of the fit...", c)
+        print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
 
-        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_")
+        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_ieps_")
         
-        return [integ, res, c]
+        return [integ,res, c]
 
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
@@ -472,7 +465,6 @@ class ep_Bubble:
 
         return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)
 
-    
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         
@@ -508,10 +500,7 @@ class ep_Bubble:
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
         prop_BZ=0.15
         cs=[]
-        cs=[]
         rs=[]
-        rs=[]
-        selfE=[]
         selfE=[]
         
         
@@ -533,53 +522,11 @@ class ep_Bubble:
                 cs.append(result[2])
                 rs.append(result[1])
                 qpval = future_to_file[future]  
-        
-
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     results_pl = executor.map(calc, qp, chunksize=1)
-
-        #     for result in results_pl:
-        #         selfE.append(result[0])
-        #         cs.append(result[2])
-        #         rs.append(result[1])
-
-
-        e=time.time()
-        print("time for sweep ieps", e-s)
-        
-        s=time.time()
-        omega=[1e-14]
-        kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
-        MAX_WORKERS=25
-        
-        
-        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            future_to_file = {
-                executor.submit(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval): qpval for qpval in qp
-            }
-
-            for future in concurrent.futures.as_completed(future_to_file):
-                result = future.result()  # read the future object for result
-                selfE.append(result[0])
-                cs.append(result[2])
-                rs.append(result[1])
-                qpval = future_to_file[future] 
-
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     results_pl = executor.map(calc, qp, chunksize=1)
-
-        #     for result in results_pl:
-        #         selfE.append(result[0])
-        #         cs.append(result[2])
-        #         rs.append(result[1])
 
 
         e=time.time()
         print("time for sweep delta", e-s)
 
-
-        
         cep=np.array(cs)/c_phonon
         plt.scatter(fillings, cep, c='b', label='eps')
         plt.plot(fillings, cep, c='k', ls='--')
@@ -615,6 +562,7 @@ class ep_Bubble:
                 np.save(f, cep)
         with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
                 np.save(f, rep)
+
         
 def main() -> int:
 
@@ -774,6 +722,9 @@ def main() -> int:
     print("residual of the fit...", res)
     # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
+
+    
+
     
     # return 0
 
