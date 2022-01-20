@@ -708,12 +708,12 @@ def main() -> int:
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
+    Ndos=40
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=7
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
