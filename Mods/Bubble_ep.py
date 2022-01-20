@@ -556,36 +556,6 @@ class ep_Bubble:
         t=e-s
         print("time for sweep delta", t)
         
-        cep=np.array(cs)/c_phonon
-        plt.scatter(fillings, cep, c='b', label='lh')
-        plt.plot(fillings, cep, c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$\alpha/ c$"+self.mode)
-        plt.savefig("velocities_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
-        plt.close()
-        # plt.show()
-
-        cep=np.array(cs)/c_phonon
-        plt.scatter(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='b', label='lh')
-        plt.plot(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$\sqrt{1-(\alpha/ c)^{2}}$, "+self.mode+"-mode")
-        plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
-        plt.close()
-        # plt.show()
-
-        rep=np.array(rs)/ c_phonon
-        plt.scatter(fillings, rep, c='b', label='lh')
-        plt.plot(fillings, rep, c='k', ls='--')
-        plt.legend()
-        plt.xlabel(r"$\nu$")
-        plt.ylabel(r"res$ /c$ "+self.mode)
-        plt.yscale('log')
-        plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
-        plt.close()
-        # plt.show()
 
         self.savedata( selfE, fillings, Nsamp, cs , rs, "")
                 
