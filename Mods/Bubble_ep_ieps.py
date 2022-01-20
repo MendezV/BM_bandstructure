@@ -378,7 +378,10 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         return integ_arr_no_reshape
     
-    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind):
+
+    def parCompute(self, args):
+        
+        (theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind)=args
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -420,40 +423,34 @@ class ep_Bubble:
                         Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
                         # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        
 
-                eb=time.time()
             
                 bub=bub+np.sum(integrand_var)*self.dS_in
 
                 sd.append( bub )
 
             integ.append(sd)
+        eb=time.time()
+        
         
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " , fil[ind])
+        
         integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         integ= self.Wupsilon*integ
         print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
-
-        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_ieps_")
         
-        return [integ,res, c]
+        integ= self.Wupsilon*integ
+        return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
         scaling_fac= self.Wupsilon/(qq*qq*self.mass)
-        # scaling_fac= self.Wupsilon*(self.agraph**2) /(self.mass*(self.qscale**2))
-        print("scalings...",scaling_fac,  self.Wupsilon)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
-        # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
-        # plt.show()
-        id=np.ones(np.shape(KX_m))
         Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
@@ -465,25 +462,26 @@ class ep_Bubble:
 
         return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)
 
+    
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.real(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
-        plt.close()
-        print("the minimum real part is ...", np.min(np.real(integ)))
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.real(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
+        # plt.close()
+        # print("the minimum real part is ...", np.min(np.real(integ)))
 
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.abs(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
-        plt.close()
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
+        # plt.close()
 
-        print("saving data from the run ...")
+        # print("saving data from the run ...")
 
         with open("bubble_data_"+identifier+".npy", 'wb') as f:
             np.save(f, integ)
@@ -498,22 +496,26 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
-        prop_BZ=0.15
+        
+        prop_BZ=0.1
         cs=[]
         rs=[]
         selfE=[]
-        
-        
+
         qp=np.arange(np.size(fillings))
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
-        MAX_WORKERS=25
         
-        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        arglist=[]
+        for i, qpval in enumerate(qp):
+            arglist.append( (theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval) )
+
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future_to_file = {
-                executor.submit(calc, qpval): qpval for qpval in qp
+                
+                executor.submit(self.parCompute, arglist[qpval]): qpval for qpval in qp
             }
 
             for future in concurrent.futures.as_completed(future_to_file):
@@ -523,10 +525,12 @@ class ep_Bubble:
                 rs.append(result[1])
                 qpval = future_to_file[future]  
 
-
+        
+        
         e=time.time()
-        print("time for sweep delta", e-s)
-
+        t=e-s
+        print("time for sweep delta", t)
+        
         cep=np.array(cs)/c_phonon
         plt.scatter(fillings, cep, c='b', label='eps')
         plt.plot(fillings, cep, c='k', ls='--')
@@ -538,11 +542,11 @@ class ep_Bubble:
         # plt.show()
 
         cep=np.array(cs)/c_phonon
-        plt.scatter(fillings, 1-cep**2, c='b', label='eps')
-        plt.plot(fillings, 1-cep**2, c='k', ls='--')
+        plt.scatter(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='b', label='eps')
+        plt.plot(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$1-(\alpha/ c)^{2}$, "+self.mode+"-mode")
+        plt.ylabel(r"$\sqrt{1-(\alpha/ c)^{2}}$, "+self.mode+"-mode")
         plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
         plt.close()
         # plt.show()
@@ -555,14 +559,11 @@ class ep_Bubble:
         plt.ylabel(r"res$ /c$ "+self.mode)
         plt.yscale('log')
         plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
-        # plt.close()
-        plt.show()
+        plt.close()
+        # plt.show()
 
-        with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, cep)
-        with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, rep)
-
+        return t
+        
         
 def main() -> int:
 
@@ -712,15 +713,15 @@ def main() -> int:
     #BUBBLE CALCULATION
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    omega=[1e-14]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),c, resc, c_phonon)
-    print("effective speed of sound down renormalization...", c)
-    print("residual of the fit...", res)
-    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
+    # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
+    # print(np.mean(popt),c, resc, c_phonon)
+    # print("effective speed of sound down renormalization...", c)
+    # print("residual of the fit...", res)
+    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
     
 
     

@@ -8,9 +8,8 @@ import MoireLattice
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import concurrent.futures
-import functools
-from multiprocessing import Pool
 import os
+import pandas as pd
 
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
@@ -433,8 +432,6 @@ class ep_Bubble:
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
-                
-            
                 bub=bub+np.sum(integrand_var)*self.dS_in
 
                 sd.append( bub )
@@ -446,15 +443,15 @@ class ep_Bubble:
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
-        
-        
+
         integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         integ= self.Wupsilon*integ
         print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
         
-        integ= self.Wupsilon*integ
+        # self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_lh_")
+        
         return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
@@ -476,38 +473,56 @@ class ep_Bubble:
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         
-        # plt.plot(VV[:,0],VV[:,1])
-        # plt.scatter(KX,KY, s=20, c=np.real(integ))
-        # plt.gca().set_aspect('equal', adjustable='box')
-        # plt.colorbar()
-        # plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
-        # plt.close()
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.real(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
+        plt.close()
         # print("the minimum real part is ...", np.min(np.real(integ)))
 
-        # plt.plot(VV[:,0],VV[:,1])
-        # plt.scatter(KX,KY, s=20, c=np.abs(integ))
-        # plt.gca().set_aspect('equal', adjustable='box')
-        # plt.colorbar()
-        # plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
-        # plt.close()
+        plt.plot(VV[:,0],VV[:,1])
+        plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        plt.gca().set_aspect('equal', adjustable='box')
+        plt.colorbar()
+        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
+        plt.close()
 
-        # print("saving data from the run ...")
+        return None
+        
+        
+            
+    def savedata(self, integ, filling, Nsamp, c , res, add_tag):
+        identifier=add_tag+str(Nsamp)+self.name
+        Nfills=np.size(filling)
+        Nss=np.size(self.KX1bz)
 
-        with open("bubble_data_"+identifier+".npy", 'wb') as f:
-            np.save(f, integ)
-        with open("bubble_data_kx_"+identifier+".npy", 'wb') as f:
-            np.save(f, KX)
-        with open("bubble_data_ky_"+identifier+".npy", 'wb') as f:
-            np.save(f, KY)
-        with open("cparams_data_"+identifier+".npy", 'wb') as f:
-            np.save(f, c)
-        with open("cparams_res_data_"+identifier+".npy", 'wb') as f:
-            np.save(f, res)
+        
+        Pibub=np.hstack(integ)
+        c_list=[]
+        res_list=[]
+        filling_list=[]
+        for i,cph in enumerate(c):
+            c_list=c_list+[cph]*Nss
+            res_list=res_list+[res[i]]*Nss
+            filling_list=filling_list+[filling[i]]*Nss
+        KXall=np.hstack([self.KX1bz]*Nfills)
+        KYall=np.hstack([self.KY1bz]*Nfills)
+        carr=np.array(c_list)
+        resarr=np.array(res_list)
+        fillingarr=np.array(filling_list)
+
+            
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr})
+        df.to_hdf('data'+identifier+'.h5', key='df', mode='w')
+
+
+        return None
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
         
-        prop_BZ=0.15
+        prop_BZ=1
         cs=[]
         rs=[]
         selfE=[]
@@ -572,10 +587,7 @@ class ep_Bubble:
         plt.close()
         # plt.show()
 
-        with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, cep)
-        with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
-                np.save(f, rep)
+        self.savedata( selfE, fillings, Nsamp, cs , rs, "")
                 
         return t
         
