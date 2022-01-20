@@ -713,7 +713,7 @@ def main() -> int:
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=7
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, True)
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]

@@ -1074,7 +1074,7 @@ class Dispersion():
         fillings=np.linspace(0,3.9,Nfil)
         
         if calculate:
-            [Ene_valley_plus_dos,Ene_valley_min_dos]=self.precompute_E_psi()
+            [psi_plus_dos,Ene_valley_plus_dos,psi_min_dos,Ene_valley_min_dos]=self.precompute_E_psi()
         if read:
             print("Loading  ..........")
             with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
