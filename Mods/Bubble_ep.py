@@ -519,7 +519,7 @@ class ep_Bubble:
         kappa_arr=np.array([self.hpl.kappa]*(Nss*Nfills))
 
             
-        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr})
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr })
         df.to_hdf('data'+identifier+'.h5', key='df', mode='w')
 
 
