@@ -493,11 +493,12 @@ class ep_Bubble:
         
             
     def savedata(self, integ, filling, Nsamp, c , res, add_tag):
+        
         identifier=add_tag+str(Nsamp)+self.name
         Nfills=np.size(filling)
         Nss=np.size(self.KX1bz)
 
-        
+        #products of the run
         Pibub=np.hstack(integ)
         c_list=[]
         res_list=[]
@@ -506,11 +507,16 @@ class ep_Bubble:
             c_list=c_list+[cph]*Nss
             res_list=res_list+[res[i]]*Nss
             filling_list=filling_list+[filling[i]]*Nss
+            
         KXall=np.hstack([self.KX1bz]*Nfills)
         KYall=np.hstack([self.KY1bz]*Nfills)
         carr=np.array(c_list)
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
+        
+        #constants
+        thetas_arr=np.array([self.latt.theta]*(Nss*Nfills))
+        kappa_arr=np.array([self.hpl.kappa]*(Nss*Nfills))
 
             
         df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr})
@@ -556,7 +562,6 @@ class ep_Bubble:
         t=e-s
         print("time for sweep delta", t)
         
-
         self.savedata( selfE, fillings, Nsamp, cs , rs, "")
                 
         return t
@@ -682,8 +687,7 @@ def main() -> int:
     Wupsilon=(beta_ep_effective**2)*qq*qq
     W=0.008
     ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
-    print("phonon params", Wupsilon,ctilde, ctilde/W )
-    print("printing stuff", beta_ep_effective/beta_ep)
+    print("phonon params", Wupsilon, ctilde, ctilde/W )
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
