@@ -10,8 +10,8 @@
 
 #Readibg parameter file
 
-param_arr=$(awk -F= '{print $1}' params_thet)
-jobname="thetasweep_kappa_0.817_beta_4ev_N20"  #JOBNAME importan to declare -has to be descriptive
+param_arr=$(awk -F= '{print $1}' params_kap)
+jobname="kappasweep_theta_1.05_beta_4ev_N30"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
@@ -40,8 +40,8 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 
-	nohup time python3 -u Bubble_ep.py 0 20 L ${param_val} 1 >> output.out & 
-	nohup time python3 -u Bubble_ep.py 0 20 T ${param_val} 1 >> output.out &
+	nohup time python3 -u Bubble_ep.py 0 30 L 1 ${param_val} >> output.out & 
+	nohup time python3 -u Bubble_ep.py 0 30 T 1 ${param_val} >> output.out &
 	
 	cd "../../../Mods"
 	sleep 1

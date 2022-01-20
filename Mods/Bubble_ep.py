@@ -528,7 +528,7 @@ class ep_Bubble:
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
         
-        prop_BZ=1
+        prop_BZ=0.15
         cs=[]
         rs=[]
         selfE=[]
@@ -575,21 +575,24 @@ def main() -> int:
         integer that picks the chemical potential for the calculation
         integer linear number of samples to be used 
         str L or T calculate the bubble for the longitudinal or transverse mode
-        double additional scale to the Hamiltonian
+        double additional scale to modulate twist angle
+        double additional scale to modulate kappa
         
     Out: 
-
+        hdf5 dataset with the filling sweep 
     
     
     Raises:
         Exception: ValueError, IndexError Input integer in the firs argument to choose chemical potential for desired filling
         Exception: ValueError, IndexError Input int for the number of k-point samples total kpoints =(arg[2])**2
         Exception: ValueError, IndexError third arg has to be the mode that one wants to simulate either L or T
-        Exception: ValueError, IndexError Fourth argument is a modulation factor from 0 to 1 to change the interaction strength
+        Exception: ValueError, IndexError Fourth argument is a modulation factor from 0 to 1 to change the twist angle
+        Exception: ValueError, IndexError Fifth argument is a modulation factor from 0 to 1 to change the interlayer hopping ratio
+
     """
     
     try:
-        filling_index=int(sys.argv[1]) #0-25
+        filling_index=int(sys.argv[1]) 
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
@@ -608,14 +611,21 @@ def main() -> int:
         raise Exception("third arg has to be the mode that one wants to simulate either L or T")
 
     try:
-        modulation=float(sys.argv[4])
+        modulation_thet=float(sys.argv[4])
 
     except (ValueError, IndexError):
         raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
 
+    try:
+        modulation_kap=float(sys.argv[5])
+
+    except (ValueError, IndexError):
+        raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+
+    
     #Lattice parameters 
     #lattices with different normalizations 
-    theta=modulation*1.05*np.pi/180  # magic angle 
+    theta=modulation_thet*1.05*np.pi/180  # magic angle 
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0) 
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one 
     [KX,KY]=lq.Generate_lattice()
@@ -631,7 +641,7 @@ def main() -> int:
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
     kappa_p=0.0797/0.0975
-    kappa=kappa_p
+    kappa=modulation_kap*kappa_p
     up = 0.0975; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -698,12 +708,12 @@ def main() -> int:
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
+    Ndos=40
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=7
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, True)
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
