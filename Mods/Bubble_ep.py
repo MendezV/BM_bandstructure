@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import concurrent.futures
 import functools
+from multiprocessing import Pool
+import os
 
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
@@ -385,7 +387,9 @@ class ep_Bubble:
         return integ_arr_no_reshape
     
 
-    def parCompute(self, theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ,ind):
+    def parCompute(self, args):
+        
+        (theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind)=args
         mu=muv[ind]
         integ=[]
         sb=time.time()
@@ -429,38 +433,34 @@ class ep_Bubble:
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
-                eb=time.time()
+                
             
                 bub=bub+np.sum(integrand_var)*self.dS_in
 
                 sd.append( bub )
 
             integ.append(sd)
+        eb=time.time()
+        
         
         integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
         
-        print("the filling is .. " ,  fil[ind])
-        integ=integ_arr_no_reshape.flatten() #in ev
+        
+        integ=integ_arr_no_reshape.flatten()  #in ev
         popt, res, c, resc=self.extract_cs( integ, prop_BZ)
         integ= self.Wupsilon*integ
-        print("parameters of the fit...", c)
+        print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
-
-        self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_")
         
+        integ= self.Wupsilon*integ
         return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
         scaling_fac= self.Wupsilon/(qq*qq*self.mass)
-        # scaling_fac= self.Wupsilon*(self.agraph**2) /(self.mass*(self.qscale**2))
-        print("scalings...",scaling_fac,  self.Wupsilon)
         [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
-        # plt.scatter(self.KX1bz,self.KY1bz, c=np.real(integ))
-        # plt.show()
-        id=np.ones(np.shape(KX_m))
         Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
@@ -476,22 +476,22 @@ class ep_Bubble:
     def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
         identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
         
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.real(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
-        plt.close()
-        print("the minimum real part is ...", np.min(np.real(integ)))
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.real(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
+        # plt.close()
+        # print("the minimum real part is ...", np.min(np.real(integ)))
 
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.abs(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
-        plt.close()
+        # plt.plot(VV[:,0],VV[:,1])
+        # plt.scatter(KX,KY, s=20, c=np.abs(integ))
+        # plt.gca().set_aspect('equal', adjustable='box')
+        # plt.colorbar()
+        # plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
+        # plt.close()
 
-        print("saving data from the run ...")
+        # print("saving data from the run ...")
 
         with open("bubble_data_"+identifier+".npy", 'wb') as f:
             np.save(f, integ)
@@ -506,25 +506,26 @@ class ep_Bubble:
 
 
     def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta):
+        
         prop_BZ=0.15
         cs=[]
-        cs=[]
-        rs=[]
         rs=[]
         selfE=[]
-        selfE=[]
-        
-        
+
         qp=np.arange(np.size(fillings))
         s=time.time()
         omega=[1e-14]
         kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
-        MAX_WORKERS=25
         
-        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        arglist=[]
+        for i, qpval in enumerate(qp):
+            arglist.append( (theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval) )
+
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future_to_file = {
-                executor.submit(calc, qpval): qpval for qpval in qp
+                
+                executor.submit(self.parCompute, arglist[qpval]): qpval for qpval in qp
             }
 
             for future in concurrent.futures.as_completed(future_to_file):
@@ -533,55 +534,15 @@ class ep_Bubble:
                 cs.append(result[2])
                 rs.append(result[1])
                 qpval = future_to_file[future]  
+
         
-
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     results_pl = executor.map(calc, qp, chunksize=1)
-
-        #     for result in results_pl:
-        #         selfE.append(result[0])
-        #         cs.append(result[2])
-        #         rs.append(result[1])
-
-
+        
         e=time.time()
-        print("time for sweep ieps", e-s)
-        
-        s=time.time()
-        omega=[1e-14]
-        kpath=np.array([self.KX1bz,self.KY1bz]).T
-        calc = functools.partial(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ)
-        MAX_WORKERS=25
-        
-        
-        with concurrent.futures.ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            future_to_file = {
-                executor.submit(self.parCompute, theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval): qpval for qpval in qp
-            }
-
-            for future in concurrent.futures.as_completed(future_to_file):
-                result = future.result()  # read the future object for result
-                selfE.append(result[0])
-                cs.append(result[2])
-                rs.append(result[1])
-                qpval = future_to_file[future] 
-
-        # with concurrent.futures.ProcessPoolExecutor() as executor:
-        #     results_pl = executor.map(calc, qp, chunksize=1)
-
-        #     for result in results_pl:
-        #         selfE.append(result[0])
-        #         cs.append(result[2])
-        #         rs.append(result[1])
-
-
-        e=time.time()
-        print("time for sweep delta", e-s)
-
-
+        t=e-s
+        print("time for sweep delta", t)
         
         cep=np.array(cs)/c_phonon
-        plt.scatter(fillings, cep, c='b', label='eps')
+        plt.scatter(fillings, cep, c='b', label='lh')
         plt.plot(fillings, cep, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
@@ -591,30 +552,32 @@ class ep_Bubble:
         # plt.show()
 
         cep=np.array(cs)/c_phonon
-        plt.scatter(fillings, 1-cep**2, c='b', label='eps')
-        plt.plot(fillings, 1-cep**2, c='k', ls='--')
+        plt.scatter(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='b', label='lh')
+        plt.plot(fillings, np.sqrt(np.abs(1-cep**2))*np.heaviside(1-cep**2, 0.0), c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
-        plt.ylabel(r"$1-(\alpha/ c)^{2}$, "+self.mode+"-mode")
+        plt.ylabel(r"$\sqrt{1-(\alpha/ c)^{2}}$, "+self.mode+"-mode")
         plt.savefig("velocities_V_renvsq_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
         plt.close()
         # plt.show()
 
         rep=np.array(rs)/ c_phonon
-        plt.scatter(fillings, rep, c='b', label='eps')
+        plt.scatter(fillings, rep, c='b', label='lh')
         plt.plot(fillings, rep, c='k', ls='--')
         plt.legend()
         plt.xlabel(r"$\nu$")
         plt.ylabel(r"res$ /c$ "+self.mode)
         plt.yscale('log')
         plt.savefig("velocities_res_V_filling_"+self.name+"_"+str(Nsamp)+"_theta_"+str(theta)+".png")
-        # plt.close()
-        plt.show()
+        plt.close()
+        # plt.show()
 
         with open("velocities_V_filling_"+self.name+".npy", 'wb') as f:
                 np.save(f, cep)
         with open("velocities_res_V_filling_"+self.name+".npy", 'wb') as f:
                 np.save(f, rep)
+                
+        return t
         
 def main() -> int:
 
@@ -664,10 +627,10 @@ def main() -> int:
         raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
 
     #Lattice parameters 
-    #lattices with different normalizations
-    theta=modulation*1.05*np.pi/180  # magic angle
-    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
-    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
+    #lattices with different normalizations 
+    theta=modulation*1.05*np.pi/180  # magic angle 
+    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0) 
+    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one 
     [KX,KY]=lq.Generate_lattice()
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
@@ -764,15 +727,16 @@ def main() -> int:
     #BUBBLE CALCULATION
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    omega=[1e-14]
-    kpath=np.array([KX,KY]).T
-    integ=B1.Compute(mu, omega, kpath)
-    popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    print(np.mean(popt),c, resc, c_phonon)
-    print("effective speed of sound down renormalization...", c)
-    print("residual of the fit...", res)
-    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # omega=[1e-14]
+    # kpath=np.array([KX,KY]).T
+    # integ=B1.Compute(mu, omega, kpath)
+    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
+    # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
+    # print(np.mean(popt),c, resc, c_phonon)
+    # print("effective speed of sound down renormalization...", c)
+    # print("residual of the fit...", res)
+    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+
     
     
     # return 0

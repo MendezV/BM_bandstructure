@@ -716,7 +716,7 @@ def main() -> int:
     kpath=np.array([KX,KY]).T
     integ=B1.Compute(mu, omega, kpath)
     popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    B1.plot_res(integ, KX, KY, VV, filling, Nsamp, c , res, "")
+    B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
     print(np.mean(popt),c, resc, c_phonon)
     print("effective speed of sound down renormalization...", c)
     print("residual of the fit...", res)
