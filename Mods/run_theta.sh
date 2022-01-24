@@ -40,7 +40,7 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 
-	nohup time python3 -u Bubble_ep.py 0 30 L ${param_val} 1 >> output.out  &
+	nohup time python3 -u Bubble_ep.py 0 30 L ${param_val} 1 >> output.out
 	nohup time python3 -u Bubble_ep.py 0 30 T ${param_val} 1 >> output.out	
 	
 	cd "../../../Mods"
