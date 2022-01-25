@@ -638,25 +638,25 @@ def main() -> int:
 
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
-    hbvf = 2.1354; # eV
-    hvkd=hbvf*q
-    kappa_p=0.0797/0.0975
-    kappa=modulation_kap*kappa_p
-    up = 0.0975; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
+    # hbvf = 2.1354; # eV
+    # hvkd=hbvf*q
+    # kappa_p=0.0797/0.0975
+    # kappa=modulation_kap*kappa_p
+    # up = 0.0975; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     PH=True
     
 
     #JY params 
-    # hbvf = 2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=0.75
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
+    hbvf = 2.7; # eV
+    hvkd=hbvf*q
+    kappa=modulation_kap*0.75
+    up = 0.105; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)

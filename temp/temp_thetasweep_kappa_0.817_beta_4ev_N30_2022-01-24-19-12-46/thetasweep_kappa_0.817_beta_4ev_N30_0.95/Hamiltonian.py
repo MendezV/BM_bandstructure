@@ -1260,7 +1260,7 @@ class Dispersion():
             plt.plot(qa,Ene_valley_plus[:,i] , c='b')
             plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
         plt.xlim([0,1])
-        plt.ylim([-0.009,0.009])
+        plt.ylim([-0.04,0.04])
         plt.savefig("highsym.png")
         plt.close()
         return [Ene_valley_plus, Ene_valley_min]
@@ -1463,7 +1463,7 @@ def main() -> int:
 
     #Lattice parameters 
     #lattices with different normalizations
-    theta=1.05*np.pi/180  # magic angle
+    theta=1.02*1.05*np.pi/180  # magic angle
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one
     [KX,KY]=lq.Generate_lattice()
@@ -1476,25 +1476,25 @@ def main() -> int:
 
 
     #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
-    hbvf = 2.1354; # eV
-    hvkd=hbvf*q
-    kappa_p=0.0797/0.0975
-    kappa=kappa_p
-    up = 0.0975; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
+    # hbvf = 2.1354; # eV
+    # hvkd=hbvf*q
+    # kappa_p=0.0797/0.0975
+    # kappa=kappa_p
+    # up = 0.0975; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     PH=True
     
 
     #JY params 
-    # hbvf = 2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=0.75
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
+    hbvf = 2.7; # eV
+    hvkd=hbvf*q
+    kappa=0.75
+    up = 0.105; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -1516,12 +1516,14 @@ def main() -> int:
     hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
 
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
+    # Ndos=100
+    Ndos=10
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Dispersion( ldos, nbands, hpl, hmin)
     Nfils=7
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False)
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) at the magic angle
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, False,True)
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
@@ -1530,12 +1532,12 @@ def main() -> int:
     disp=Dispersion( lq, nbands, hpl, hmin)
     disp.High_symmetry()
     
-    mu=mu_values[int(Nfils/2)]
-    filling=fillings[int(Nfils/2)]
-    [xFS_dense,yFS_dense]=disp.FS_contour(100, mu, hpl)
-    plt.scatter(xFS_dense,yFS_dense)
-    plt.savefig(f"contour_{mu}.png")
-    plt.close()
+    # mu=mu_values[int(Nfils/2)]
+    # filling=fillings[int(Nfils/2)]
+    # [xFS_dense,yFS_dense]=disp.FS_contour(100, mu, hpl)
+    # plt.scatter(xFS_dense,yFS_dense)
+    # plt.savefig(f"contour_{mu}.png")
+    # plt.close()
     
 if __name__ == '__main__':
     import sys
