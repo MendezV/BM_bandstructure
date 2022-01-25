@@ -33,7 +33,7 @@ for param_val in ${param_arr[@]}; do
 
     cp Hamiltonian.py  "${dire}"
     cp MoireLattice.py  "${dire}"
-    cp params  "${dire}"
+    cp params_thet2  "${dire}"
 	cp -r dispersions "${dire}"
 	#entering the temp directory, running and coming back
 	cd "${dire}"
