@@ -708,7 +708,7 @@ def main() -> int:
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
+    Ndos=30
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)

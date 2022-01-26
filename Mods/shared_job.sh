@@ -2,9 +2,10 @@
 #SBATCH --job-name=ALFsharedtrial
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=jfm343@cornell.edu
-#SBATCH --partition=compute
+#SBATCH --partition=shared
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=64
 #SBATCH --mem=124G
 #SBATCH -t 48:00:00
 #SBATCH --account=crl171
@@ -24,10 +25,11 @@ module load anaconda3
 
 
 #running
-srun python3 -u Bubble_ep.py 0 30 L ${param_val} 1
+srun python -u Bubble_ep.py 0 30 L ${param_val} 1
+
 
 ##moving data out
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"
-dirfin="${PRDIR}/${SLURM_JOB_NAME}_${date_fin}"
+dirfin="/home/jfm343/weak_coupling/BM_bandstructure/data/${SLURM_JOB_NAME}_${date_fin}"
 mkdir "${dirfin}"
 mv * "${dirfin}"
