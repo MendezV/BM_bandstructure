@@ -1504,11 +1504,20 @@ def main() -> int:
     PH=True
     
 
-    #JY params 
-    hbvf = 2.7; # eV
+     #JY params 
+    # hbvf = 2.7; # eV
+    # hvkd=hbvf*q
+    # kappa=1
+    # up = 0.105; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
+
+    #Andrei params 
+    hbvf = 19.81/(8*np.pi/3); # eV
     hvkd=hbvf*q
     kappa=1
-    up = 0.105; # eV
+    up = 0.110; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha

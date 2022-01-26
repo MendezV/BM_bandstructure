@@ -648,7 +648,6 @@ def main() -> int:
     # alph=alpha
     PH=True
     
-
     #JY params 
     hbvf = 2.7; # eV
     hvkd=hbvf*q
@@ -657,6 +656,15 @@ def main() -> int:
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+
+    #Andrei params 
+    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hvkd=hbvf*q
+    # kappa=modulation_kap*1
+    # up = 0.110; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -697,42 +705,42 @@ def main() -> int:
     Wupsilon=(beta_ep_effective**2)*qq*qq
     W=0.008
     ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
-    print("phonon params", Wupsilon, ctilde, ctilde/W )
+    # print("phonon params", Wupsilon, ctilde, ctilde/W )
     
-    #parameters to be passed to the Bubble class
-    mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    # #parameters to be passed to the Bubble class
+    # mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
+    # cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+    # hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
+    # hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
-    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
-    [ Kxp, Kyp]=ldos.Generate_lattice()
-    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=7
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
-    filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
-    filling=fillings[filling_index]
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    # #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+    # Ndos=100
+    # ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
+    # [ Kxp, Kyp]=ldos.Generate_lattice()
+    # disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
+    # Nfils=7
+    # # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
+    # filling_index=int(sys.argv[1]) 
+    # mu=mu_values[filling_index]
+    # filling=fillings[filling_index]
+    # print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
     
-    #BUBBLE CALCULATION
-    test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    # omega=[1e-14]
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
-    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    # print(np.mean(popt),c, resc, c_phonon)
-    # print("effective speed of sound down renormalization...", c)
-    # print("residual of the fit...", res)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # #BUBBLE CALCULATION
+    # test_symmetry=True
+    # B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # # omega=[1e-14]
+    # # kpath=np.array([KX,KY]).T
+    # # integ=B1.Compute(mu, omega, kpath)
+    # # popt, res, c, resc=B1.extract_cs( integ, 0.2)
+    # # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
+    # # print(np.mean(popt),c, resc, c_phonon)
+    # # print("effective speed of sound down renormalization...", c)
+    # # print("residual of the fit...", res)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
 
     
     
