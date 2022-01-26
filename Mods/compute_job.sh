@@ -22,8 +22,9 @@ module load slurm
 module load matlab
 module load anaconda3
 
+
 #running
-srun --mpi=pmi2 -n 128 TBG_Landau.out
+srun python3 -u Bubble_ep.py 0 30 L ${param_val} 
 
 ##moving data out
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"

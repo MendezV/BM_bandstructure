@@ -11,53 +11,46 @@
 #Readibg parameter file
 
 param_arr=$(awk -F= '{print $1}' params_thet)
-jobname="thetasweep_kappa_0.817_beta_4ev_N30"  #JOBNAME importan to declare -has to be descriptive
+jobname="thetasweep_kappa_0.75_N30"  #JOBNAME importan to declare -has to be descriptive
+pow=$PWD #saving the current working directory
+
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
-echo "${date_in}" >inforun
-echo '....Jobs started running' >>  inforun
-
-#Temporary directories where the runs will take place
-dire_to_temps="../temp/temp_${jobname}_${date_in}"
-rm -rf "${dire_to_temps}"
-mkdir "${dire_to_temps}"
+echo $date_in
 
 #loop over the parameters
 for param_val in ${param_arr[@]}; do
 
+	echo "${pow} is the current working directory"
+
 	#create one temporary directory per parameter
-	dire=""${dire_to_temps}"/${jobname}_${param_val}"
-	rm -rf "${dire}"
-	mkdir -vp "${dire}"
+	jname="${jobname}_${parameter}"
 
+	#creating temp directory in scratch to run
+	dir="${TMPDIR}/${jname}_${date_in}"
+	mkdir -v "${dir}"
 
-    cp Bubble_ep.py "${dire}"
-    cp Hamiltonian.py  "${dire}"
-    cp MoireLattice.py  "${dire}"
-    cp params_theta  "${dire}"
-	cp -r dispersions "${dire}"
+	#moving seeds, parameters and TBG_landau.out to the new dir
+	echo "started copy of job files...."
+    cp Bubble_ep.py "${dir}"
+    cp Hamiltonian.py  "${dir}"
+    cp MoireLattice.py  "${dir}"
+    cp params_theta  "${dir}"
+	cp -r dispersions "${dir}"
 	#entering the temp directory, running and coming back
-	cd "${dire}"
+	echo "ended copy of job files...."
 
-	nohup time python3 -u Bubble_ep.py 0 30 L ${param_val} 1 >> output.out
-	nohup time python3 -u Bubble_ep.py 0 30 T ${param_val} 1 >> output.out	
-	
-	cd "../../../Mods"
+	#entering the temp directory, running and coming back
+	echo "submitting job...."
+	cd "${dir}"
+	sbatch -J "${jname}" --export=param_val="${param_val}" compute_job.sh
 	sleep 1
+	echo "moving back to ${pow} ...."
+	cd "${pow}"
+
+	sleep 1
+
 
 done
 
-wait
-
-#general info about the job as it ends
-date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"
-echo "${date_fin}" >>inforun
-echo 'Jobs finished running'>>inforun
-
-#moving files to the data directory and tidying up
-dire_to_data="../data/${jobname}_${date_fin}"
-mkdir "${dire_to_data}"
-mv "${dire_to_temps}"/* "${dire_to_data}"
-mv inforun "${dire_to_data}"
-rm -r "${dire_to_temps}"
