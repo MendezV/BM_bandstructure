@@ -11,7 +11,7 @@
 #Readibg parameter file
 
 param_arr=$(awk -F= '{print $1}' params_thet2)
-jobname="thetasweep_kappa_0.75_N30"  #JOBNAME importan to declare -has to be descriptive
+jobname="thetasweep_kappa_0.85_PHflalse_N30"  #JOBNAME importan to declare -has to be descriptive
 pow=$PWD #saving the current working directory
 
 
@@ -55,4 +55,3 @@ for param_val in ${param_arr[@]}; do
 
 
 done
-
