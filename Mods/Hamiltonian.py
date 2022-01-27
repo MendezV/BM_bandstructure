@@ -1496,7 +1496,7 @@ def main() -> int:
     hbvf = 2.1354; # eV
     hvkd=hbvf*q
     kappa_p=0.0797/0.0975
-    kappa=1#kappa_p
+    kappa=kappa_p
     up = 0.0975; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
