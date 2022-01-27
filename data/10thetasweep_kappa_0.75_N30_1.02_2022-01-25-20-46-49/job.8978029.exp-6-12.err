@@ -1,0 +1,2 @@
+Bubble_ep.py:470: RuntimeWarning: invalid value encountered in double_scalars
+  return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)

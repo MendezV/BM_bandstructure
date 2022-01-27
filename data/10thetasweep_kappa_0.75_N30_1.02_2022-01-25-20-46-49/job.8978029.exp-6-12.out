@@ -1,0 +1,78 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.0063381195068359375  s
+91 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.7
+q is... 0.07829772165774311
+hvkd is... 0.2114038484759064
+kappa is.. 0.75
+alpha is.. 0.4966796998114573
+the twist angle is .. 0.01869247628885927
+phonon params 567251308986598.4 81.50729469744994 10188.411837181242
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.06900215148925781  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.0520632266998291  s
+starting dispersion ..........
+time to diag over MBZ 294.7349009513855
+saving  ..........
+number of bands in density of states calculation, 2
+sum of the hist, normed? 8.000000000000053
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.006314754486083984  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.006290912628173828  s
+starting dispersion ..........
+time to diag over MBZ 34.411131143569946
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.006308317184448242  s
+(637, 564, 2) (91, 564, 2) (637,)
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.006256103515625  s
+(637, 564, 2) (91, 564, 2) (637,)
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 1.2389461994171143
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 1.117272138595581
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 1.1163458824157715
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 0.18605685234069824
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 1.1896741390228271
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 0.1906449794769287
+testing symmetry of the form factors...
+plus valley form factor passed the C3 symmetry test with average difference...  9.118692073341427e-15
+minus valley form factor passed the C3 symmetry test with average difference...  8.445110793847452e-15
+finished testing symmetry of the form factors...
+starting bubble....... 91
+time for bubble... 0.2230980396270752
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.16524147987365723
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.1664135456085205
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.16624832153320312
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.16724205017089844
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.16773009300231934
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 91
+time for bubble... 0.16735529899597168
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+time for sweep delta 1.2540910243988037

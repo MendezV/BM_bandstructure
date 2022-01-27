@@ -5,7 +5,7 @@
 #SBATCH --partition=shared
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=64
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=124G
 #SBATCH -t 48:00:00
 #SBATCH --account=crl171
@@ -25,11 +25,11 @@ module load anaconda3
 
 
 #running
-srun python -u Bubble_ep.py 0 30 L ${param_val} 1
+srun python -u Bubble_ep.py 0 10 L ${param_val} 1
 
 
 ##moving data out
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"
-dirfin="${PRDIR}/${SLURM_JOB_NAME}_${date_fin}"
+dirfin="/home/jfm343/weak_coupling/BM_bandstructure/data/${SLURM_JOB_NAME}_${date_fin}"
 mkdir "${dirfin}"
 mv * "${dirfin}"
