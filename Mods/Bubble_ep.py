@@ -625,7 +625,7 @@ def main() -> int:
     
     #Lattice parameters 
     #lattices with different normalizations 
-    theta=modulation_thet*1.05*np.pi/180  # magic angle 
+    theta=modulation_thet*np.pi/180  # magic angle 
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0) 
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one 
     [KX,KY]=lq.Generate_lattice()
@@ -649,22 +649,22 @@ def main() -> int:
     PH=True
     
     #JY params 
-    hbvf = 2.7; # eV
-    hvkd=hbvf*q
-    kappa=modulation_kap*0.75
-    up = 0.105; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
-
-    #Andrei params 
-    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     # hvkd=hbvf*q
-    # kappa=modulation_kap*1
-    # up = 0.110; # eV
+    # kappa=modulation_kap*0.75
+    # up = 0.105; # eV
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
+
+    #Andrei params 
+    hbvf = 19.81/(8*np.pi/3); # eV
+    hvkd=hbvf*q
+    kappa=modulation_kap*1
+    up = 0.110; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -673,82 +673,82 @@ def main() -> int:
     print("alpha is..", alph)
     print("the twist angle is ..", theta)
 
-    #electron parameters
-    nbands=2
-    hbarc=0.1973269804*1e-6 #ev*m
-    alpha=137.0359895 #fine structure constant
-    a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
-    e_el=1.6021766*(10**(-19))  #in joule/ev
-    ee2=(hbarc/a_graphene)/alpha
-    kappa_di=3.03
+    # #electron parameters
+    # nbands=2
+    # hbarc=0.1973269804*1e-6 #ev*m
+    # alpha=137.0359895 #fine structure constant
+    # a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
+    # e_el=1.6021766*(10**(-19))  #in joule/ev
+    # ee2=(hbarc/a_graphene)/alpha
+    # kappa_di=3.03
 
-    #phonon parameters
-    c_light=299792458 #m/s
-    M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
-    mass=M/(c_light**2) # in ev *s^2/m^2
-    hhbar=6.582119569e-16 #(in eV s)
-    alpha_ep=0*2# in ev
-    beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
-    c_phonon=21400 #m/s
+    # #phonon parameters
+    # c_light=299792458 #m/s
+    # M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
+    # mass=M/(c_light**2) # in ev *s^2/m^2
+    # hhbar=6.582119569e-16 #(in eV s)
+    # alpha_ep=0*2# in ev
+    # beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
+    # c_phonon=21400 #m/s
     
-    #calculating effective coupling
-    A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
-    AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
-    A1bz=(2*np.pi)**2 / AWZ_graphene
-    alpha_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    beta_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
-    beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
+    # #calculating effective coupling
+    # A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
+    # AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
+    # A1bz=(2*np.pi)**2 / AWZ_graphene
+    # alpha_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    # beta_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    # alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
+    # beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
     
-    #testing the orders of magnitude for the dimensionless velocity squared
-    qq=q/a_graphene
-    Wupsilon=(beta_ep_effective**2)*qq*qq
-    W=0.008
-    ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
-    print("phonon params", Wupsilon )
-    print("phonon params upsilon", Wupsilon/W )
-    print("area ratio", A1mbz/A1bz, (2*np.sin(theta/2))**2   )
-    print("correct factor by which the interaction is reduced",np.sqrt(2)/(2*np.sin(theta/2)))
-    print("c tilde",np.sqrt((Wupsilon/W)*(1/(qq**2))*(1/mass) ))
+    # #testing the orders of magnitude for the dimensionless velocity squared
+    # qq=q/a_graphene
+    # Wupsilon=(beta_ep_effective**2)*qq*qq
+    # W=0.008
+    # ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
+    # print("phonon params", Wupsilon )
+    # print("phonon params upsilon", Wupsilon/W )
+    # print("area ratio", A1mbz/A1bz, (2*np.sin(theta/2))**2   )
+    # print("correct factor by which the interaction is reduced",np.sqrt(2)/(2*np.sin(theta/2)))
+    # print("c tilde",np.sqrt((Wupsilon/W)*(1/(qq**2))*(1/mass) ))
     
-    #parameters to be passed to the Bubble class
-    mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    # #parameters to be passed to the Bubble class
+    # mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
+    # cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+    # hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
+    # hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
-    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
-    [ Kxp, Kyp]=ldos.Generate_lattice()
-    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=20
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
-    filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
-    filling=fillings[filling_index]
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    # #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+    # Ndos=100
+    # ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
+    # [ Kxp, Kyp]=ldos.Generate_lattice()
+    # disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
+    # Nfils=20
+    # # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
+    # filling_index=int(sys.argv[1]) 
+    # mu=mu_values[filling_index]
+    # filling=fillings[filling_index]
+    # print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
     
-    #BUBBLE CALCULATION
-    test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    # omega=[1e-14]
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
-    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    # print(np.mean(popt),c, resc, c_phonon)
-    # print("effective speed of sound down renormalization...", c)
-    # print("residual of the fit...", res)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    # #BUBBLE CALCULATION
+    # test_symmetry=True
+    # B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # # omega=[1e-14]
+    # # kpath=np.array([KX,KY]).T
+    # # integ=B1.Compute(mu, omega, kpath)
+    # # popt, res, c, resc=B1.extract_cs( integ, 0.2)
+    # # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
+    # # print(np.mean(popt),c, resc, c_phonon)
+    # # print("effective speed of sound down renormalization...", c)
+    # # print("residual of the fit...", res)
+    # B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
 
     
     
-    return 0
+    # return 0
 
 if __name__ == '__main__':
     sys.exit(main())  # next section explains the use of sys.exit
