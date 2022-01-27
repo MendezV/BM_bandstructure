@@ -651,7 +651,7 @@ def main() -> int:
     #JY params 
     hbvf = 2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.85
+    kappa=modulation_kap*0.75
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -720,11 +720,11 @@ def main() -> int:
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=80
+    Ndos=100
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=7
+    Nfils=20
     # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
     [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
     filling_index=int(sys.argv[1]) 
