@@ -648,8 +648,7 @@ def main() -> int:
     # alph=alpha
     PH=True
     
-
-    # #JY params 
+    #JY params 
     hbvf = 2.7; # eV
     hvkd=hbvf*q
     kappa=modulation_kap*0.85
@@ -657,6 +656,15 @@ def main() -> int:
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+
+    #Andrei params 
+    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hvkd=hbvf*q
+    # kappa=modulation_kap*1
+    # up = 0.110; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -687,8 +695,8 @@ def main() -> int:
     A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
     AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
     A1bz=(2*np.pi)**2 / AWZ_graphene
-    alpha_ep_effective=np.sqrt(A1mbz/A1bz)*alpha_ep
-    beta_ep_effective=np.sqrt(A1mbz/A1bz)*beta_ep
+    alpha_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    beta_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
     alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
     beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
     
@@ -697,7 +705,11 @@ def main() -> int:
     Wupsilon=(beta_ep_effective**2)*qq*qq
     W=0.008
     ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
-    print("phonon params", Wupsilon, ctilde, ctilde/W )
+    print("phonon params", Wupsilon )
+    print("phonon params upsilon", Wupsilon/W )
+    print("area ratio", A1mbz/A1bz, (2*np.sin(theta/2))**2   )
+    print("correct factor by which the interaction is reduced",np.sqrt(2)/(2*np.sin(theta/2)))
+    print("c tilde",np.sqrt((Wupsilon/W)*(1/(qq**2))*(1/mass) ))
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
@@ -736,7 +748,7 @@ def main() -> int:
 
     
     
-    # return 0
+    return 0
 
 if __name__ == '__main__':
     sys.exit(main())  # next section explains the use of sys.exit
