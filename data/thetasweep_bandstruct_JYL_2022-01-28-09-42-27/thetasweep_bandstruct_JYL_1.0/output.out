@@ -1,0 +1,25 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.007518291473388672  s
+91 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.3382685902179845
+q is... 0.07310725283461868
+hvkd is... 0.17094439302031356
+kappa is.. 0.3
+alpha is.. 0.6142348289102568
+the twist angle is .. 0.017453292519943295
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.004163026809692383  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.004116535186767578  s
+starting dispersion ..........
+time to diag over MBZ 8.775474309921265
+number of bands in density of states calculation, 2
+sum of the hist, normed? 8.000000000000002
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.004065513610839844  s
+(4200,)
+the bandwidth is ... 0.01280627399355594
+277.60user 6.98system 0:36.64elapsed 776%CPU (0avgtext+0avgdata 3161340maxresident)k
+0inputs+168outputs (0major+4597886minor)pagefaults 0swaps
