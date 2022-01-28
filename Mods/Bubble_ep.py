@@ -614,7 +614,7 @@ def main() -> int:
         modulation_thet=float(sys.argv[4])
 
     except (ValueError, IndexError):
-        raise Exception("Fourth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+        raise Exception("Fourth arguments is the twist angle")
 
     try:
         modulation_kap=float(sys.argv[5])
@@ -687,9 +687,16 @@ def main() -> int:
     M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-16 #(in eV s)
-    alpha_ep=0*2# in ev
+    alpha_ep=2 # in ev
     beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
-    c_phonon=21400 #m/s
+    if mode=="L":
+        c_phonon=21400 #m/s
+    if mode=="T":
+        c_phonon=13600 #m/s
+    else:
+        c_phonon=21400 #m/s
+    
+    
     
     #calculating effective coupling
     A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
