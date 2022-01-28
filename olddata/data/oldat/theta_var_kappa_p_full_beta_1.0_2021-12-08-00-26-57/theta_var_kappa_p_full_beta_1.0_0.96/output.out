@@ -1,8 +1,0 @@
-python3: can't open file 'Bubble_norm.py': [Errno 2] No such file or directory
-Command exited with non-zero status 2
-0.02user 0.00system 0:00.02elapsed 80%CPU (0avgtext+0avgdata 9200maxresident)k
-0inputs+8outputs (0major+998minor)pagefaults 0swaps
-python3: can't open file 'Bubble_norm.py': [Errno 2] No such file or directory
-Command exited with non-zero status 2
-0.01user 0.00system 0:00.02elapsed 100%CPU (0avgtext+0avgdata 9184maxresident)k
-0inputs+0outputs (0major+1000minor)pagefaults 0swaps
