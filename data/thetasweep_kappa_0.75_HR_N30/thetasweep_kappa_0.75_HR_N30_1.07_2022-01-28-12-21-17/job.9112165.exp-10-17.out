@@ -1,0 +1,134 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.051470279693603516  s
+919 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.3382685902179845
+q is... 0.07822461666706933
+hvkd is... 0.18291016413445044
+kappa is.. 0.75
+alpha is.. 0.5740522977324454
+the twist angle is .. 0.018675022996339326
+phonon params 282567875060811.94
+phonon params upsilon 3.5320984382601492e+16
+area ratio 0.00034874634810787747 0.00034874634810787823
+correct factor by which the interaction is reduced 75.72864105882249
+c tilde 1674.5374117832393
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5676820278167725  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5646347999572754  s
+starting dispersion ..........
+time to diag over MBZ 2918.386219263077
+saving  ..........
+number of bands in density of states calculation, 2
+sum of the hist, normed? 8.0
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05283403396606445  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05278754234313965  s
+starting dispersion ..........
+time to diag over MBZ 260.03436493873596
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.052416324615478516  s
+(6433, 564, 2) (919, 564, 2) (6433,)
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05242729187011719  s
+(6433, 564, 2) (919, 564, 2) (6433,)
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 15.136406421661377
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 14.971985578536987
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 15.087621450424194
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 2.6684210300445557
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 15.300536870956421
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 2.248004198074341
+testing symmetry of the form factors...
+plus valley form factor passed the C3 symmetry test with average difference...  4.377632188218666e-15
+minus valley form factor passed the C3 symmetry test with average difference...  3.710657689095818e-15
+finished testing symmetry of the form factors...
+starting bubble....... 919
+time for bubble... 29.82586145401001
+effective speed of sound down renormalization...$-\Delta c$ 6175.97921415633
+residual of the fit... 0.06685762345896781
+starting bubble....... 919
+time for bubble... 29.78486704826355
+effective speed of sound down renormalization...$-\Delta c$ 6461.872632812756
+residual of the fit... 0.009635659757049587
+starting bubble....... 919
+time for bubble... 29.862091302871704
+effective speed of sound down renormalization...$-\Delta c$ 6957.281083059547
+residual of the fit... 0.07122855965052866
+starting bubble....... 919
+time for bubble... 30.02913475036621
+effective speed of sound down renormalization...$-\Delta c$ 8011.587598202039
+residual of the fit... 0.17637555563741536
+starting bubble....... 919
+time for bubble... 30.204792022705078
+effective speed of sound down renormalization...$-\Delta c$ 9580.624948241786
+residual of the fit... 0.0295673678666272
+starting bubble....... 919
+time for bubble... 30.018866539001465
+effective speed of sound down renormalization...$-\Delta c$ 9756.920227687659
+residual of the fit... 0.07328424959271579
+starting bubble....... 919
+time for bubble... 30.08811664581299
+effective speed of sound down renormalization...$-\Delta c$ 8212.626678341258
+residual of the fit... 0.04048495967948071
+starting bubble....... 919
+time for bubble... 29.990719318389893
+effective speed of sound down renormalization...$-\Delta c$ 7565.729004587383
+residual of the fit... 0.022049773389583707
+starting bubble....... 919
+time for bubble... 29.953208684921265
+effective speed of sound down renormalization...$-\Delta c$ 6891.98783820528
+residual of the fit... 0.020406271891236102
+starting bubble....... 919
+time for bubble... 29.944358348846436
+effective speed of sound down renormalization...$-\Delta c$ 6198.720640824258
+residual of the fit... 0.01396252646201106
+starting bubble....... 919
+time for bubble... 29.963462829589844
+effective speed of sound down renormalization...$-\Delta c$ 5921.073309731248
+residual of the fit... 0.010485981881870358
+starting bubble....... 919
+time for bubble... 29.76909375190735
+effective speed of sound down renormalization...$-\Delta c$ 5296.353418107811
+residual of the fit... 0.006628971084630229
+starting bubble....... 919
+time for bubble... 29.942108154296875
+effective speed of sound down renormalization...$-\Delta c$ 5147.951910309261
+residual of the fit... 0.004732248149393016
+starting bubble....... 919
+time for bubble... 29.85889744758606
+effective speed of sound down renormalization...$-\Delta c$ 4581.961240446628
+residual of the fit... 0.003622931964321538
+starting bubble....... 919
+time for bubble... 29.770230293273926
+effective speed of sound down renormalization...$-\Delta c$ 4433.69594467419
+residual of the fit... 0.008640422436562472
+starting bubble....... 919
+time for bubble... 29.862098932266235
+effective speed of sound down renormalization...$-\Delta c$ 3906.3932272072784
+residual of the fit... 0.013084341697534887
+starting bubble....... 919
+time for bubble... 29.91366934776306
+effective speed of sound down renormalization...$-\Delta c$ 3691.3059325467484
+residual of the fit... 0.05586142330152529
+starting bubble....... 919
+time for bubble... 29.94464659690857
+effective speed of sound down renormalization...$-\Delta c$ 3196.5447233624764
+residual of the fit... 0.024758407421143585
+starting bubble....... 919
+time for bubble... 29.75333547592163
+effective speed of sound down renormalization...$-\Delta c$ 2566.7734863957903
+residual of the fit... 0.008081430846362855
+starting bubble....... 919
+time for bubble... 29.688626527786255
+effective speed of sound down renormalization...$-\Delta c$ 1768.3699674172208
+residual of the fit... 0.01499409503052555
+time for sweep delta 598.2066717147827
