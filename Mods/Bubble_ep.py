@@ -100,8 +100,8 @@ class ep_Bubble:
         ################################
         self.latt=latt
         self.umkl=umkl
-        [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
-        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the integration grid 
+        [self.KX1bz, self.KY1bz]=latt.Generate_lattice() #for the integration grid, we integrate over these
+        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the q external momenta
         [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
         self.Npoi1bz=np.size(self.KX1bz)
         self.Npoi=np.size(self.KX)
@@ -405,7 +405,7 @@ class ep_Bubble:
                 qx=kpath[int(l), 0]
                 qy=kpath[int(l), 1]
                 
-                Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
+                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
@@ -457,7 +457,7 @@ class ep_Bubble:
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
         scaling_fac= self.Wupsilon/(qq*qq*self.mass)
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX1bz,self.KY1bz, prop_BZ)
+        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, prop_BZ)
         Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
@@ -536,7 +536,7 @@ class ep_Bubble:
         qp=np.arange(np.size(fillings))
         s=time.time()
         omega=[1e-14]
-        kpath=np.array([self.KX1bz,self.KY1bz]).T
+        kpath=np.array([self.KX,self.KY]).T
         
         arglist=[]
         for i, qpval in enumerate(qp):
@@ -632,7 +632,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=0
+    umkl=1
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
@@ -651,7 +651,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.75
+    kappa=modulation_kap*0.3
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd

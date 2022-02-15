@@ -25,7 +25,7 @@ module load anaconda3
 
 
 #running
-srun python -u Bubble_ep.py 0 30 L ${param_val} 1
+srun python -u Bubble_ep.py 0 30 T ${param_val} 1
 
 
 ##moving data out
