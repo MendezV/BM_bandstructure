@@ -348,12 +348,12 @@ class ep_Bubble:
                 qy=kpath[int(l), 1]
                 Ikq=[]
                 
-                Ikq=self.latt.insertion_index( self.KX+qx,self.KY+qy, self.KQX, self.KQY)
+                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
+                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
 
 
                 integrand_var=0
@@ -409,8 +409,8 @@ class ep_Bubble:
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi)])
+                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
+                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
 
 
                 integrand_var=0
