@@ -496,7 +496,7 @@ class ep_Bubble:
         
         identifier=add_tag+str(Nsamp)+self.name
         Nfills=np.size(filling)
-        Nss=np.size(self.KX1bz)
+        Nss=np.size(self.KX)
 
         #products of the run
         Pibub=np.hstack(integ)
@@ -508,8 +508,8 @@ class ep_Bubble:
             res_list=res_list+[res[i]]*Nss
             filling_list=filling_list+[filling[i]]*Nss
             
-        KXall=np.hstack([self.KX1bz]*Nfills)
-        KYall=np.hstack([self.KY1bz]*Nfills)
+        KXall=np.hstack([self.KX]*Nfills)
+        KYall=np.hstack([self.KY]*Nfills)
         carr=np.array(c_list)
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
