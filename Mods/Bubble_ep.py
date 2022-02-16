@@ -99,6 +99,7 @@ class ep_Bubble:
         #lattice attributes
         ################################
         self.latt=latt
+        # print(latt.Npoints, "points in the lattice")
         self.umkl=umkl
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice() #for the integration grid, we integrate over these
         [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the q external momenta
@@ -107,7 +108,7 @@ class ep_Bubble:
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
         
-        self.Ik=latt.insertion_index( self.KX,self.KY, self.KQX, self.KQY)
+        self.Ik=latt.insertion_index( self.KX1bz,self.KY1bz, self.KQX, self.KQY)
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         self.dS_in=1/self.Npoi1bz
@@ -215,25 +216,35 @@ class ep_Bubble:
                 cos2.append(undet)
                 diffarm.append( undet   - dosdet   )
             
+
+            plt.scatter(K,KP, c=cos1)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_p"+self.name+".png")
+            plt.close()
             
+            plt.scatter(K,KP, c=cos2)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_m"+self.name+".png")
+            plt.close()
+
             if np.mean(np.abs(diffarp))<1e-7:
                 print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
             else:
                 print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
                 #saving data for revision
-                np.save("TestC3_symm_diffp"+self.name+".npy",diffarp)
-                np.save("TestC3_symm_K"+self.name+".npy",K)
-                np.save("TestC3_symm_KP"+self.name+".npy",KP)
-                np.save("TestC3_symm_det"+self.name+".npy",cos1)
+                np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
+                np.save("TestC3_symm_K_p"+self.name+".npy",K)
+                np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
+                np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
             if np.mean(np.abs(diffarm))<1e-7:
                 print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
             else:
                 print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
                 #saving data for revision
-                np.save("TestC3_symm_diffp"+self.name+".npy",diffarm)
-                np.save("TestC3_symm_K"+self.name+".npy",K)
-                np.save("TestC3_symm_KP"+self.name+".npy",KP)
-                np.save("TestC3_symm_det"+self.name+".npy",cos2)
+                np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
+                np.save("TestC3_symm_K_m"+self.name+".npy",K)
+                np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
+                np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
 
             print("finished testing symmetry of the form factors...")
         
@@ -632,7 +643,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=1
+    umkl=3
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
@@ -651,7 +662,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.3
+    kappa=modulation_kap*0.75
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -687,7 +698,7 @@ def main() -> int:
     M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
     hhbar=6.582119569e-16 #(in eV s)
-    alpha_ep=2 # in ev
+    alpha_ep=0 # in ev
     beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
     if mode=="L":
         c_phonon=21400 #m/s
@@ -732,8 +743,8 @@ def main() -> int:
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=20
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
     filling_index=int(sys.argv[1]) 
     mu=mu_values[filling_index]
     filling=fillings[filling_index]
@@ -751,7 +762,7 @@ def main() -> int:
     # print(np.mean(popt),c, resc, c_phonon)
     # print("effective speed of sound down renormalization...", c)
     # print("residual of the fit...", res)
-    B1.Fill_sweep(fillings, mu_values, VV, Nsamp, c_phonon,theta)
+    B1.Fill_sweep([fillings[0]], mu_values, VV, Nsamp, c_phonon,theta)
 
     
     

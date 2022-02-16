@@ -860,7 +860,7 @@ class Dispersion():
         psi_min_a=[]
 
 
-        print("starting dispersion ..........")
+        print(f"starting dispersion with {self.Npoi1bz} points..........")
         
         s=time.time()
         
@@ -1078,16 +1078,16 @@ class Dispersion():
             [psi_plus_dos,Ene_valley_plus_dos,psi_min_dos,Ene_valley_min_dos]=self.precompute_E_psi()
         if read:
             print("Loading  ..........")
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'_kappa_'+str(self.hpl.kappa)+'.npy', 'rb') as f:
                 Ene_valley_plus_dos=np.load(f)
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'rb') as f:
+            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'_kappa_'+str(self.hpl.kappa)+'.npy', 'rb') as f:
                 Ene_valley_min_dos=np.load(f)
     
         if write:
             print("saving  ..........")
-            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'wb') as f:
+            with open('dispersions/Edisp_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'_kappa_'+str(self.hpl.kappa)+'.npy', 'wb') as f:
                 np.save(f, Ene_valley_plus_dos)
-            with open('dispersions/Edism_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'.npy', 'wb') as f:
+            with open('dispersions/Edism_'+str(self.lq.Npoints)+'_theta_'+str(self.lq.theta)+'_kappa_'+str(self.hpl.kappa)+'.npy', 'wb') as f:
                 np.save(f, Ene_valley_min_dos)
                 
         
