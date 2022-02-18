@@ -662,7 +662,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.75
+    kappa=modulation_kap*0.3
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
