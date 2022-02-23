@@ -39,7 +39,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 
 
         
-class ee_Bubble:
+class ep_Bubble:
     """
     A class used to represent electron phonon bubbles
 
@@ -164,8 +164,28 @@ class ee_Bubble:
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
-        self.Omega_FFp=self.FFp.denqFFL_s()
-        self.Omega_FFm=self.FFm.denqFFL_s()
+        if symmetric=="s":
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_s()
+                self.L00m=self.FFm.denqFFL_s()
+                self.Lnemp=self.FFp.NemqFFL_s()
+                self.Lnemm=self.FFm.NemqFFL_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else: #Tmode
+                self.Lnemp=self.FFp.NemqFFT_s()
+                self.Lnemm=self.FFm.NemqFFT_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+        else: # a- mode
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_a()
+                self.L00m=self.FFm.denqFFL_a()
+                self.Lnemp=self.FFp.NemqFFL_a()
+                self.Lnemm=self.FFm.NemqFFL_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else: #Tmode
+                self.Lnemp=self.FFp.NemqFFT_a()
+                self.Lnemm=self.FFm.NemqFFT_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
 
         
         ################################
