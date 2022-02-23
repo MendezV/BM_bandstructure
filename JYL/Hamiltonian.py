@@ -233,7 +233,29 @@ class Ham_BM_p():
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
     
+    def eigens_dec(self, kx,ky, nbands):
+        
+        U=self.U
+        Udag=U.H
+        [H1,H2]=self.diracH( kx, ky)
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H1, 0*Udag ], [0*U, H2]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)[0]
+            # print("wave1p;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+    
 
     #METHODS FOR MANIPULATING WAVEFUNCTIONS AND FORM FACTORS
     #for reference the pattern of kronecker prod is 
@@ -645,7 +667,29 @@ class Ham_BM_m():
 
         return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
     
+    def eigens_dec(self, kx,ky, nbands):
+        
+        U=self.U
+        Udag=U.H
+        [H1,H2]=self.diracH( kx, ky)
+        N =np.shape(U)[0]
+        
+        Hxi=np.bmat([[H2, 0*U ], [0*Udag, H1]]) #Full matrix
+        (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
+        #######Gauge Fixing by setting the largest element to be real
+        # umklp,umklp, layer, sublattice
+        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+
+        for nband in range(nbands):
+            psi_p=psi[:,nband]
+            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # print("wave1m;",psi_p[maxisind])
+            phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
+            psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
+            
+
+        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
 
 
     #METHODS FOR MANIPULATING WAVEFUNCTIONS AND FORM FACTORS
@@ -871,6 +915,45 @@ class Dispersion():
 
 
             E1,wave1=self.hmin.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            psi_min_a.append(wave1)
+
+            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi1bz,self.nbands])
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi1bz,self.nbands])
+
+        
+        
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+    
+
+    def precompute_E_psi_dec(self):
+
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+
+
+        print(f"starting dispersion with {self.Npoi1bz} points..........")
+        
+        s=time.time()
+        
+        for l in range(self.Npoi1bz):
+            E1,wave1=self.hpl.eigens_dec(self.KX1bz[l],self.KY1bz[l],self.nbands)
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            psi_plus_a.append(wave1)
+
+
+            E1,wave1=self.hmin.eigens_dec(self.KX1bz[l],self.KY1bz[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
 
@@ -1448,6 +1531,73 @@ class FormFactors_umklapp():
         return Nem_FFT
     
     
+class HartreeBandStruc:
+    
+    
+    def __init__(self, latt, nbands, hpl, hmin, nremote_bands, umkl):
+
+        self.lat=latt
+        
+        #changes to eliominate arg KX KY put KX1bz first, then call umklapp lattice and put slef in KX, KY
+        #change to implement dos 
+        self.lq=latt
+        self.nbands=nbands
+        self.hpl=hpl
+        self.hmin=hmin
+        [self.KX1bz, self.KY1bz]=latt.Generate_lattice()
+        self.Npoi1bz=np.size(self.KX1bz)
+        self.latt=latt
+        self.umkl=umkl
+
+        self.nremote_bands=nremote_bands
+
+        ################################
+        #dispersion attributes
+        ################################
+
+        self.nbands=nbands
+        self.hpl=hpl
+        self.hmin=hmin
+        disp=Dispersion( latt, nbands, hpl, hmin)
+        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl)
+
+        ################################
+        #generating form factors
+        ################################
+        self.FFp=FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl,self.hpl)
+        self.FFm=FormFactors_umklapp(self.psi_min, -1, latt, self.umkl,self.hmin)
+
+
+        self.L00p=self.FFp.denqFFL_s()
+        self.L00m=self.FFm.denqFFL_s()
+
+        #refStates
+        [self.psi_plus_dec,self.Ene_valley_plus_1bz_dec,self.psi_min_dec,self.Ene_valley_min_1bz_dec]=disp.precompute_E_psi_dec()
+
+        self.Ene_valley_plus_dec=self.hpl.ExtendE(self.Ene_valley_plus_1bz_dec , self.umkl)
+        self.Ene_valley_min_dec=self.hmin.ExtendE(self.Ene_valley_min_1bz_dec , self.umkl)
+
+
+        
+
+        
+        #refStates
+
+        print("im here clearly", np.shape(self.psi_plus))
+        
+    
+    def Proy(self,psi):
+        P=psi.T @psi
+        return P
+        
+
+    
+ 
+    
+        
 
 def main() -> int:
     """[summary]
@@ -1572,6 +1722,9 @@ def main() -> int:
     # plt.scatter(xFS_dense,yFS_dense)
     # plt.savefig(f"contour_{mu}.png")
     # plt.close()
+
+
+    HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
     
 if __name__ == '__main__':
     import sys
