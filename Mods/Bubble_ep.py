@@ -643,7 +643,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=3
+    umkl=0
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
@@ -662,7 +662,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.3
+    kappa=modulation_kap*0.75 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
