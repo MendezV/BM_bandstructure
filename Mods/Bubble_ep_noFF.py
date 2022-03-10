@@ -39,7 +39,7 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
 
 
         
-class ee_Bubble:
+class ep_Bubble:
     """
     A class used to represent electron phonon bubbles
 
@@ -164,8 +164,28 @@ class ee_Bubble:
         self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
         self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
-        self.Omega_FFp=self.FFp.denqFFL_s()
-        self.Omega_FFm=self.FFm.denqFFL_s()
+        if symmetric=="s":
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_s()
+                self.L00m=self.FFm.denqFFL_s()
+                self.Lnemp=self.FFp.NemqFFL_s()
+                self.Lnemm=self.FFm.NemqFFL_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else: #Tmode
+                self.Lnemp=self.FFp.NemqFFT_s()
+                self.Lnemm=self.FFm.NemqFFT_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+        else: # a- mode
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_a()
+                self.L00m=self.FFm.denqFFL_a()
+                self.Lnemp=self.FFp.NemqFFL_a()
+                self.Lnemm=self.FFm.NemqFFL_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            else: #Tmode
+                self.Lnemp=self.FFp.NemqFFT_a()
+                self.Lnemm=self.FFm.NemqFFT_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
 
         
         ################################
@@ -322,61 +342,7 @@ class ee_Bubble:
         
         return (fac_p+fac_p2)
 
-    def Compute(self, mu, omegas, kpath):
-
-        integ=[]
-        sb=time.time()
-
-        print("starting bubble.......",np.shape(kpath)[0])
-
-        path=np.arange(0,np.shape(kpath)[0])
-        for omegas_m_i in omegas:
-            sd=[]
-            for l in path:  #for calculating only along path in FBZ
-                bub=0
-                
-                qx=kpath[int(l), 0]
-                qy=kpath[int(l), 1]
-                Ikq=[]
-                
-                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
-
-            
-                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
-
-
-                integrand_var=0
-                #####all bands for the + and - valley
-                for nband in range(self.nbands):
-                    for mband in range(self.nbands):
-                        
-                        ek_n=self.Ene_valley_plus[:,nband]
-                        ek_m=self.Ene_valley_plus[:,mband]
-                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-
-
-                        ek_n=self.Ene_valley_min[:,nband]
-                        ek_m=self.Ene_valley_min[:,mband]
-                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        
-
-                eb=time.time()
-            
-                bub=bub+np.sum(integrand_var)*self.dS_in
-
-                sd.append( bub )
-
-            integ.append(sd)
-            
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
-        print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
     
-
     def parCompute(self, args):
         
         (theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind)=args
@@ -411,15 +377,15 @@ class ee_Bubble:
                         
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
-                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                        # Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
-                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                        # Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -556,6 +522,63 @@ class ee_Bubble:
         self.savedata( selfE, fillings, Nsamp, cs , rs, "")
                 
         return t
+    
+    def epsilon_sweep(self,fillings, mu_values):
+        
+        
+        scalings=[1e-8,0.001,0.01,0.1,1,2,5, 100]
+        for e in scalings:
+            cs=[]
+            cs_lh=[]
+            eddy=self.eta_small_imag
+            self.eta_small_imag=e*eddy
+            
+            #have to divide by the vlume of the MBZ to get the same normalization
+            Vol= self.latt.VolMBZ
+            
+            mmin=np.min([np.min(self.Ene_valley_plus),np.min(self.Ene_valley_min)])
+            mmax=np.max([np.max(self.Ene_valley_plus),np.max(self.Ene_valley_min)])
+            NN=int((mmax-mmin)/self.eta)+int((int((mmax-mmin)/self.eta)+1)%2) #making sure there is a bin at zero energy
+
+            bins2=np.linspace(self.bins[0],self.bins[-1],NN)
+            for ide in range(np.size(bins2)):
+                # mu= mu_values[ide]
+                # filling=fillings[ide]
+                omega=[0]
+                kpath=np.array([0,0]).T
+                integ=self.Compute_noff(bins2[ide], omega, kpath)
+                integ_lh=self.Compute_lh_noff(bins2[ide], omega, kpath)
+                cs.append(np.real(integ)/Vol)
+                cs_lh.append(integ_lh/Vol)
+            self.eta_small_imag=eddy
+            # print(e)
+
+            # print(cs)
+            # print(cs_lh)
+            plt.title("scaling fact cutoff "+str(e))
+            plt.plot(self.bins, self.valt, label="hist")
+            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.legend()
+            plt.savefig("comparedos"+str(e)+".png")
+            plt.close()
+            plt.title("scaling fact cutoff"+str(e))
+            plt.plot(bins2,cs, label="ieps")
+            plt.plot(bins2,cs_lh, label="derivative")
+            plt.plot(self.bins, self.valt, label="hist")
+            plt.legend()
+            plt.title("scaling fact cutoff "+str(e))
+            print("normalizations ", e , np.sum(cs)*(bins2[1]-bins2[0]),np.sum(cs_lh)*(bins2[1]-bins2[0]))
+            plt.savefig("scaling"+str(e)+".png")
+            plt.close()
+            
+            plt.plot(bins2,cs, label="ieps")
+            plt.plot(bins2,cs_lh, label="derivative")
+            plt.plot(self.earr,self.dosarr, label="integ")
+            plt.title("scaling fact "+str(e))
+            plt.legend()
+            plt.savefig("scaling_2_"+str(e)+".png")
+            plt.close()
+        
         
 def main() -> int:
 
@@ -733,7 +756,7 @@ def main() -> int:
     
     #BUBBLE CALCULATION
     test_symmetry=True
-    B1=ee_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     # omega=[1e-14]
     # kpath=np.array([KX,KY]).T
     # integ=B1.Compute(mu, omega, kpath)
