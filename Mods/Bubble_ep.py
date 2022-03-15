@@ -321,11 +321,16 @@ class ep_Bubble:
         #zero temp
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-        deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
+
+        # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
+        # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
+        # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         
-        return (fac_p+fac_p2)
+        # return (fac_p+fac_p2)
+        eps=self.eta ##SENSITIVE TO DISPERSION
+
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        return (fac_p)
 
 
     def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
@@ -336,11 +341,15 @@ class ep_Bubble:
         nfk= self.nf(edk,T)
         nfkq= self.nf(edkq,T)
 
-        deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
+        # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
+        # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
+        # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         
-        return (fac_p+fac_p2)
+        # return (fac_p+fac_p2)
+        eps=self.eta ##SENSITIVE TO DISPERSION
+
+        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
+        return (fac_p)
 
     def Compute(self, mu, omegas, kpath):
 
