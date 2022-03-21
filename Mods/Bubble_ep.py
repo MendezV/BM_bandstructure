@@ -171,10 +171,18 @@ class ep_Bubble:
                 self.Lnemp=self.FFp.NemqFFL_s()
                 self.Lnemm=self.FFm.NemqFFL_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-            else: #Tmode
+            elif mode=="T": 
                 self.Lnemp=self.FFp.NemqFFT_s()
                 self.Lnemm=self.FFm.NemqFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="dens":
+                self.Omega_FFp=self.FFp.denqFF_s()
+                self.Omega_FFm=self.FFm.denqFF_s()
+                
+            else:
+                self.Omega_FFp=self.FFp.denqFF_s()
+                self.Omega_FFm=self.FFm.denqFF_s()
+            
         else: # a- mode
             if mode=="L":
                 self.L00p=self.FFp.denqFFL_a()
@@ -182,10 +190,16 @@ class ep_Bubble:
                 self.Lnemp=self.FFp.NemqFFL_a()
                 self.Lnemm=self.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-            else: #Tmode
+            elif mode=="T":
                 self.Lnemp=self.FFp.NemqFFT_a()
                 self.Lnemm=self.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="dens":
+                self.Omega_FFp=self.FFp.denqFF_s()
+                self.Omega_FFm=self.FFm.denqFF_s()
+            else:
+                self.Omega_FFp=self.FFp.denqFF_a()
+                self.Omega_FFm=self.FFm.denqFF_a()
 
         
         ################################
@@ -322,11 +336,14 @@ class ep_Bubble:
         nfk=np.heaviside(-edk,0.5) # at zero its 1
         nfkq=np.heaviside(-edkq,0.5) #at zero is 1
 
+        ####delta
         # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
         # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         
         # return (fac_p+fac_p2)
+        
+        ####iepsilon
         eps=self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
@@ -341,11 +358,14 @@ class ep_Bubble:
         nfk= self.nf(edk,T)
         nfkq= self.nf(edkq,T)
 
+        ####delta
         # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
         # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
         
         # return (fac_p+fac_p2)
+        
+        ###iepsilon
         eps=self.eta ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
@@ -686,6 +706,15 @@ def main() -> int:
     # alpha=up/hvkd
     # alph=alpha
     
+    #dirac params 
+    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
+    # hvkd=hbvf*q
+    # kappa=modulation_kap*0.0 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
+    # up = 0.105; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha*0
+    
     print("hbvf is ..",hbvf )
     print("q is...", q)
     print("hvkd is...", hvkd)
@@ -752,11 +781,11 @@ def main() -> int:
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=20
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
     # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
     filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
-    filling=fillings[filling_index]
+    mu=0 #mu_values[filling_index]
+    filling=0 #fillings[filling_index]
     print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
     
@@ -771,7 +800,7 @@ def main() -> int:
     # print(np.mean(popt),c, resc, c_phonon)
     # print("effective speed of sound down renormalization...", c)
     # print("residual of the fit...", res)
-    B1.Fill_sweep([fillings[0]], mu_values, VV, Nsamp, c_phonon,theta)
+    B1.Fill_sweep([0], [0], VV, Nsamp, c_phonon,theta)
 
     
     
