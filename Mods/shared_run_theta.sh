@@ -47,11 +47,11 @@ for param_val in ${param_arr[@]}; do
 	echo "submitting job...."
 	cd "${dir}"
 	sbatch -J "${jname}" --export=ALL,param_val="${param_val}" shared_job.sh
-	sleep 1
+	sleep 3
 	echo "moving back to ${pow} ...."
 	cd "${pow}"
 
-	sleep 1
+	sleep 3
 
 
 done
