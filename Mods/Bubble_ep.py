@@ -220,23 +220,27 @@ class ep_Bubble:
                 KP.append(self.KQY[k]-self.KQY[kp])
                 #Regular FF
                 # Plus Valley FF Omega
-                undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 cos1.append(undet)
                 diffarp.append( undet   - dosdet   )
                 # Minus Valley FF Omega
-                undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
-                dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 cos2.append(undet)
                 diffarm.append( undet   - dosdet   )
             
 
-            plt.scatter(K,KP, c=cos1)
+            plt.scatter(K,KP, c=cos1, s=2)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_p"+self.name+".png")
             plt.close()
             
-            plt.scatter(K,KP, c=cos2)
+            plt.scatter(K,KP, c=cos2,s=2)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_m"+self.name+".png")
             plt.close()
@@ -344,7 +348,7 @@ class ep_Bubble:
         # return (fac_p+fac_p2)
         
         ####iepsilon
-        eps=self.eta ##SENSITIVE TO DISPERSION
+        eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         return (fac_p)
@@ -366,65 +370,11 @@ class ep_Bubble:
         # return (fac_p+fac_p2)
         
         ###iepsilon
-        eps=self.eta ##SENSITIVE TO DISPERSION
+        eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
         return (fac_p)
 
-    def Compute(self, mu, omegas, kpath):
-
-        integ=[]
-        sb=time.time()
-
-        print("starting bubble.......",np.shape(kpath)[0])
-
-        path=np.arange(0,np.shape(kpath)[0])
-        for omegas_m_i in omegas:
-            sd=[]
-            for l in path:  #for calculating only along path in FBZ
-                bub=0
-                
-                qx=kpath[int(l), 0]
-                qy=kpath[int(l), 1]
-                Ikq=[]
-                
-                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
-
-            
-                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
-
-
-                integrand_var=0
-                #####all bands for the + and - valley
-                for nband in range(self.nbands):
-                    for mband in range(self.nbands):
-                        
-                        ek_n=self.Ene_valley_plus[:,nband]
-                        ek_m=self.Ene_valley_plus[:,mband]
-                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-
-
-                        ek_n=self.Ene_valley_min[:,nband]
-                        ek_m=self.Ene_valley_min[:,mband]
-                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
-                        
-
-                eb=time.time()
-            
-                bub=bub+np.sum(integrand_var)*self.dS_in
-
-                sd.append( bub )
-
-            integ.append(sd)
-            
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
-        print("time for bubble...",eb-sb)
-        return integ_arr_no_reshape
-    
 
     def parCompute(self, args):
         
@@ -480,7 +430,7 @@ class ep_Bubble:
         eb=time.time()
         
         
-        integ_arr_no_reshape=np.array(integ).flatten()#/(8*Vol_rec) #8= 4bands x 2valleys
+        integ_arr_no_reshape=np.real(np.array(integ).flatten())#/(8*Vol_rec) #8= 4bands x 2valleys
         print("time for bubble...",eb-sb)
         
 
@@ -553,13 +503,18 @@ class ep_Bubble:
         carr=np.array(c_list)
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
+        disp_m1=np.array([self.Ene_valley_min_1bz[:,0].flatten()]*Nfills).flatten()
+        disp_m2=np.array([self.Ene_valley_min_1bz[:,1].flatten()]*Nfills).flatten()
+        disp_p1=np.array([self.Ene_valley_plus_1bz[:,0].flatten()]*Nfills).flatten()
+        disp_p2=np.array([self.Ene_valley_plus_1bz[:,1].flatten()]*Nfills).flatten()
+
         
         #constants
         thetas_arr=np.array([self.latt.theta]*(Nss*Nfills))
         kappa_arr=np.array([self.hpl.kappa]*(Nss*Nfills))
 
             
-        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr })
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 })
         df.to_hdf('data'+identifier+'.h5', key='df', mode='w')
 
 
@@ -760,7 +715,7 @@ def main() -> int:
     qq=q/a_graphene
     Wupsilon=(beta_ep_effective**2)*qq*qq
     W=0.008
-    ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
+    #ctilde=W*(qq**2)*(mass)*(c_phonon**2)/Wupsilon
     print("phonon params", Wupsilon )
     print("phonon params upsilon", Wupsilon/W )
     print("area ratio", A1mbz/A1bz, (2*np.sin(theta/2))**2   )
@@ -772,20 +727,21 @@ def main() -> int:
     cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=100
+    Ndos=10
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
     Nfils=20
     # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
+    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
     filling_index=int(sys.argv[1]) 
-    mu=0 #mu_values[filling_index]
-    filling=0 #fillings[filling_index]
+    mu=mu_values[filling_index]
+    filling=fillings[filling_index]
+    print("CHEMICAL POTENTIALS AND FILLINGS", mu_values, fillings)
     print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
     
@@ -800,7 +756,7 @@ def main() -> int:
     # print(np.mean(popt),c, resc, c_phonon)
     # print("effective speed of sound down renormalization...", c)
     # print("residual of the fit...", res)
-    B1.Fill_sweep([0], [0], VV, Nsamp, c_phonon,theta)
+    B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
 
     
     

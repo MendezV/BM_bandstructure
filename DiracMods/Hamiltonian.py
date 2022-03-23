@@ -9,10 +9,15 @@ from scipy.linalg import circulant
 import sys  
 
 class Ham():
-    def __init__(self, hbvf, latt):
-
-        self.hvkd = hbvf
+    def __init__(self, hbvf, latt, rescale=None):
+        if rescale is None:
+            self.rescale = 1
+        else:
+            self.rescale = rescale
+        
+        self.hvkd = self.rescale*hbvf
         self.latt=latt
+        
         
         
     def __repr__(self):
@@ -29,7 +34,7 @@ class Ham():
         e3=(-2*GM2+GM1)/3
         
         
-        W3=0.00375/3  #in ev
+        W3=self.hvkd #0.00375/3  #in ev
         k=np.array([kx,ky])
         
         hk=W3*(np.exp(1j*k@e1)+np.exp(1j*k@e2)+np.exp(1j*k@e3))
@@ -49,58 +54,26 @@ class Ham():
         
         return np.array([-hk_n,hk_n ]), psi
     
-    def eigens_vp(self, kx,ky):
-        hbvf = 0.001*2.1354; # eV
-        # W3=0.00375/3  #in ev
-        kv=np.array([kx,ky])
-        knorm=np.sqrt(kv.T@kv)
-        k=kx+1j*ky
-        kbar=kx-1j*ky
+    def ExtendE(self,E_k , umklapp):
+        Gu=self.latt.Umklapp_List(umklapp)
         
-        hk_n=hbvf*knorm
-        
-        psi2=np.array([+1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
-        psi1=np.array([-1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
-    
-        # mat=hbvf*np.array([[0,kbar],[k,0]])
-        # print((mat@psi1)/psi1, -hk_n )
-        # print((mat@psi2)/psi2, hk_n )
-        
-        psi=np.zeros([np.size(psi1), 2])+0*1j
-        psi[:,0]=psi1
-        psi[:,1]=psi2
+        Elist=[]
+        for GG in Gu:
+            Elist=Elist+[E_k]
+            
+        return np.vstack(Elist)
 
-        
-        return np.array([-hk_n,hk_n ]), psi
     
-    def eigens_vm(self, kx,ky):
-        hbvf = 0.001*2.1354; # eV
-        # W3=0.00375/3  #in ev
-        kv=np.array([kx,ky])
-        knorm=np.sqrt(kv.T@kv)
-        mk=-kx-1j*ky
-        mkbar=-kx+1j*ky
-        
-        hk_n=hbvf*knorm
-        
-        psi2=np.array([+1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
-        psi1=np.array([-1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
     
-        # mat=hbvf*np.array([[0,mk],[mkbar,0]])
-        # print((mat@psi1)/psi1, -hk_n )
-        # print((mat@psi2)/psi2, hk_n )
-        # print(np.conj(psi1.T)@psi1)
-        
-        psi=np.zeros([np.size(psi1), 2])+0*1j
-        psi[:,0]=psi1
-        psi[:,1]=psi2
-        
-        return np.array([-hk_n,hk_n ]), psi
 
 class Ham_p():
-    def __init__(self, hbvf, latt):
-
-        self.hvkd = hbvf
+    def __init__(self, hbvf, latt, rescale=None):
+        if rescale is None:
+            self.rescale = 1
+        else:
+            self.rescale = rescale
+        
+        self.hvkd = self.rescale*hbvf
         self.latt=latt
         
         
@@ -111,14 +84,13 @@ class Ham_p():
     # METHODS FOR CALCULATING THE DISPERSION
     
     def eigens(self, kx,ky):
-        hbvf = 0.001*2.1354; # eV
         # W3=0.00375/3  #in ev
         kv=np.array([kx,ky])
         knorm=np.sqrt(kv.T@kv)
         k=kx+1j*ky
         kbar=kx-1j*ky
         
-        hk_n=hbvf*knorm
+        hk_n=self.hvkd*knorm
         
         psi2=np.array([+1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
         psi1=np.array([-1*np.exp(1j*np.angle(kbar)), 1])/np.sqrt(2)
@@ -136,9 +108,13 @@ class Ham_p():
     
     
 class Ham_m():
-    def __init__(self, hbvf, latt):
-
-        self.hvkd = hbvf
+    def __init__(self, hbvf, latt, rescale=None):
+        if rescale is None:
+            self.rescale = 1
+        else:
+            self.rescale = rescale
+        
+        self.hvkd = self.rescale*hbvf
         self.latt=latt
         
         
@@ -149,14 +125,13 @@ class Ham_m():
     # METHODS FOR CALCULATING THE DISPERSION
 
     def eigens(self, kx,ky):
-        hbvf = 0.001*2.1354; # eV
         # W3=0.00375/3  #in ev
         kv=np.array([kx,ky])
         knorm=np.sqrt(kv.T@kv)
         mk=-kx-1j*ky
         mkbar=-kx+1j*ky
         
-        hk_n=hbvf*knorm
+        hk_n=self.hvkd*knorm
         
         psi2=np.array([+1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
         psi1=np.array([-1*np.exp(1j*np.angle(mk)), 1])/np.sqrt(2)
@@ -282,7 +257,7 @@ class Dispersion():
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_plus[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( Ene_valley_min[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
-        eps=np.min(eps_a)*4
+        eps=np.min(eps_a)*10
         print("and epsilon is ...", eps)
         
         mmin=np.min([np.min(Ene_valley_plus),np.min(Ene_valley_min)])
@@ -706,7 +681,7 @@ class Dispersion():
             plt.plot(qa,Ene_valley_plus[:,i] , c='b')
             plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
         plt.xlim([0,1])
-        plt.ylim([-0.009,0.009])
+        # plt.ylim([-0.009,0.009])
         plt.savefig("highsym.png")
         plt.close()
         return [Ene_valley_plus, Ene_valley_min]
@@ -720,7 +695,7 @@ class FormFactors():
         self.cpsi=np.conj(psi)
         self.xi=xi
 
-        
+        Gu=lat.Umklapp_List(umklapp)
         [KX,KY]=lat.Generate_lattice()
         [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
         
@@ -733,6 +708,17 @@ class FormFactors():
         self.qx=kqx1-kqx2
         self.qy=kqy1-kqy2
         self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
+        
+        # not the easiest here
+        # psilist=[]
+        # for GG in Gu:
+        #     shi1=int(GG[0])
+        #     shi2=int(GG[1])
+        #     [psishift,Ene,psishift,Ene]=disp.precompute_E_psi_u(KQX,KQY)
+        #     # psishift=ham.trans_psi2(psi_p, shi1, shi2)
+        #     psilist=psilist+[psi]
+        # self.psi=np.vstack(psilist)
+        # self.cpsi=np.conj(self.psi)
             
 
     def __repr__(self):
@@ -897,39 +883,226 @@ def main() -> int:
     ##########################################
     #parameters energy calculation
     ##########################################
-    a_graphene=2.46*(1e-10) #in meters
-    nbands=2 
-    #hbvf=0.003404*0.1973269804*1e-6 /a_graphene #ev*m
+    graphene=False
+    if graphene==True:
+        a_graphene=2.46*(1e-10) #in meters
+        nbands=2 
+        Nsamp=int(sys.argv[2])
 
-    Nsamp=int(sys.argv[2])
+        #Lattice generation
+        latt=Lattice.TriangLattice(Nsamp,0)
+        
+        #parameters for the bandstructure
+        hbvf = 2.1354; # eV
+        print("hbvf is ..",hbvf )
+        
+        #generating the dispersion 
+        resc=1 #0.001
+        h=Ham(hbvf, latt, resc)
+        disp=Dispersion( latt, nbands, h,h)
+        disp.High_symmetry()
+        
+        #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+        Ndos=100
+        ldos=Lattice.TriangLattice(Ndos,0)
+        disp=Dispersion( ldos, nbands, h, h)
+        Nfils=20
+        [fillings,mu_values]=disp.mu_filling_array(Nfils, False, False, True) #read write calculate
+        filling_index=int(sys.argv[1]) 
+        mu=mu_values[filling_index]
+        filling=fillings[filling_index]
+        print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+        
+        #testing the form factors
+        
+        umkl=2
+        [KX1bz, KY1bz]=latt.Generate_lattice()
+        Npoi1bz=np.size(KX1bz)
+        [KX,KY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl) #for the integration grid 
+        [KQX,KQY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl+1) #for the momentum transfer lattice
+        Npoi=np.size(KX)
+        NpoiQ=np.size(KQX)
+        [KX,KY]=latt.Generate_lattice()
+        [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KQX,KQY)
+        disp=Dispersion( latt, nbands, h, h)
+        [psi,Ene,psi,Ene]=disp.precompute_E_psi_u(KQX,KQY)
+        FF=FormFactors(psi, 1, latt, umkl+1)
 
+        # L00p=FF.F_tb()
+        # L00m=FF.F_tb()
+        L00p=FF.denqFF()
+        L00m=FF.denqFF()
+        # L00p=FF.NemqFFL()
+        # L00m=FF.NemqFFL()
+        test= True
+        name="ee"
+        if test:
+            print("testing symmetry of the form factors...")
+            [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KQX,KQY)
+            diffarp=[]
+            diffarm=[]
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            kp=np.argmin(KQX**2 +KQY**2)
+            for k in range(NpoiQ):
+                K.append(KQX[k]-KQX[kp])
+                KP.append(KQY[k]-KQY[kp])
+                #Regular FF
+                undet=np.abs(np.linalg.det(np.abs(L00p[k,:,kp,:])**2 ))
+                dosdet=np.abs(np.linalg.det(np.abs(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 ))
+                cos1.append(undet)
+                cos2.append(dosdet)
+                diffarp.append( undet   - dosdet   )
+                # Minus Valley FF Omega
+                undet=np.abs(np.linalg.det(np.abs(L00m[k,:,kp,:])**2 ))
+                dosdet=np.abs(np.linalg.det(np.abs(L00m[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 ))
+                diffarm.append( undet   - dosdet   )
 
+            
+            VV=latt.boundary()
+            plt.plot(diffarp, label="plus valley")
+            plt.plot(diffarm, label="minsu valley")
+            plt.title("FF- C3 FF")
+            plt.legend()
+            plt.savefig("TestC3_symm"+name+".png")
+            # plt.show()
+            plt.close()  
+            plt.scatter(K,KP,c=cos1, s=3)
+            plt.plot(VV[:,0],VV[:,1], c='r')
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.savefig("cos1scat.png")
+            plt.close( ) 
+            plt.scatter(K,KP,c=cos2, s=3)
+            plt.plot(VV[:,0],VV[:,1], c='r')
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.savefig("cos2scat.png")
+            plt.close(  )
+            print("finished testing symmetry of the form factors...")
+    else:
+        a_graphene=2.46*(1e-10) #in meters
+        nbands=2 
+        Nsamp=int(sys.argv[2])
 
+        #Lattice generation
+        latt=Lattice.TriangLattice(Nsamp,0)
+        
+        #parameters for the bandstructure
+        hbvf = 2.1354; # eV
+        print("hbvf is ..",hbvf )
+        
+        #generating the dispersion 
+        resc=1 #0.001
+        hpl=Ham_p(hbvf, latt, resc)
+        hm=Ham_m(hbvf, latt, resc)
+        disp=Dispersion( latt, nbands, hpl,hm)
+        disp.High_symmetry()
+        
+        #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+        Ndos=100
+        ldos=Lattice.TriangLattice(Ndos,0)
+        disp=Dispersion( ldos, nbands, hpl, hm)
+        Nfils=20
+        [fillings,mu_values]=disp.mu_filling_array(Nfils, False, False, True) #read write calculate
+        filling_index=int(sys.argv[1]) 
+        mu=mu_values[filling_index]
+        filling=fillings[filling_index]
+        print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+        
+        #testing the form factors
+        
+        umkl=2
+        [KX1bz, KY1bz]=latt.Generate_lattice()
+        Npoi1bz=np.size(KX1bz)
+        [KX,KY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl) #for the integration grid 
+        [KQX,KQY]=latt.Generate_Umklapp_lattice(KX1bz, KY1bz,umkl+1) #for the momentum transfer lattice
+        Npoi=np.size(KX)
+        NpoiQ=np.size(KQX)
+        [KX,KY]=latt.Generate_lattice()
+        [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KQX,KQY)
+        disp=Dispersion( latt, nbands, hpl, hm)
+        [psi,Ene,psi,Ene]=disp.precompute_E_psi_u(KQX,KQY)
+        FF=FormFactors(psi, 1, latt, umkl+1)
 
-    latt=Lattice.TriangLattice(Nsamp,0)
+        # L00p=FF.F_tb()
+        # L00m=FF.F_tb()
+        L00p=FF.denqFF()
+        L00m=FF.denqFF()
+        # L00p=FF.NemqFFL()
+        # L00m=FF.NemqFFL()
+        test= True
+        name="ee"
+        if test:
+            print("testing symmetry of the form factors...")
+            [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KQX,KQY)
+            diffarp=[]
+            diffarm=[]
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            kp=np.argmin(KQX**2 +KQY**2)
+            for k in range(NpoiQ):
+                K.append(KQX[k]-KQX[kp])
+                KP.append(KQY[k]-KQY[kp])
+                #Regular FF
+                undet=np.abs(np.linalg.det(np.abs(L00p[k,:,kp,:])**2 ))
+                dosdet=np.abs(np.linalg.det(np.abs(L00p[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 ))
+                cos1.append(undet)
+                cos2.append(dosdet)
+                diffarp.append( undet   - dosdet   )
+                # Minus Valley FF Omega
+                undet=np.abs(np.linalg.det(np.abs(L00m[k,:,kp,:])**2 ))
+                dosdet=np.abs(np.linalg.det(np.abs(L00m[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2 ))
+                diffarm.append( undet   - dosdet   )
+
+            
+            VV=latt.boundary()
+            plt.plot(diffarp, label="plus valley")
+            plt.plot(diffarm, label="minsu valley")
+            plt.title("FF- C3 FF")
+            plt.legend()
+            plt.savefig("TestC3_symm"+name+".png")
+            # plt.show()
+            plt.close()  
+            plt.scatter(K,KP,c=cos1, s=3)
+            plt.plot(VV[:,0],VV[:,1], c='r')
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.savefig("cos1scat.png")
+            plt.close( ) 
+            plt.scatter(K,KP,c=cos2, s=3)
+            plt.plot(VV[:,0],VV[:,1], c='r')
+            plt.colorbar()
+            plt.gca().set_aspect('equal', adjustable='box')
+            plt.savefig("cos2scat.png")
+            plt.close(  )
+            print("finished testing symmetry of the form factors...")
+
+def helper():
     [KX,KY]=latt.Generate_lattice()
     plt.scatter(KX,KY)
     plt.savefig("trave.png")
     plt.close()
-    
-    xi=1
-    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
-    hbvf = 2.1354; # eV
-    print("hbvf is ..",hbvf )
+
     
     umkl=1
     [KXu,KYu]=latt.Generate_Umklapp_lattice(KX,KY,umkl)
     Npoi_u=np.size(KXu)
     plt.scatter(KXu, KYu)
     plt.scatter(KX, KY)
-    
-
     [KXc3z,KYc3z, Indc3z]=latt.C3zLatt(KXu,KYu)
-
-    h=Ham(hbvf, latt)
-    disp=Dispersion( latt, nbands, h,h)
+    
+    
     [psi,Ene,psi,Ene]=disp.precompute_E_psi_u(KXu, KYu)
 
+    plt.scatter(KXu,KYu, c=Ene[:,1])
+    plt.savefig("dispersion_pre.png")
+    plt.close()
+    
     hpl=Ham_p(hbvf, latt)
     hmin=Ham_m(hbvf, latt)
     # [GM1, GM2]=l.GMvec
@@ -959,7 +1132,7 @@ def main() -> int:
     plt.savefig("dispersion.png")
     plt.close()
     
-    disp.High_symmetry()
+    # disp.High_symmetry()
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=100

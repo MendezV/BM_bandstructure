@@ -463,7 +463,7 @@ class MoireTriangLattice:
         L=L+[K[0]]+[Gamma]+[M[0]]+[Kp[-1]] ##path in reciprocal space
         # L=L+[K[0]]+[Gamma]+[M[0]]+[K[0]] ##path in reciprocal space Andrei paper
 
-        Nt_points=40
+        Nt_points=80
         kp_path=self.linpam(L,Nt_points)
 
         if self.normed==0:

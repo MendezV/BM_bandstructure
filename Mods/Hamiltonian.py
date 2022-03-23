@@ -10,7 +10,7 @@ from scipy.linalg import circulant
   
 
 class Ham_BM_p():
-    def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
+    def __init__(self, hvkd, alpha, xi, latt, kappa, PH, Interlay=None):
 
         self.hvkd = hvkd
         self.alpha= alpha
@@ -26,8 +26,12 @@ class Ham_BM_p():
        
         self.cuttoff_momentum_lat=self.umklapp_lattice()
 
-
-        self.U=np.matrix(self.InterlayerU())
+        if Interlay is None:
+            self.Interlay = 1
+        else:
+            self.Interlay = Interlay
+            
+        self.U=self.Interlay*np.matrix(self.InterlayerU())
 
         #constant shift for the dispersion
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
@@ -447,7 +451,7 @@ class Ham_BM_p():
 
 
 class Ham_BM_m():
-    def __init__(self, hvkd, alpha, xi, latt, kappa, PH):
+    def __init__(self, hvkd, alpha, xi, latt, kappa, PH,Interlay=None):
 
         self.hvkd = hvkd
         self.alpha= alpha
@@ -463,8 +467,12 @@ class Ham_BM_m():
        
         self.cuttoff_momentum_lat=self.umklapp_lattice()
 
-
-        self.U=np.matrix(self.InterlayerU())
+        if Interlay is None:
+            self.Interlay = 1
+        else:
+            self.Interlay = Interlay
+            
+        self.U=self.Interlay*np.matrix(self.InterlayerU())
 
         #constant shift for the dispersion
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
@@ -1155,7 +1163,8 @@ class Dispersion():
     
     def mu_filling_array(self, Nfil, read, write, calculate):
         
-        fillings=np.linspace(0,3.9,Nfil)
+        fillings_pre=np.linspace(0,3.9,Nfil)
+        fillings=fillings_pre[1:]
         
         if calculate:
             [psi_plus_dos,Ene_valley_plus_dos,psi_min_dos,Ene_valley_min_dos]=self.precompute_E_psi()
@@ -1177,14 +1186,15 @@ class Dispersion():
 
         [earr, dos, f2 ]=self.DOS(Ene_valley_plus_dos,Ene_valley_min_dos)
 
-        mu_values=[]        
+        mu_values=[]
+        mu_values.append(0)        
         for fill in fillings:
             [mu, nfil, es,nn]=self.chem_for_filling( fill, f2, earr)
             mu_values.append(mu)
 
 
         
-        return [fillings,np.array(mu_values)]
+        return [fillings_pre,np.array(mu_values)]
     
     ### FERMI SURFACE ANALYSIS
 
@@ -1363,7 +1373,7 @@ class Dispersion():
         BW=maxV-minC
         print("the bandwidth is ..." ,BW)
         plt.xlim([0,1])
-        plt.ylim([-0.04,0.04])
+        # plt.ylim([-0.008,0.008])
         plt.savefig("highsym.png")
         plt.close()
         return [Ene_valley_plus, Ene_valley_min]
@@ -1698,12 +1708,12 @@ def main() -> int:
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
     
-    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH)
-    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH)
+    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH,1)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH,1)
 
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     # Ndos=100
-    Ndos=10
+    Ndos=20
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Dispersion( ldos, nbands, hpl, hmin)
@@ -1725,8 +1735,32 @@ def main() -> int:
     # plt.savefig(f"contour_{mu}.png")
     # plt.close()
 
+    [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
+    plt.scatter(disp.KX1bz, disp.KY1bz, c=Ene_valley_plus[:,0])
+    plt.colorbar()
+    plt.savefig('disp_p1.png')
+    plt.close()
 
-    HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
+    
+    plt.scatter(disp.KX1bz, disp.KY1bz, c=Ene_valley_plus[:,1])
+    plt.colorbar()
+    plt.savefig('disp_p2.png')
+    plt.close()
+
+    
+    plt.scatter(disp.KX1bz, disp.KY1bz, c=Ene_valley_min[:,0])
+    plt.colorbar()
+    plt.savefig('disp_m1.png')
+    plt.close()
+    
+    plt.scatter(disp.KX1bz, disp.KY1bz, c=Ene_valley_min[:,1])
+    plt.colorbar()
+    plt.savefig('disp_m2.png')
+    plt.close()
+
+    
+    
+    # HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
     
 if __name__ == '__main__':
     import sys
