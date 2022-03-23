@@ -4,7 +4,8 @@
 #SBATCH --mail-user=jfm343@cornell.edu
 #SBATCH --partition=compute
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=64
 #SBATCH --mem=124G
 #SBATCH -t 48:00:00
 #SBATCH --account=crl171
@@ -20,7 +21,7 @@ module load cpu
 module load gcc openblas openmpi hdf5
 module load slurm
 module load matlab
-module load anaconda3
+module load anaconda3/2020.11
 
 
 #running

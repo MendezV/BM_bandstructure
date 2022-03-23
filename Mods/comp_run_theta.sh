@@ -46,7 +46,7 @@ for param_val in ${param_arr[@]}; do
 	#entering the temp directory, running and coming back
 	echo "submitting job...."
 	cd "${dir}"
-	sbatch -J "${jname}" --export=param_val="${param_val}" compute_job.sh
+	sbatch -J "${jname}" --export=ALL,param_val="${param_val}" compute_job.sh
 	sleep 1
 	echo "moving back to ${pow} ...."
 	cd "${pow}"
@@ -55,4 +55,3 @@ for param_val in ${param_arr[@]}; do
 
 
 done
-

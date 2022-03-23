@@ -21,12 +21,11 @@ module load cpu
 module load gcc openblas openmpi hdf5
 module load slurm
 module load matlab
-module load anaconda3
+module load anaconda3/2020.11
 
 
 #running
-srun python -u Bubble_ep.py 0 30 L ${param_val} 1
-
+srun python3 -u Bubble_ep.py 0 30 T ${param_val} 1
 
 ##moving data out
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"
