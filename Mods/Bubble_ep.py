@@ -756,7 +756,7 @@ def main() -> int:
     # print(np.mean(popt),c, resc, c_phonon)
     # print("effective speed of sound down renormalization...", c)
     # print("residual of the fit...", res)
-    B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
+    B1.Fill_sweep( mu_values, fillings, VV, Nsamp, c_phonon, theta)
 
     
     
