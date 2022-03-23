@@ -731,7 +731,7 @@ def main() -> int:
     hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=10
+    Ndos=100
     ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2)
     [ Kxp, Kyp]=ldos.Generate_lattice()
     disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
