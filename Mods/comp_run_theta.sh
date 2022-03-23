@@ -37,7 +37,7 @@ for param_val in ${param_arr[@]}; do
     cp Bubble_ep.py "${dir}"
     cp Hamiltonian.py  "${dir}"
     cp MoireLattice.py  "${dir}"
-    cp params_theta2  "${dir}"
+    cp params_thet2  "${dir}"
 	cp -r dispersions "${dir}"
 	cp compute_job.sh "${dir}"
 	#entering the temp directory, running and coming back
