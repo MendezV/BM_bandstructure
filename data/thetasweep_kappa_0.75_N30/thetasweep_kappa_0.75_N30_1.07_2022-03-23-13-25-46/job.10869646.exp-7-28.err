@@ -1,0 +1,12 @@
+srun: error: io_init_msg_read too small
+srun: error: failed reading io init message
+srun: error: unpackmem: Buffer to be unpacked is too large (3083673251 > 100000000)
+srun: error: unpack error in io_init_msg_unpack
+srun: error: Invalid IO init header version
+srun: error: unpackmem: Buffer to be unpacked is too large (218777711 > 100000000)
+srun: error: unpack error in io_init_msg_unpack
+srun: error: Invalid IO init header version
+srun: error: io_init_msg_read too small
+srun: error: failed reading io init message
+Bubble_ep.py:460: RuntimeWarning: invalid value encountered in double_scalars
+  return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)

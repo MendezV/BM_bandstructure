@@ -1,0 +1,138 @@
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05003952980041504  s
+919 numer of sampling lattice points
+taking 0 umklapps
+hbvf is .. 2.3382685902179845
+q is... 0.07749356643361043
+hvkd is... 0.18120077233568196
+kappa is.. 0.75
+alpha is.. 0.5794677287880602
+the twist angle is .. 0.018500490071139894
+phonon params 272152047269086.62
+phonon params upsilon 3.4019005908635828e+16
+area ratio 0.000342258370694157 0.00034225837069415746
+correct factor by which the interaction is reduced 76.4430415345447
+c tilde 1658.8879779096287
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5501618385314941  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.5555579662322998  s
+starting dispersion with 9919 points..........
+time to diag over MBZ 4359.87890791893
+saving  ..........
+number of bands in density of states calculation, 2
+sum of the hist, normed? 8.00000000000002
+CHEMICAL POTENTIALS AND FILLINGS [0.00000000e+00 1.18086928e-05 2.59584108e-05 3.77338053e-05
+ 4.66371259e-05 5.35266668e-05 6.15222105e-05 6.98636882e-05
+ 8.04570758e-05 9.11252705e-05 1.02677510e-04 1.14604789e-04
+ 1.27452695e-04 1.41457656e-04 1.56076352e-04 1.70846893e-04
+ 1.86331245e-04 2.02136793e-04 2.19702307e-04 3.50449237e-04] [0.         0.20526316 0.41052632 0.61578947 0.82105263 1.02631579
+ 1.23157895 1.43684211 1.64210526 1.84736842 2.05263158 2.25789474
+ 2.46315789 2.66842105 2.87368421 3.07894737 3.28421053 3.48947368
+ 3.69473684 3.9       ]
+CHEMICAL POTENTIAL AND FILLING 0.0 0.0
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05084109306335449  s
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05099034309387207  s
+starting dispersion with 919 points..........
+time to diag over MBZ 256.48608350753784
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05102419853210449  s
+(6433, 564, 2) (919, 564, 2) (6433,)
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.05096888542175293  s
+(6433, 564, 2) (919, 564, 2) (6433,)
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 14.612840414047241
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 2.1495888233184814
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 14.62894344329834
+calculating tensor that stores the overlaps........
+finsihed the overlaps.......... 1.9914255142211914
+testing symmetry of the form factors...
+failed C3 symmetry test, plus valley... 7.377430343199003e-05
+failed C3 symmetry test, minus valley... 7.377430343199003e-05
+finished testing symmetry of the form factors...
+starting bubble....... 919
+time for bubble... 28.948023319244385
+effective speed of sound down renormalization...$-\Delta c$ 12536.394344810285
+residual of the fit... 0.029988116290148522
+starting bubble....... 919
+time for bubble... 28.895607471466064
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.893604040145874
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.054898500442505
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.0836284160614
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.070793867111206
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.026110649108887
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.069740056991577
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.04288148880005
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.97336459159851
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.154004335403442
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.914157152175903
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.980894088745117
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.93389081954956
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 29.003968954086304
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.956933736801147
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.923616886138916
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.858765840530396
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.8549165725708
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+starting bubble....... 919
+time for bubble... 28.826282024383545
+effective speed of sound down renormalization...$-\Delta c$ 0.0
+residual of the fit... nan
+time for sweep delta 581.6543211936951
