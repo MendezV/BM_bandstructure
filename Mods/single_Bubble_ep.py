@@ -646,7 +646,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.75 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
+    kappa=modulation_kap*0.15 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
