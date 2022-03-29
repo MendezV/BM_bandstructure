@@ -179,3 +179,22 @@ plt.scatter(KX,KY, c=tensdet)
 plt.colorbar()
 
 plt.savefig("tt5.png")
+
+
+
+
+tensdet=[]
+KKX=[]
+KKY=[]
+for i in range(Npoi):
+    KKX.append(KX[i])
+    KKY.append(KX[i])
+    dd=0
+    for j in range(Npoi):
+        kx_ind=np.argmin(  np.abs(KQX-(KX[i]+KX[j]))**2 + np.abs(KQY-(KY[i]+KY[j]))**2  )
+        dd=dd+np.abs(la.det(np.abs(Lambda_Tens[kx_ind,:,j,:])**2))
+    tensdet.append(dd/Npoi) 
+plt.scatter(KX,KY, c=tensdet)
+plt.colorbar()
+plt.savefig("testdet.png")
+plt.close()

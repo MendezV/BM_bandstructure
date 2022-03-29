@@ -149,11 +149,11 @@ class Ham_BM_p():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
-        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy))  # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy))  # ARITCFICIAL GAP ADDED
+        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy))  # ARITCFICIAL GAP ADDED
+        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy))  # ARITCFICIAL GAP ADDED
         
         # H1=hvkd*( kx*tau*paulix+ky*pauliy ) # ARITCFICIAL GAP ADDED
         # H2=hvkd*( kx*tau*paulix+ky*pauliy ) # ARITCFICIAL GAP ADDED
@@ -599,11 +599,11 @@ class Ham_BM_m():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
-        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy))  # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy))  # ARITCFICIAL GAP ADDED
+        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy))  # ARITCFICIAL GAP ADDED
+        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy))  # ARITCFICIAL GAP ADDED
         
         
         # H1=hvkd*( kx*tau*paulix+ky*pauliy ) # ARITCFICIAL GAP ADDED
@@ -1405,51 +1405,51 @@ class Dispersion():
 
 class FormFactors_umklapp():
     def __init__(self, psi_p, xi, lat, umklapp, ham):
-        # self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
-        # self.lat=lat
-        # self.cpsi_p=np.conj(psi_p)
-        # self.xi=xi
-        # self.Nu=int(np.shape(self.psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
-
-        
-        # [KX,KY]=lat.Generate_lattice()
-        
-        # Gu=lat.Umklapp_List(umklapp)
-        # [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
-
-        # self.kx=KXu
-        # self.ky=KYu
-
-        # #momentum transfer lattice
-        # kqx1, kqx2=np.meshgrid(self.kx,self.kx)
-        # kqy1, kqy2=np.meshgrid(self.ky,self.ky)
-        # self.qx=kqx1-kqx2
-        # self.qy=kqy1-kqy2
-        # self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
-        
-        # self.qmin_x=KXu[1]-KXu[0]
-        # self.qmin_y=KYu[1]-KYu[0]
-        # self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
-        # psilist=[]
-        # for GG in Gu:
-        #     shi1=int(GG[0])
-        #     shi2=int(GG[1])
-        #     psishift=ham.trans_psi2(psi_p, shi1, shi2)
-        #     psilist=psilist+[psishift]
-        # self.psi=np.vstack(psilist)
-        # self.cpsi=np.conj(self.psi)
-        # print(np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
-        self.psi = psi_p #has dimension #kpoints, 4*N, nbands
+        self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
         self.lat=lat
-        self.cpsi=np.conj(psi_p)
+        self.cpsi_p=np.conj(psi_p)
         self.xi=xi
+        self.Nu=int(np.shape(self.psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
 
-        Gu=lat.Umklapp_List(umklapp)
-        [KX,KY]=lat.Generate_lattice()
-        [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
         
+        [KX,KY]=lat.Generate_lattice()
+        
+        Gu=lat.Umklapp_List(umklapp)
+        [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
+
         self.kx=KXu
         self.ky=KYu
+
+        #momentum transfer lattice
+        kqx1, kqx2=np.meshgrid(self.kx,self.kx)
+        kqy1, kqy2=np.meshgrid(self.ky,self.ky)
+        self.qx=kqx1-kqx2
+        self.qy=kqy1-kqy2
+        self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
+        
+        self.qmin_x=KXu[1]-KXu[0]
+        self.qmin_y=KYu[1]-KYu[0]
+        self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
+        psilist=[]
+        for GG in Gu:
+            shi1=int(GG[0])
+            shi2=int(GG[1])
+            psishift=ham.trans_psi2(psi_p, shi1, shi2)
+            psilist=psilist+[psishift]
+        self.psi=np.vstack(psilist)
+        self.cpsi=np.conj(self.psi)
+        print(np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
+        # self.psi = psi_p #has dimension #kpoints, 4*N, nbands
+        # self.lat=lat
+        # self.cpsi=np.conj(psi_p)
+        # self.xi=xi
+
+        # Gu=lat.Umklapp_List(umklapp)
+        # [KX,KY]=lat.Generate_lattice()
+        # [KXu,KYu]=lat.Generate_Umklapp_lattice(KX,KY,umklapp)
+        
+        # self.kx=KXu
+        # self.ky=KYu
        
         #momentum transfer lattice
         kqx1, kqx2=np.meshgrid(self.kx,self.kx)
