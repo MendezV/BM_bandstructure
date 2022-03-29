@@ -103,7 +103,7 @@ class ep_Bubble:
         self.umkl=umkl
         [self.KX1bz, self.KY1bz]=latt.Generate_lattice() #for the integration grid, we integrate over these
         [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the q external momenta
-        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+2) #for the momentum transfer lattice
         self.Npoi1bz=np.size(self.KX1bz)
         self.Npoi=np.size(self.KX)
         self.NpoiQ=np.size(self.KQX)
@@ -157,6 +157,16 @@ class ep_Bubble:
         self.symmetric=symmetric
         self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.hpl.kappa)+"_theta_"+str(self.latt.theta)
 
+        plt.scatter(self.KX1bz,self.KY1bz, c=self.Ene_valley_plus_1bz[:,0])
+        plt.colorbar()
+        plt.savefig("disp1"+self.name+".png")
+        plt.close()
+        
+        plt.scatter(self.KX1bz,self.KY1bz, c=self.Ene_valley_plus_1bz[:,1])
+        plt.colorbar()
+        plt.savefig("disp2"+self.name+".png")
+        plt.close()
+        
         
         ################################
         #generating form factors
@@ -205,64 +215,77 @@ class ep_Bubble:
         ################################
         #testing form factors for symmetry
         ################################
+        # if test:
+        #     print("testing symmetry of the form factors...")
+        #     [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
+        #     diffarp=[]
+        #     diffarm=[]
+        #     K=[]
+        #     KP=[]
+        #     cos1=[]
+        #     cos2=[]
+        #     kp=np.argmin(self.KQX**2 +self.KQY**2)
+        #     for k in range(self.NpoiQ):
+        #         K.append(self.KQX[k]-self.KQX[kp])
+        #         KP.append(self.KQY[k]-self.KQY[kp])
+        #         #Regular FF
+        #         # Plus Valley FF Omega
+        #         undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+        #         dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+        #         # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
+        #         # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+        #         cos1.append(undet)
+        #         diffarp.append( undet   - dosdet   )
+        #         # Minus Valley FF Omega
+        #         undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
+        #         dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+        #         # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
+        #         # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+        #         cos2.append(undet)
+        #         diffarm.append( undet   - dosdet   )
         if test:
             print("testing symmetry of the form factors...")
-            [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
-            diffarp=[]
-            diffarm=[]
-            K=[]
-            KP=[]
-            cos1=[]
-            cos2=[]
-            kp=np.argmin(self.KQX**2 +self.KQY**2)
-            for k in range(self.NpoiQ):
-                K.append(self.KQX[k]-self.KQX[kp])
-                KP.append(self.KQY[k]-self.KQY[kp])
-                #Regular FF
-                # Plus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos1.append(undet)
-                diffarp.append( undet   - dosdet   )
-                # Minus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos2.append(undet)
-                diffarm.append( undet   - dosdet   )
             
 
-            plt.scatter(K,KP, c=cos1, s=2)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_p"+self.name+".png")
-            plt.close()
+            tensdet=[]
+            KKX=[]
+            KKY=[]
+            for i in range(self.Npoi):
+                KKX.append(self.KX[i])
+                KKY.append(self.KX[i])
+                dd=0
+                for j in range(self.Npoi):
+                    kx_ind=np.argmin(np.abs(self.KQX-(self.KX[i]+self.KX[j]))) 
+                    k_ind=np.argmin(np.abs((self.KQY[kx_ind]-(self.KY[i]+self.KY[j]))))[0]
+                    print(kx_ind, k_ind)
+                
+                    dd=dd+np.abs(la.det(np.abs(self.Omega_FFm[k_ind,:,self.Ik[j],:])**2))
+
+                tensdet.append(dd/self.Npoi)
             
-            plt.scatter(K,KP, c=cos2,s=2)
+            plt.scatter(self.KX,self.KY, c=tensdet)
             plt.colorbar()
-            plt.savefig("TestC3_symm_det_m"+self.name+".png")
+            plt.savefig("testdet"+self.name+".png")
             plt.close()
 
-            if np.mean(np.abs(diffarp))<1e-7:
-                print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
-            else:
-                print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
-                #saving data for revision
-                np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
-                np.save("TestC3_symm_K_p"+self.name+".npy",K)
-                np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
-                np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
-            if np.mean(np.abs(diffarm))<1e-7:
-                print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
-            else:
-                print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
-                #saving data for revision
-                np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
-                np.save("TestC3_symm_K_m"+self.name+".npy",K)
-                np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
-                np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
+            # if np.mean(np.abs(diffarp))<1e-7:
+            #     print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
+            # else:
+            #     print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
+            #     #saving data for revision
+            #     np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
+            #     np.save("TestC3_symm_K_p"+self.name+".npy",K)
+            #     np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
+            #     np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
+            # if np.mean(np.abs(diffarm))<1e-7:
+            #     print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
+            # else:
+            #     print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
+            #     #saving data for revision
+            #     np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
+            #     np.save("TestC3_symm_K_m"+self.name+".npy",K)
+            #     np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
+            #     np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
 
             print("finished testing symmetry of the form factors...")
         
@@ -727,8 +750,8 @@ def main() -> int:
     cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
+    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 0) #last argument is whether or not we have interlayer hopping
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 0) #last argument is whether or not we have interlayer hopping
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=10
