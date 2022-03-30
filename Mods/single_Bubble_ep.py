@@ -123,9 +123,10 @@ class ep_Bubble:
         disp=Hamiltonian.Dispersion( latt, nbands, hpl, hmin)
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
         
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
+        # self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
+        # self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
+        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
         
         ################################
         ###selecting eta
@@ -161,8 +162,12 @@ class ep_Bubble:
         ################################
         #generating form factors
         ################################
-        self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
+        # self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
+        # self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
+        
+        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
+        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl+1,self.hmin)
+
         
         if symmetric=="s":
             if mode=="L":
@@ -214,55 +219,80 @@ class ep_Bubble:
             KP=[]
             cos1=[]
             cos2=[]
-            kp=np.argmin(self.KQX**2 +self.KQY**2)
-            for k in range(self.NpoiQ):
-                K.append(self.KQX[k]-self.KQX[kp])
-                KP.append(self.KQY[k]-self.KQY[kp])
-                #Regular FF
-                # Plus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos1.append(undet)
-                diffarp.append( undet   - dosdet   )
-                # Minus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos2.append(undet)
-                diffarm.append( undet   - dosdet   )
-            
+            for s in range(self.Npoi):
+                kp=np.argmin( (self.KQX-self.KX[s])**2 +(self.KQY-self.KY[s])**2)
+                undet=0
+                dosdet=0
+                K.append(self.KQX[kp])
+                KP.append(self.KQY[kp])
+                for k in range(self.NpoiQ):
+                    
+                    #Regular FF
+                    # Plus Valley FF Omega
+                    undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                    dosdet=dosdet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                    # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
+                    # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                cos1.append(undet/self.NpoiQ)
+                diffarp.append( undet/self.NpoiQ   - dosdet/self.NpoiQ   )
 
-            plt.scatter(K,KP, c=cos1, s=2)
+
+            plt.scatter(K,KP, c=cos1)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_p"+self.name+".png")
             plt.close()
             
-            plt.scatter(K,KP, c=cos2,s=2)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_m"+self.name+".png")
-            plt.close()
+            diffarp=[]
+            diffarm=[]
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            
+            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)
+            undet=0
+            dosdet=0
+            
+            for k in range(self.NpoiQ):
+                K.append(self.KQX[k])
+                KP.append(self.KQY[k])
+                
+                #Regular FF
+                # Plus Valley FF Omega
+                undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                dosdet=dosdet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                cos1.append(undet)
+                diffarp.append( undet   - dosdet   )
 
-            if np.mean(np.abs(diffarp))<1e-7:
-                print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
-            else:
-                print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
-                #saving data for revision
-                np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
-                np.save("TestC3_symm_K_p"+self.name+".npy",K)
-                np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
-                np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
-            if np.mean(np.abs(diffarm))<1e-7:
-                print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
-            else:
-                print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
-                #saving data for revision
-                np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
-                np.save("TestC3_symm_K_m"+self.name+".npy",K)
-                np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
-                np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
+            plt.scatter(K,KP, c=cos1)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_2p"+self.name+".png")
+            plt.close()
+            # plt.scatter(K,KP, c=cos2)
+            # plt.colorbar()
+            # plt.savefig("TestC3_symm_det_m"+self.name+".png")
+            # plt.close()
+
+            # if np.mean(np.abs(diffarp))<1e-7:
+            #     print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
+            # else:
+            #     print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
+            #     #saving data for revision
+            #     np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
+            #     np.save("TestC3_symm_K_p"+self.name+".npy",K)
+            #     np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
+            #     np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
+            # if np.mean(np.abs(diffarm))<1e-7:
+            #     print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
+            # else:
+            #     print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
+            #     #saving data for revision
+            #     np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
+            #     np.save("TestC3_symm_K_m"+self.name+".npy",K)
+            #     np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
+            #     np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
 
             print("finished testing symmetry of the form factors...")
         
@@ -410,15 +440,15 @@ class ep_Bubble:
                         
                         ek_n=self.Ene_valley_plus[:,nband]
                         ek_m=self.Ene_valley_plus[:,mband]
-                        # Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
+                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
 
 
                         ek_n=self.Ene_valley_min[:,nband]
                         ek_m=self.Ene_valley_min[:,mband]
-                        # Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
+                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
+                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
                         integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_ZT(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu)
                         
 
@@ -627,7 +657,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=0
+    umkl=1
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
@@ -641,7 +671,7 @@ def main() -> int:
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
-    PH=True
+    PH=False#True
     
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
@@ -728,7 +758,7 @@ def main() -> int:
 
 
     hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=10

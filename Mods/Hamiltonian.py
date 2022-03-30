@@ -230,7 +230,8 @@ class Ham_BM_p():
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
-            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)[0]
+            # maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)[0]
+            maxisind = np.unravel_index(np.argmax(np.abs(np.imag(psi_p)), axis=None), psi_p.shape)[0]
             # print("wave1p;",psi_p[maxisind])
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
@@ -667,7 +668,8 @@ class Ham_BM_m():
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
-            maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            # maxisind = np.unravel_index(np.argmax(np.abs(psi_p), axis=None), psi_p.shape)
+            maxisind = np.unravel_index(np.argmax(np.abs(np.imag(psi_p)), axis=None), psi_p.shape)[0]
             # print("wave1m;",psi_p[maxisind])
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
@@ -942,7 +944,46 @@ class Dispersion():
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
+    def precompute_E_psi_karg(self,KX,KY):
+    
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
 
+        Npoi=np.size(KX)
+        print(f"starting dispersion with {Npoi} points..........")
+        
+        s=time.time()
+       
+        
+        for l in range(Npoi):
+            E1,wave1=self.hpl.eigens(KX[l],KY[l],self.nbands)
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            psi_plus_a.append(wave1)
+
+
+            E1,wave1=self.hmin.eigens(KX[l],KY[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            psi_min_a.append(wave1)
+
+            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
+
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        psi_plus=np.array(psi_plus_a)
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,self.nbands])
+
+        psi_min=np.array(psi_min_a)
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,self.nbands])
+
+        
+        
+
+        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+    
+    
     def precompute_E_psi_dec(self):
 
         Ene_valley_plus_a=np.empty((0))
@@ -1378,7 +1419,159 @@ class Dispersion():
         plt.close()
         return [Ene_valley_plus, Ene_valley_min]
     
+class FormFactors():
+    def __init__(self, psi_p, xi, lat, umklapp, ham):
+        self.psi = psi_p #has dimension #kpoints, 4*N, nbands
+        self.lat=lat
+        self.cpsi =np.conj(psi_p)
+        self.xi=xi
+        self.Nu=int(np.shape(psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
 
+        
+        [KX,KY]=lat.Generate_lattice()
+        
+        [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
+
+        self.kx=KXu
+        self.ky=KYu
+
+        #momentum transfer lattice
+        kqx1, kqx2=np.meshgrid(self.kx,self.kx)
+        kqy1, kqy2=np.meshgrid(self.ky,self.ky)
+        self.qx=kqx1-kqx2
+        self.qy=kqy1-kqy2
+        self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
+        
+        self.qmin_x=KXu[1]-KXu[0]
+        self.qmin_y=KYu[1]-KYu[0]
+        self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
+        
+        print(np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
+            
+
+    def __repr__(self):
+        return "Form factors for valley {xi}".format( xi=self.xi)
+
+    def matmult(self, layer, sublattice):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Qmat=np.eye(self.Nu)
+        
+
+        mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        
+        psimult=[]
+        for i in range(np.shape(self.psi)[0]):
+            psimult=psimult+[mat@self.psi[i,:,:]]
+        mult_psi=np.array(psimult)
+
+        return  mult_psi#mat@self.psi
+
+    def calcFormFactor(self, layer, sublattice):
+        s=time.time()
+        print("calculating tensor that stores the overlaps........")
+        mult_psi=self.matmult(layer,sublattice)
+        Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
+        e=time.time()
+        print("finsihed the overlaps..........", e-s)
+        return(Lambda_Tens)
+    
+ 
+
+
+    #######fourth round
+    def fq(self, FF ):
+
+        farr= np.ones(np.shape(FF))
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                farr[:, i, :, j]=(self.qx**2-self.qy**2)/self.q
+                        
+        return farr
+
+    def gq(self,FF):
+        garr= np.ones(np.shape(FF))
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                garr[:, i, :, j]=2*(self.qx*self.qy)/self.q
+                        
+        return garr 
+
+
+    def hq(self,FF):
+        harr= np.ones(np.shape(FF))
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=self.q
+                        
+        return harr 
+
+    def h_denominator(self,FF):
+        qmin=self.qmin
+        harr= np.ones(np.shape(FF))
+        qcut=np.array(self.q)
+        qanom=qcut[np.where(qcut<0.01*qmin)]
+        qcut[np.where(qcut<0.01*qmin)]=np.ones(np.shape(qanom))*qmin
+        
+        for i in range(np.shape(FF)[1]):
+            for j in range(np.shape(FF)[1]):
+                harr[:, i, :, j]=qcut
+                        
+        return harr
+
+
+    
+
+    ########### Anti-symmetric displacement of the layers
+    def denqFF_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return L30
+
+    def denqFFL_a(self):
+        L30=self.calcFormFactor( layer=3, sublattice=0)
+        return self.hq(L30)*L30
+
+
+    def NemqFFL_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFL=self.fq(L31) *L31-self.xi*self.gq(L32)*L32
+        return Nem_FFL
+
+    def NemqFFT_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        Nem_FFT=-self.gq(L31) *L31- self.xi*self.fq(L32)*L32
+        return Nem_FFT
+
+    ########### Symmetric displacement of the layers
+    def denqFF_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return L00
+
+    def denqFFL_s(self):
+        L00=self.calcFormFactor( layer=0, sublattice=0)
+        return self.hq(L00)*L00
+
+    def NemqFFL_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFL=self.fq(L01) *L01-self.xi*self.gq(L02)*L02
+        return Nem_FFL
+
+    def NemqFFT_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
+        return Nem_FFT
+    
+    
 
 class FormFactors_umklapp():
     def __init__(self, psi_p, xi, lat, umklapp, ham):
@@ -1708,8 +1901,8 @@ def main() -> int:
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
     
-    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH,1)
-    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH,1)
+    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH,0)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH,0)
 
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     # Ndos=100
