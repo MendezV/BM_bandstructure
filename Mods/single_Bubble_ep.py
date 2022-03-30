@@ -127,6 +127,22 @@ class ep_Bubble:
         # self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,0])
+        plt.colorbar()
+        plt.savefig("disp1.png")
+        plt.close()
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,1])
+        plt.colorbar()
+        plt.savefig("disp2.png")
+        plt.close()
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,0])
+        plt.colorbar()
+        plt.savefig("disp3.png")
+        plt.close()
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,1])
+        plt.colorbar()
+        plt.savefig("disp4.png")
+        plt.close()
         
         ################################
         ###selecting eta
@@ -237,7 +253,14 @@ class ep_Bubble:
                 diffarp.append( undet/self.NpoiQ   - dosdet/self.NpoiQ   )
 
 
-            plt.scatter(K,KP, c=cos1)
+            #DELETING THE GAMMA POINT
+            
+            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
+            del K[kp]
+            del KP[kp]
+            del cos1[kp]
+            
+            plt.scatter(K,KP, c=cos1, s=6)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_p"+self.name+".png")
             plt.close()
@@ -249,7 +272,7 @@ class ep_Bubble:
             cos1=[]
             cos2=[]
             
-            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)
+            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)+10
             undet=0
             dosdet=0
             
@@ -259,41 +282,73 @@ class ep_Bubble:
                 
                 #Regular FF
                 # Plus Valley FF Omega
-                undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=dosdet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
                 # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
                 # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 cos1.append(undet)
                 diffarp.append( undet   - dosdet   )
-
-            plt.scatter(K,KP, c=cos1)
+                
+            #DELETING THE GAMMA POINT
+            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
+            del K[kp]
+            del KP[kp]
+            del cos1[kp]
+            
+            plt.scatter(K,KP, c=cos1, s=6)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_2p"+self.name+".png")
             plt.close()
-            # plt.scatter(K,KP, c=cos2)
-            # plt.colorbar()
-            # plt.savefig("TestC3_symm_det_m"+self.name+".png")
-            # plt.close()
+            
+            
+            
+            
+            print("testing symmetry of the form factors...")
+            [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
+            diffarp=[]
+            diffarm=[]
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            kp=np.argmin(self.KQX**2 +self.KQY**2)+10
+            for k in range(self.NpoiQ):
+                K.append(self.KQX[k]-self.KQX[kp])
+                KP.append(self.KQY[k]-self.KQY[kp])
+                #Regular FF
+                # Plus Valley FF Omega
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                cos1.append(undet)
+                diffarp.append( undet   - dosdet   )
+                # Minus Valley FF Omega
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
+                # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
+                cos2.append(undet)
+                diffarm.append( undet   - dosdet   )
+            
+            #DELETING THE GAMMA POINT
+            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
+            del K[kp]
+            del KP[kp]
+            del cos1[kp]
+            del cos2[kp]
 
-            # if np.mean(np.abs(diffarp))<1e-7:
-            #     print("plus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarp)))
-            # else:
-            #     print("failed C3 symmetry test, plus valley...",np.mean(np.abs(diffarp)))
-            #     #saving data for revision
-            #     np.save("TestC3_symm_diff_p"+self.name+".npy",diffarp)
-            #     np.save("TestC3_symm_K_p"+self.name+".npy",K)
-            #     np.save("TestC3_symm_KP_p"+self.name+".npy",KP)
-            #     np.save("TestC3_symm_det_p"+self.name+".npy",cos1)
-            # if np.mean(np.abs(diffarm))<1e-7:
-            #     print("minus valley form factor passed the C3 symmetry test with average difference... ",np.mean(np.abs(diffarm)))
-            # else:
-            #     print("failed C3 symmetry test, minus valley...",np.mean(np.abs(diffarp)))
-            #     #saving data for revision
-            #     np.save("TestC3_symm_diff_m"+self.name+".npy",diffarm)
-            #     np.save("TestC3_symm_K_m"+self.name+".npy",K)
-            #     np.save("TestC3_symm_KP_m"+self.name+".npy",KP)
-            #     np.save("TestC3_symm_det_m"+self.name+".npy",cos2)
+            plt.scatter(K,KP, c=cos1, s=6)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_3p"+self.name+".png")
+            plt.close()
+            
+            plt.scatter(K,KP, c=cos2,s=6)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_4m"+self.name+".png")
+            plt.close()
 
+      
             print("finished testing symmetry of the form factors...")
         
         
@@ -671,7 +726,7 @@ def main() -> int:
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
-    PH=False#True
+    PH=True
     
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
