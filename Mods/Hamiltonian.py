@@ -225,12 +225,12 @@ class Ham_BM_p():
         [H1,H2]=self.diracH( kx, ky)
         N =np.shape(U)[0]
         
-        Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
+        Hxi=H1#np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
         (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
         #######Gauge Fixing by setting the largest element to be real
         # umklp,umklp, layer, sublattice
-        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+        psi=Eigvect#[:,N-int(nbands/2):N+int(nbands/2)]
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
@@ -240,7 +240,8 @@ class Ham_BM_p():
             phas=np.angle(psi_p[maxisind]) #fixing the phase to the maximum 
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
 
-        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+        # return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+        return Eigvals-self.e0, psi
     
     def eigens_dec(self, kx,ky, nbands):
         
@@ -667,12 +668,12 @@ class Ham_BM_m():
         [H1,H2]=self.diracH( kx, ky)
         N =np.shape(U)[0]
         
-        Hxi=np.bmat([[H2, U ], [Udag, H1]]) #Full matrix
+        Hxi=H1#np.bmat([[H2, U ], [Udag, H1]]) #Full matrix
         (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
 
         #######Gauge Fixing by setting the largest element to be real
         # umklp,umklp, layer, sublattice
-        psi=Eigvect[:,N-int(nbands/2):N+int(nbands/2)]
+        psi=Eigvect#[:,N-int(nbands/2):N+int(nbands/2)]
 
         for nband in range(nbands):
             psi_p=psi[:,nband]
@@ -683,7 +684,8 @@ class Ham_BM_m():
             psi[:,nband]=psi[:,nband]*np.exp(-1j*phas)
             
 
-        return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+        # return Eigvals[N-int(nbands/2):N+int(nbands/2)]-self.e0, psi
+        return Eigvals-self.e0, psi
     
     def eigens_dec(self, kx,ky, nbands):
         

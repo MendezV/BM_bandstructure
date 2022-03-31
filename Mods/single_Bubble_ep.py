@@ -227,6 +227,34 @@ class ep_Bubble:
         #testing form factors for symmetry
         ################################
         if test:
+            
+            
+            K=[]
+            KP=[]
+            cos1=[]
+            cos2=[]
+            for s in range(self.NpoiQ):
+                kp=np.argmin( (self.KQX-self.KQX[s])**2 +(self.KQY-self.KQY[s])**2)
+                undet=0
+                K.append(self.KQX[kp])
+                KP.append(self.KQY[kp])
+                for k in range(self.Npoi):
+                    ks=np.argmin( (self.KQX-self.KX[k])**2 +(self.KQY-self.KY[k])**2)
+                    undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[ks,:,kp,:])**2))  
+                cos1.append(undet/self.Npoi)
+                
+            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
+            del K[kp]
+            del KP[kp]
+            del cos1[kp]
+
+            plt.scatter(K,KP, c=cos1)
+            plt.colorbar()
+            plt.savefig("TestC3_symm_det_0p"+self.name+".png")
+            plt.close()
+
+
+
             print("testing symmetry of the form factors...")
             [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
             diffarp=[]
@@ -712,7 +740,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=1
+    umkl=0
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 

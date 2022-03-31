@@ -201,7 +201,7 @@ for s in range(NpoiQ):
         undet=undet+np.abs(np.linalg.det(np.abs(Lambda_Tens[ks,:,kp,:])**2))  
     cos1.append(undet/Npoi)
     
-plt.scatter(K,KP, c=cos1)
+plt.scatter(K,KP, c=cos1, vmin=0.630,vmax=0.640)
 plt.colorbar()
 plt.savefig("testdet.png")
 plt.close()
@@ -218,7 +218,7 @@ kyoff=[]
 for i in range(NpoiQ):
     kx=KQX[i]
     ky=KQY[i]
-    Eigvals, Eigvect=calceig_m(kx,ky)
+    Eigvals, Eigvect=calceig_p(kx,ky)
 
     
     Eup[i]=Eigvals[1]
@@ -246,7 +246,7 @@ del K[kp]
 del KP[kp]
 del cos1[kp]
 
-plt.scatter(K,KP, c=cos1)
+plt.scatter(K,KP, c=cos1, vmin=0.630,vmax=0.640)
 plt.colorbar()
 plt.savefig("testdet2.png")
 plt.close()
