@@ -20,7 +20,7 @@ class Ham_BM_p():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=0#1e-8#artificial gap
+        self.gap=0*1e-8#artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -149,11 +149,11 @@ class Ham_BM_p():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         
-        # H1=((kx*tau*paulix)+(ky*pauliy)) 
-        # H2=((kx*tau*paulix)+(ky*pauliy)) 
+        H1=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
+        H2=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
         
         return [H1,H2]
     
@@ -214,8 +214,8 @@ class Ham_BM_p():
         # T2 = np.array([[w0,w1*zs],[w1*z,w0]])
         # T3 = np.array([[w0,w1*z],[w1*zs,w0]])
 
-        U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
-        # U=0*T1
+        # U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
+        U=0*T1
         return U
         
     def eigens(self, kx,ky, nbands):
@@ -466,7 +466,7 @@ class Ham_BM_m():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=0#1e-8#artificial gap
+        self.gap=0*1e-8#artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -593,11 +593,11 @@ class Ham_BM_m():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
-        H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        # H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
+        # H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         
-        # H1=((kx*tau*paulix)+(ky*pauliy)) 
-        # H2=((kx*tau*paulix)+(ky*pauliy)) 
+        H1=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
+        H2=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
         
         return [H1,H2]
 
@@ -656,8 +656,8 @@ class Ham_BM_m():
         # T2 = np.array([[w0,w1*zs],[w1*z,w0]])
         # T3 = np.array([[w0,w1*z],[w1*zs,w0]])
 
-        U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
-        # U=T1*0
+        # U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
+        U=T1*0
         return U
         
     def eigens(self, kx,ky, nbands):

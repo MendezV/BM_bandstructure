@@ -272,7 +272,7 @@ class ep_Bubble:
             cos1=[]
             cos2=[]
             
-            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)+10
+            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)+4
             undet=0
             dosdet=0
             
@@ -311,7 +311,7 @@ class ep_Bubble:
             KP=[]
             cos1=[]
             cos2=[]
-            kp=np.argmin(self.KQX**2 +self.KQY**2)+10
+            kp=np.argmin(self.KQX**2 +self.KQY**2)+4
             for k in range(self.NpoiQ):
                 K.append(self.KQX[k]-self.KQX[kp])
                 KP.append(self.KQY[k]-self.KQY[kp])
@@ -812,8 +812,8 @@ def main() -> int:
     cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
 
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
+    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 0) #last argument is whether or not we have interlayer hopping
+    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 0 ) #last argument is whether or not we have interlayer hopping
     
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     Ndos=10
