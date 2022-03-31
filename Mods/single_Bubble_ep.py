@@ -123,10 +123,11 @@ class ep_Bubble:
         disp=Hamiltonian.Dispersion( latt, nbands, hpl, hmin)
         [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
         
-        # self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
-        # self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
+        #full diag
+        # [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
         
         ################################
         ###selecting eta
@@ -162,11 +163,12 @@ class ep_Bubble:
         ################################
         #generating form factors
         ################################
-        # self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        # self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
+        self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
+        self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
         
-        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl+1,self.hmin)
+        #full diag
+        # self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
+        # self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl+1,self.hmin)
 
         
         if symmetric=="s":
@@ -259,8 +261,8 @@ class ep_Bubble:
                 
                 #Regular FF
                 # Plus Valley FF Omega
-                undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=dosdet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
+                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
+                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
                 # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
                 # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
                 cos1.append(undet)

@@ -20,7 +20,7 @@ class Ham_BM_p():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=0#1e-8#artificial gap
+        self.gap=1e-6#artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
