@@ -133,9 +133,21 @@ class MoireTriangLattice:
         return y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
     
     #hexagon where the flat side is up
-    def hexagon2(self,pos,Radius_inscribed_hex):
+    def hexagon2(self,pos, Radius_inscribed_hex):
         x,y = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
         return y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
+    
+    def hexagon3(self,pos, Radius_inscribed_hex):
+        X,Y = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
+        kx=[]
+        ky=[]
+        for x in X:
+            for y in Y:
+                if (y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2)):
+                    kx.append(x)
+                    ky.append(y)
+                    
+        return kx,ky                
 
     #gets high symmetry points
     def FBZ_points(self,b_1,b_2):

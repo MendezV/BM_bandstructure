@@ -238,17 +238,17 @@ class ep_Bubble:
                 undet=0
                 K.append(self.KQX[kp])
                 KP.append(self.KQY[kp])
-                for k in range(self.Npoi):
-                    ks=np.argmin( (self.KQX-self.KX[k])**2 +(self.KQY-self.KY[k])**2)
+                for k in range(self.Npoi1bz):
+                    ks=np.argmin( (self.KQX-self.KX1bz[k])**2 +(self.KQY-self.KY1bz[k])**2)
                     undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[ks,:,kp,:])**2))  
-                cos1.append(undet/self.Npoi)
+                cos1.append(undet/self.Npoi1bz)
                 
             kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
             del K[kp]
             del KP[kp]
             del cos1[kp]
 
-            plt.scatter(K,KP, c=cos1)
+            plt.scatter(K,KP, c=cos1, s=6)
             plt.colorbar()
             plt.savefig("TestC3_symm_det_0p"+self.name+".png")
             plt.close()
@@ -341,8 +341,8 @@ class ep_Bubble:
             cos2=[]
             kp=np.argmin(self.KQX**2 +self.KQY**2)+4
             for k in range(self.NpoiQ):
-                K.append(self.KQX[k]-self.KQX[kp])
-                KP.append(self.KQY[k]-self.KQY[kp])
+                K.append(self.KQX[k])
+                KP.append(self.KQY[k])
                 #Regular FF
                 # Plus Valley FF Omega
                 undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
@@ -740,7 +740,7 @@ def main() -> int:
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
-    umkl=0
+    umkl=1
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
