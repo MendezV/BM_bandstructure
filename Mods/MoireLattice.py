@@ -697,10 +697,8 @@ class MoireTriangLattice:
                 kx.append(pos[0][i])
                 ky.append(pos[1][i])
                 delind.append(i)
-        print(np.shape(KX))
         KX=np.delete(KX,delind)
         KY=np.delete(KY,delind)
-        print(np.shape(KX))
   
         return kx,ky, KX,KY
 
