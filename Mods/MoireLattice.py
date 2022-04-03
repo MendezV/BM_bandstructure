@@ -136,18 +136,7 @@ class MoireTriangLattice:
     def hexagon2(self,pos, Radius_inscribed_hex):
         x,y = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
         return y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2) #checking if the point is under the diagonal of the inscribed hexagon and below the top edge
-    
-    def hexagon3(self,pos, Radius_inscribed_hex):
-        X,Y = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
-        kx=[]
-        ky=[]
-        for x in X:
-            for y in Y:
-                if (y < np.sqrt(3)* min(Radius_inscribed_hex - x, Radius_inscribed_hex / 2)):
-                    kx.append(x)
-                    ky.append(y)
-                    
-        return kx,ky                
+               
 
     #gets high symmetry points
     def FBZ_points(self,b_1,b_2):
@@ -697,4 +686,86 @@ class MoireTriangLattice:
             indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
             Ik.append(indmin)
         return Ik
+    
+    def hexagon3(self,pos, Radius_inscribed_hex, KX,KY):
+        Y,X = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
+        kx=[]
+        ky=[]
+        delind=[]
+        for i in range(np.size(X)):
+            if (Y[i] <= np.sqrt(3)* min(Radius_inscribed_hex - X[i], Radius_inscribed_hex / 2)):
+                kx.append(pos[0][i])
+                ky.append(pos[1][i])
+                delind.append(i)
+        print(np.shape(KX))
+        KX=np.delete(KX,delind)
+        KY=np.delete(KY,delind)
+        print(np.shape(KX))
+  
+        return kx,ky, KX,KY
 
+    def Generate_lattice_2(self):
+        
+        print("starting sampling in reciprocal space....")
+        s=time.time()
+        
+        [GM1,GM2]=self.GM_vec()
+        LM=self.LM()
+        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        
+        
+        GM1p, GM2p=self.GM_vec()
+        GM1=-GM2p
+        GM2=GM1p+GM2p
+        
+        
+        
+        LP=self.Npoints
+        nn1=np.arange(0,LP,1)
+        nn2=np.arange(0,LP,1)
+
+        nn_1,nn_2=np.meshgrid(nn1,nn2)
+        n1=nn_1.flatten()
+        n2=nn_2.flatten()
+
+        KXp=n1*GM1[0]/LP+n2*GM2[0]/LP
+        KYp=n1*GM1[1]/LP+n2*GM2[1]/LP
+
+        k_window_sizey = K[2][1] 
+        k_window_sizex = K[1][0] 
+
+        #will filter points that are in a hexagon inscribed in a circle of radius Radius_inscribed_hex
+        
+        kxx=[]
+        kyy=[]
+
+        uc=1+0.5/LP
+        dc=1-0.5/LP
+        
+        kx,ky,KXp, KYp=self.hexagon3([KXp, KYp], uc*k_window_sizey, KXp, KYp)
+        kxx=kxx+kx
+        kyy=kyy+ky
+        
+        Ulist=self.Umklapp_List(1)
+        
+        for U in Ulist:
+            G=GM1p*U[0]+GM2p*U[1]
+ 
+            if not (U[0]==0 and U[1]==0):
+                kx,ky,KXp, KYp=self.hexagon3([KXp+G[0], KYp+G[1]], uc*k_window_sizey, KXp, KYp)
+                kxx=kxx+kx
+                kyy=kyy+ky
+        
+        KX=np.array(kxx)
+        KY=np.array(kyy)
+
+        e=time.time()
+        print("finished sampling in reciprocal space....t=",e-s," s")
+
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+        return [KX/Gnorm,KY/Gnorm]
