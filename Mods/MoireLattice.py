@@ -746,6 +746,7 @@ class MoireTriangLattice:
         
         Ulist=self.Umklapp_List(1)
         
+        #folding into the FBZ
         for U in Ulist:
             G=GM1p*U[0]+GM2p*U[1]
  
@@ -754,8 +755,12 @@ class MoireTriangLattice:
                 kxx=kxx+kx
                 kyy=kyy+ky
         
-        KX=np.array(kxx)
-        KY=np.array(kyy)
+        #sorting from most negative to most positive 
+        kw2,kyy2 = zip(*sorted(zip(np.array(kxx)+np.array(kyy),kyy)))
+        kw2,kxx2 = zip(*sorted(zip(np.array(kxx)+np.array(kyy),kxx)))
+        
+        KX=np.array(kxx2)
+        KY=np.array(kyy2)
 
         e=time.time()
         print("finished sampling in reciprocal space....t=",e-s," s")
