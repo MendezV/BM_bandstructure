@@ -101,7 +101,7 @@ class ep_Bubble:
         self.latt=latt
         # print(latt.Npoints, "points in the lattice")
         self.umkl=umkl
-        [self.KX1bz, self.KY1bz]=latt.Generate_lattice() #for the integration grid, we integrate over these
+        [self.KX1bz, self.KY1bz]=latt.Generate_lattice_2() #for the integration grid, we integrate over these
         [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the q external momenta
         [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
         self.Npoi1bz=np.size(self.KX1bz)
@@ -127,19 +127,19 @@ class ep_Bubble:
         # self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
         
         [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,0])
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,0], s=3)
         plt.colorbar()
         plt.savefig("disp1.png")
         plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,1])
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,1],s=3)
         plt.colorbar()
         plt.savefig("disp2.png")
         plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,0])
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,0], s=3)
         plt.colorbar()
         plt.savefig("disp3.png")
         plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,1])
+        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,1],s=3)
         plt.colorbar()
         plt.savefig("disp4.png")
         plt.close()
@@ -736,7 +736,7 @@ def main() -> int:
     theta=modulation_thet*np.pi/180  # magic angle 
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0) 
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2) #this one 
-    [KX,KY]=lq.Generate_lattice()
+    [KX,KY]=lq.Generate_lattice_2()
     Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
     [q1,q2,q3]=l.q
     q=la.norm(q1)
