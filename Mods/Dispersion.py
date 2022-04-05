@@ -21,7 +21,7 @@ class Ham_BM():
         self.latt=latt
         self.kappa=kappa
         self.PH=PH #particle hole symmetry
-        self.gap=0*1e-8#artificial gap
+        self.gap=0.0  #artificial gap
         
         #precomputed momentum lattice and interlayer coupling
        
@@ -208,9 +208,18 @@ class Ham_BM():
         z = np.exp(-1j*phi*tau)
         zs = np.exp(1j*phi*tau)
         
-        T1 = np.array([[w0,w1],[w1,w0]])
-        T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
-        T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        # T1 = np.array([[w0,w1],[w1,w0]])
+        # T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
+        # T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
+        
+        T1=pauli0+paulix
+        T2=pauli0+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
+        T3=pauli0+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
 
 
         U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
@@ -404,7 +413,23 @@ class Ham_BM():
         mat=np.kron(np.kron(pau[layer],Qmat), pau[sublattice])
 
         return  mat@psi
+    
+    def Cs_psi(self, psi):
         
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Qmat=np.eye(self.Dim)
+        
+        layer=0
+        sublattice=3
+        # mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        mat=np.kron(np.kron(pau[layer],Qmat), pau[sublattice])
+
+        return  mat@psi
 
     def c3z_psi(self, psi):
         rot=self.latt.C3z
@@ -491,133 +516,19 @@ class Dispersion():
         s=time.time()
 
         # for l in range(18,19):
+   
         for l in range(self.Npoi1bz):
+            
             E1,wave1=self.hpl.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            psi_plus_a.append(wave1)
+            wave1p=self.gauge_fix( wave1)
+            psi_plus_a.append(wave1p)
             
-     
-            """
-            wave1[:,0]=wave1[:,0]#*np.exp(1j*a2/2)
-            wave1[:,1]=1j*wave1[:,1]#*np.exp(1j*a2/2)
-            
-            print("POSITION", self.KX1bz[l],self.KY1bz[l])
-            plt.scatter(self.KX1bz,self.KY1bz)
-            # plt.plot(self.KX1bz,self.KY1bz)
-            plt.scatter(self.KX1bz[l],self.KY1bz[l])
-            plt.savefig("pos.png")
-            plt.close()
-            
-            
-            II=np.eye(self.Dim)
-            pauli0=np.array([[1,0],[0,1]])
-            paulix=np.array([[0,1],[1,0]])
-            pauliy=np.array([[0,-1j],[1j,0]])
-            pauliz=np.array([[1,0],[0,-1]])
-            op=np.kron(pauli0,np.kron(II,paulix))
-            
-            testw=np.array(wave1[:,0])
-            firstp=np.angle(testw)
-            firstmag=np.abs(testw)
-            secondp=np.angle(op@testw)
-            secondmag=np.abs(op@testw)
-            plt.plot(firstmag-secondmag)
-            plt.savefig("cosa1.png")
-            plt.close()
-            print("ASDFASDFA", np.shape( -secondp+firstp))
- 
-            
-            
-            phasedif=np.fmod(secondp+firstp, 2*np.pi)
-          
-            plt.plot(phasedif)
-            plt.savefig("cosa2.png")
-            plt.close()
-            
-            ### testing jong yeon's way
-            testw=np.array(wave1[:,0])
-            testw2=np.conj(np.array(op@testw))
-            ang_low=np.angle(np.conj(testw.T)@testw2)
-            print("ASDFA",ang_low,np.conj(testw.T)@testw2)
-            testw_new=testw*np.exp(1j*ang_low/2)
-            testw2=np.conj(np.array(op@testw_new))
-            print(np.conj(testw_new.T)@testw2)
-            
-            ### testing eigenval eq
-            testw=np.array(wave1[:,0])
-            testw2=np.abs(np.conj(np.array(op@testw))-testw)
-            plt.plot(testw2)
-            plt.savefig("cos3.png")
-            plt.close()
-            
-            
-            
-            II=np.eye(self.Dim)
-            pauli0=np.array([[1,0],[0,1]])
-            paulix=np.array([[0,1],[1,0]])
-            pauliy=np.array([[0,-1j],[1j,0]])
-            pauliz=np.array([[1,0],[0,-1]])
-            op=np.kron(pauli0,np.kron(II,paulix))
-            plt.imshow(op)
-            plt.savefig("cos4.png")
-            plt.close()
-            
-            op=np.kron(np.kron(II,pauli0),paulix)
-            plt.imshow(op)
-            plt.savefig("cos5.png")
-            plt.close()
-
-            
-            testw=np.array(wave1[:,0])
-            testw2=(np.conj(np.array(op@testw)))
-            plt.plot(np.real(testw))
-            plt.plot(np.real(testw2))
-            plt.savefig("cos4.png")
-            plt.close()
-            plt.plot(np.imag(testw))
-            plt.plot(np.imag(testw2))
-            plt.savefig("cos5.png")
-            plt.close()
-            
-            plt.plot(np.abs(testw))
-            plt.plot(np.abs(testw2))
-            plt.savefig("cos6.png")
-            plt.close()
-            
-            break
-            
-            
-            wave1p=wave1.getH()
-            c2Twave=self.hpl.c2zT_psi(wave1)
-            norm=np.abs( wave1p@wave1 )
-            print(l,norm )
-            a1=np.abs( wave1p@c2Twave )
-            print(l, a1 )
-            print(np.linalg.eigh(a1)[1])
-            mm=(np.linalg.eigh(a1)[1]).getH()
-            wave1p=np.array(wave1)
-            wave1p[:,0]=np.array(wave1@mm)[:,0].flatten()#*np.exp(1j*a2/2)
-            wave1p[:,1]=1j*np.array(wave1@mm)[:,1].flatten()#*np.exp(1j*a2/2)
-            a2=np.abs( (np.conj(wave1.T)@(np.conj(wave1p))) )
-            print(l,  a2)
-            # print(l,   wave1p/wave1)
-            # print(l, np.sum( np.array(np.conj(wave1))*np.array(self.hpl.c2zT_psi(wave1)) ,0) )
-            # a=np.angle(np.sum( np.array(np.conj(wave1))*np.array(self.hpl.c2zT_psi(wave1)) ,0))
-            # print(a)
-            # a2=np.matlib.repmat(a, 4*self.hpl.Dim, 2)
-            
-            
-            print("\n \n")
-            """
-            
-            
-            
-            E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            psi_min_a.append(wave1)
-
-            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
+        #TODO: construct minus wavefunctions from plus wavef 
+        #test gaugefixing for this procedure
+        #test symmetry for the form factors
+        #start implementing the projector- understand the role of non-normal ordered
+    
         e=time.time()
         print("time to diag over MBZ", e-s)
         ##relevant wavefunctions and energies for the + valley
@@ -649,6 +560,7 @@ class Dispersion():
             E1,wave1=self.hpl.eigens(KX[l],KY[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             psi_plus_a.append(wave1)
+            
 
 
             E1,wave1=self.hmin.eigens(KX[l],KY[l],self.nbands)
@@ -710,7 +622,42 @@ class Dispersion():
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
+    ###########Gauge fixing the wavefunctions
+    
+    def gauge_fix(self, wave1):
+        #using c2T symmetry to fix the phases of the wavefuncs
+        ihalf=int(self.nbands/2)
+        
+        testw=np.array(wave1[:,:ihalf])
+        testw2=self.hpl.c2zT_psi(testw)
+        
+        ang_low=np.angle(np.conj(testw.T)@testw2)
+        testw_new=testw*np.exp(1j*ang_low/2)
+        wave1[:,:ihalf]=np.array(testw_new)
+        
+        testw=np.array(wave1[:,ihalf:])
+        testw2=self.hpl.c2zT_psi(testw)
+        
+        ang_low=np.angle(np.conj(testw.T)@testw2)
+        testw_new=1j*testw*np.exp(1j*ang_low/2)  #extra factor of i to make the representation act as n_z
+        wave1[:,ihalf:]=np.array(testw_new)
+        
+        Sewing=np.conj(wave1.T)@self.hpl.c2zT_psi(wave1)
+        pauliz=np.array([[1,0],[0,-1]])
+        if np.abs(np.mean(Sewing-pauliz))>1e-6:
+            print("c2T failed")
+            print(Sewing)
+        
+        #using C sublattice to fix an additional relative minus sign
+        testw=np.array(wave1)
+        testw2=self.hpl.Cs_psi(testw)
+        
+        Sewing2=np.real((np.conj(testw.T)@testw2))
+        
+        return wave1*np.sign(Sewing2[0,1])
+    
     ###########DOS FOR DEBUGGING
+
     
     def DOS(self,Ene_valley_plus_pre,Ene_valley_min_pre):
         [Ene_valley_plus,Ene_valley_min]=[Ene_valley_plus_pre,Ene_valley_min_pre]
@@ -1580,22 +1527,22 @@ def main() -> int:
     
 
     #JY params 
-    hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    hvkd=hbvf*q
-    kappa=0.75
-    up = 0.105; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
-
-    #Andrei params 
-    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     # hvkd=hbvf*q
-    # kappa=1
-    # up = 0.110; # eV
+    # kappa=0.75
+    # up = 0.105; # eV
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
+
+    #Andrei params 
+    hbvf = 19.81/(8*np.pi/3); # eV
+    hvkd=hbvf*q
+    kappa=1
+    up = 0.110; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
