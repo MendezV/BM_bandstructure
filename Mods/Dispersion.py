@@ -411,7 +411,7 @@ class Ham_BM():
 
         return  mat@psi
     
-    def Cs_psi(self, psi):
+    def Csub_psi(self, psi):
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -524,9 +524,11 @@ class Dispersion():
             E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             wave1m=self.gauge_fix( wave1)
-            psi_plus_a.append(wave1m)
+            psi_min_a.append(wave1m)
             
-            self.checkchiral(wave1p, wave1m)
+            # self.check_Cstar(wave1p, self.impose_Cstar(wave1p,l, self.Npoi1bz))
+            swm1=self.impose_Cstar(wave1p,l, self.Npoi1bz)
+            print(la.det(np.abs(np.conj(swm1.T)@wave1m)))
             
         #TODO: construct minus wavefunctions from plus wavef 
         #test gaugefixing for this procedure
@@ -659,7 +661,7 @@ class Dispersion():
         
         #using C sublattice to fix an additional relative minus sign
         testw=np.array(wave1)
-        testw2=self.hpl.Cs_psi(testw)
+        testw2=self.hpl.Csub_psi(testw)
         
         Sewing2=np.real((np.conj(testw.T)@testw2))
         # print(Sewing2)
@@ -667,22 +669,36 @@ class Dispersion():
         #multiplying the sign to the upper half of the spectrum
         wave1[:,ihalf:]=wave1[:,ihalf:]*np.sign(Sewing2[0,1])
         
-        #if we are in the chiral limit the second sewing matrix is a rep of chiral symmetry
+        #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
         if self.hpl.kappa==0.0:
-            Sewing2=np.real( np.conj(wave1.T)@(self.hpl.Cs_psi(wave1)) )
+            Sewing2=np.real( np.conj(wave1.T)@(self.hpl.Csub_psi(wave1)) )
             paulix=np.array([[0,1],[1,0]])
             if np.abs(np.mean(Sewing2-paulix))>1e-6:
-                print("chiral failed")
+                print("chiral sublattice failed")
                 print(Sewing2)
     
         
         return wave1
     
-    def imposechiral(self, wave1):
+    def impose_Cstar(self, wave1,k, Npoi):
+        #antiunitary particle hole connecting different valleys
+        II=np.eye(self.Dim)
         
-        return None
-    def checkchiral(self, wave1, wave2):
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauliy,np.kron(II, paulix))
+        wavem=op@wave1[ : , ::-1]
+        # if k< np.ceil(Npoi/2):
+        #     wavem=op@wave1[ : , ::-1]
+        
+        return wavem
+    
+    
+    def check_Cstar(self, wave1, wave2):
         II=np.eye(self.Dim)
         
         pauli0=np.array([[1,0],[0,1]])
@@ -1567,22 +1583,22 @@ def main() -> int:
     
 
     #JY params 
-    hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    hvkd=hbvf*q
-    kappa=0.75
-    up = 0.105; # eV
-    u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
-
-    #Andrei params 
-    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     # hvkd=hbvf*q
-    # kappa=1
-    # up = 0.110; # eV
+    # kappa=0.75
+    # up = 0.105; # eV
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
+
+    #Andrei params 
+    hbvf = 19.81/(8*np.pi/3); # eV
+    hvkd=hbvf*q
+    kappa=1
+    up = 0.110; # eV
+    u = kappa*up; # eV
+    alpha=up/hvkd
+    alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
