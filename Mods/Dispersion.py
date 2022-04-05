@@ -202,11 +202,8 @@ class Ham_BM():
         Mdelt3=matGq3
        
 
-        w0=self.kappa
-        w1=1
+
         phi = 2*np.pi/3    
-        z = np.exp(-1j*phi*tau)
-        zs = np.exp(1j*phi*tau)
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -217,9 +214,9 @@ class Ham_BM():
         # T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
         # T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
         
-        T1=pauli0+paulix
-        T2=pauli0+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
-        T3=pauli0+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
+        T1=pauli0*self.kappa+paulix
+        T2=pauli0*self.kappa+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
+        T3=pauli0*self.kappa+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
 
 
         U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
@@ -524,6 +521,13 @@ class Dispersion():
             wave1p=self.gauge_fix( wave1)
             psi_plus_a.append(wave1p)
             
+            E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            wave1m=self.gauge_fix( wave1)
+            psi_plus_a.append(wave1m)
+            
+            self.checkchiral(wave1p, wave1m)
+            
         #TODO: construct minus wavefunctions from plus wavef 
         #test gaugefixing for this procedure
         #test symmetry for the form factors
@@ -605,6 +609,8 @@ class Dispersion():
             E1,wave1=self.hmin.eigens_dec(self.KX1bz[l],self.KY1bz[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             psi_min_a.append(wave1)
+            
+            
 
             # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
 
@@ -628,6 +634,7 @@ class Dispersion():
         #using c2T symmetry to fix the phases of the wavefuncs
         ihalf=int(self.nbands/2)
         
+        #lower half of the spectrum
         testw=np.array(wave1[:,:ihalf])
         testw2=self.hpl.c2zT_psi(testw)
         
@@ -635,6 +642,7 @@ class Dispersion():
         testw_new=testw*np.exp(1j*ang_low/2)
         wave1[:,:ihalf]=np.array(testw_new)
         
+        #upper half of the spectrum
         testw=np.array(wave1[:,ihalf:])
         testw2=self.hpl.c2zT_psi(testw)
         
@@ -642,6 +650,7 @@ class Dispersion():
         testw_new=1j*testw*np.exp(1j*ang_low/2)  #extra factor of i to make the representation act as n_z
         wave1[:,ihalf:]=np.array(testw_new)
         
+        #testing the representation of c2T
         Sewing=np.conj(wave1.T)@self.hpl.c2zT_psi(wave1)
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
@@ -653,8 +662,39 @@ class Dispersion():
         testw2=self.hpl.Cs_psi(testw)
         
         Sewing2=np.real((np.conj(testw.T)@testw2))
+        # print(Sewing2)
         
-        return wave1*np.sign(Sewing2[0,1])
+        #multiplying the sign to the upper half of the spectrum
+        wave1[:,ihalf:]=wave1[:,ihalf:]*np.sign(Sewing2[0,1])
+        
+        #if we are in the chiral limit the second sewing matrix is a rep of chiral symmetry
+        #should give a paulix in the basis that we chose
+        if self.hpl.kappa==0.0:
+            Sewing2=np.real( np.conj(wave1.T)@(self.hpl.Cs_psi(wave1)) )
+            paulix=np.array([[0,1],[1,0]])
+            if np.abs(np.mean(Sewing2-paulix))>1e-6:
+                print("chiral failed")
+                print(Sewing2)
+    
+        
+        return wave1
+    
+    def imposechiral(self, wave1):
+        
+        return None
+    def checkchiral(self, wave1, wave2):
+        II=np.eye(self.Dim)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauliy,np.kron(II, paulix))
+        
+        Sewing=np.conj(wave1.T)@(op@wave2)
+        print(np.abs(Sewing))
+        return None
     
     ###########DOS FOR DEBUGGING
 
@@ -1527,22 +1567,22 @@ def main() -> int:
     
 
     #JY params 
-    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=0.75
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
-
-    #Andrei params 
-    hbvf = 19.81/(8*np.pi/3); # eV
+    hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=1
-    up = 0.110; # eV
+    kappa=0.75
+    up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+
+    #Andrei params 
+    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hvkd=hbvf*q
+    # kappa=1
+    # up = 0.110; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
