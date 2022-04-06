@@ -10,8 +10,7 @@ from scipy.linalg import circulant
 import scipy.linalg as la
 
 
-# test symmetry for the form factors chiral
-# implement chiral for decoupled
+# implement particle hole for decoupled
 # implement bubble without HF
 
 # For HF
@@ -531,8 +530,6 @@ class Dispersion():
         print(f"starting dispersion with {self.Npoi1bz} points..........")
         
         s=time.time()
-
-        # for l in range(18,19):
    
         for l in range(self.Npoi1bz):
             
@@ -542,30 +539,32 @@ class Dispersion():
             self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
-            
+            # generate explicitly
             # E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
             # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             # wave1m=self.gauge_fix( wave1)
             # psi_min_a.append(wave1m)
             
             #with the convention that this is the eigenvalue and eigenvector at -k
-            
+            # infer from C2 or T symmetry, energies
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            wave1m=self.impose_C2(wave1p)
-            self.check_C2T(wave1m)
-            psi_min_a.append(wave1m)
             
-            self.check_T(wave1p,wave1m)
-            self.check_C2(wave1p,wave1m)
+            # infer from C2 or T symmetry, wavefuncs
+            # wave1m=self.impose_C2(wave1p)
+            # self.check_C2T(wave1m)
+            # psi_min_a.append(wave1m)
+            
+            # self.check_T(wave1p,wave1m)
+            # self.check_C2(wave1p,wave1m)
 
     
         e=time.time()
         print("time to diag over MBZ", e-s)
         ##relevant wavefunctions and energies for the + valley
         psi_plus=np.array(psi_plus_a)
+        psi_plus,psi_min=self.impose_all_Cstar(psi_plus)
+        # psi_min=np.array(psi_min_a)
         Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi1bz,self.nbands])
-
-        psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi1bz,self.nbands])
 
 
@@ -707,7 +706,7 @@ class Dispersion():
             
             self.check_T(Wp[k,:,:],Wm[k,:,:])
             # self.check_C2(Wp[k,:,:],Wm[k,:,:]) # for some reason, this rep of C2 is incompatible with the rep of Cstar
-        return None
+        return Wp,Wm
           
     def check_Cstar(self, wave1p, wave1m):
         II=np.eye(self.Dim)
@@ -1354,14 +1353,15 @@ class FormFactors_umklapp():
         self.Nu=int(np.shape(self.psi_p)[1]/4) #4, 2 for sublattice and 2 for layer
 
         
-        [KX,KY]=lat.Generate_lattice()
+        [KX,KY]=lat.Generate_lattice_2()
+        
         
         Gu=lat.Umklapp_List(umklapp)
         [KXu,KYu]=lat.Generate_Umklapp_lattice2( KX, KY,umklapp)
 
         self.kx=KXu
         self.ky=KYu
-
+ 
         #momentum transfer lattice
         kqx1, kqx2=np.meshgrid(self.kx,self.kx)
         kqy1, kqy2=np.meshgrid(self.ky,self.ky)
@@ -1548,12 +1548,24 @@ class HartreeBandStruc:
 
         self.L00p=self.FFp.denqFFL_s()
         self.L00m=self.FFm.denqFFL_s()
-
+        
+        #checking symmetries of the form factors
+        paulix=np.array([[0,1],[1,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        for i in range(np.shape(self.L00p)[0]):
+            for j in range(np.shape(self.L00m)[0]):
+                diff=np.mean(self.L00m[i,:,j,:]-pauliz@np.conj(self.L00p[i,:,j,:])@pauliz)
+                if np.abs(diff)>1e-10:
+                    print("problem in FF TRS at", i , j)
+                diff=np.mean(self.L00m[i,:,j,:]-paulix@(self.L00p[i,:,j,:])@paulix)
+                if np.abs(diff)>1e-10:
+                    print("problem in FF PHS at", i , j)
+                
         #refStates
-        [self.psi_plus_dec,self.Ene_valley_plus_1bz_dec,self.psi_min_dec,self.Ene_valley_min_1bz_dec]=disp.precompute_E_psi_dec()
+        # [self.psi_plus_dec,self.Ene_valley_plus_1bz_dec,self.psi_min_dec,self.Ene_valley_min_1bz_dec]=disp.precompute_E_psi_dec()
 
-        self.Ene_valley_plus_dec=self.hpl.ExtendE(self.Ene_valley_plus_1bz_dec , self.umkl)
-        self.Ene_valley_min_dec=self.hmin.ExtendE(self.Ene_valley_min_1bz_dec , self.umkl)
+        # self.Ene_valley_plus_dec=self.hpl.ExtendE(self.Ene_valley_plus_1bz_dec , self.umkl)
+        # self.Ene_valley_min_dec=self.hmin.ExtendE(self.Ene_valley_min_1bz_dec , self.umkl)
 
 
     
@@ -1721,7 +1733,7 @@ def main() -> int:
     
     
     
-    # HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
+    HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
     
 if __name__ == '__main__':
     import sys
