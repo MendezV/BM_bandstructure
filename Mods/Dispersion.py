@@ -595,47 +595,7 @@ class Dispersion():
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
-    
-    def precompute_E_psi_dec(self):
 
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-
-        print(f"starting dispersion with {self.Npoi1bz} points..........")
-        
-        s=time.time()
-        
-        for l in range(self.Npoi1bz):
-            E1,wave1=self.hpl.eigens_dec(self.KX1bz[l],self.KY1bz[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            psi_plus_a.append(wave1)
-
-
-            E1,wave1=self.hmin.eigens_dec(self.KX1bz[l],self.KY1bz[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            psi_min_a.append(wave1)
-            
-            
-
-            # printProgressBar(l + 1, self.Npoi_Q, prefix = 'Progress Diag2:', suffix = 'Complete', length = 50)
-
-        e=time.time()
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.Npoi1bz,self.nbands])
-
-        psi_min=np.array(psi_min_a)
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi1bz,self.nbands])
-
-        
-        
-
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
-    
     ###########Gauge fixing the wavefunctions
     
     def gauge_fix(self, wave1):
@@ -731,8 +691,7 @@ class Dispersion():
             self.check_T(Wp[k,:,:],Wm[k,:,:])
             # self.check_C2(Wp[k,:,:],Wm[k,:,:]) # for some reason, this rep of C2 is incompatible with the rep of Cstar
         return None
-        
-    
+          
     def check_Cstar(self, wave1p, wave1m):
         II=np.eye(self.Dim)
         
@@ -792,6 +751,8 @@ class Dispersion():
             print("C2 failed")
             print(Sewing)
         return None
+    
+    
     ###########DOS FOR DEBUGGING
 
     
@@ -1364,6 +1325,7 @@ class FormFactors():
         Nem_FFT=-self.gq(L01)*L01 - self.xi*self.fq(L02)*L02
         return Nem_FFT
 
+    
 
     
 class FormFactors_umklapp():
