@@ -1931,8 +1931,8 @@ def main() -> int:
     ee2=(hbarc/a_graphene)/alpha
     kappa_di=3.03
     
-    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH,0)
-    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH,0)
+    hpl=Ham_BM_p(hvkd, alph, 1, lq, kappa, PH,1)
+    hmin=Ham_BM_m(hvkd, alph, -1, lq, kappa, PH,1)
 
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     # Ndos=100

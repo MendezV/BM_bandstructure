@@ -519,19 +519,26 @@ class Dispersion():
             E1,wave1=self.hpl.eigens(self.KX1bz[l],self.KY1bz[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             wave1p=self.gauge_fix( wave1)
+            self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
-            E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
+            
+            # E1,wave1=self.hmin.eigens(-self.KX1bz[l],-self.KY1bz[l],self.nbands)
+            # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            # wave1m=self.gauge_fix( wave1)
+            # psi_min_a.append(wave1m)
+            
+            #with the convention that this is the eigenvalue and eigenvector at -k
+            
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            wave1m=self.gauge_fix( wave1)
+            wave1m=self.impose_C2(wave1p)
+            self.check_C2T(wave1m)
             psi_min_a.append(wave1m)
             
-            # self.check_Cstar(wave1p, self.impose_Cstar(wave1p,l, self.Npoi1bz))
-            swm1=self.impose_Cstar(wave1p,l, self.Npoi1bz)
-            print(la.det(np.abs(np.conj(swm1.T)@wave1m)))
+            self.check_T(wave1p,wave1m)
+            self.check_C2(wave1p,wave1m)
+
             
-        #TODO: construct minus wavefunctions from plus wavef 
-        #test gaugefixing for this procedure
         #test symmetry for the form factors
         #start implementing the projector- understand the role of non-normal ordered
     
@@ -544,8 +551,7 @@ class Dispersion():
         psi_min=np.array(psi_min_a)
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.Npoi1bz,self.nbands])
 
-        
-        
+
 
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
@@ -681,37 +687,111 @@ class Dispersion():
         
         return wave1
     
-    def impose_Cstar(self, wave1,k, Npoi):
-        #antiunitary particle hole connecting different valleys
-        II=np.eye(self.Dim)
-        
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
+    def check_C2T(self,wave1):
+
         pauliz=np.array([[1,0],[0,-1]])
         
-        op=np.kron(pauliy,np.kron(II, paulix))
-        wavem=op@wave1[ : , ::-1]
-        # if k< np.ceil(Npoi/2):
-        #     wavem=op@wave1[ : , ::-1]
-        
-        return wavem
-    
-    
-    def check_Cstar(self, wave1, wave2):
-        II=np.eye(self.Dim)
-        
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
+
+        Sewing=np.conj(wave1.T)@self.hpl.c2zT_psi(wave1)
         pauliz=np.array([[1,0],[0,-1]])
+        if np.abs(np.mean(Sewing-pauliz))>1e-6:
+            print("c2T failed")
+            print(Sewing)
         
-        op=np.kron(pauliy,np.kron(II, paulix))
-        
-        Sewing=np.conj(wave1.T)@(op@wave2)
-        print(np.abs(Sewing))
         return None
     
+    def impose_all_Cstar(self, psi_plus):
+        
+        (Nkpoints, DimV, Nbands)=np.shape(psi_plus)
+        II=np.eye(self.Dim)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        op=np.kron(pauliy,np.kron(II, paulix))
+        Wm=np.zeros(np.shape(psi_plus))+0*1j
+        Wp=np.array(psi_plus)
+        
+        TopRange=int(np.ceil(Nkpoints/2))
+        kpoints=int(Nkpoints)
+        for k in range(TopRange):
+            Wm[k,:,:]=op@(psi_plus[k,:,::-1])
+            Wm[kpoints-1-k,:,:]=(psi_plus[k,:,:])@pauliz
+        
+        for k in range(TopRange):
+            Wp[kpoints-1-k,:,:]=op@(Wm[kpoints-1-k,:,::-1])
+
+        for k in range(kpoints):
+            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])
+            self.check_C2T(Wp[k,:,:])
+            self.check_C2T(Wm[k,:,:])
+
+            
+            self.check_T(Wp[k,:,:],Wm[k,:,:])
+            # self.check_C2(Wp[k,:,:],Wm[k,:,:]) # for some reason, this rep of C2 is incompatible with the rep of Cstar
+        return None
+        
+    
+    def check_Cstar(self, wave1p, wave1m):
+        II=np.eye(self.Dim)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauliy,np.kron(II, paulix))
+        
+        Sewing=np.conj(wave1m.T)@(op@wave1p)
+        if np.abs(np.mean(Sewing-paulix))>1e-6:
+            print("C star failed")
+            print(Sewing)
+        return None
+    
+    def impose_T(self,wave1):
+        ihalf=int(self.nbands/2)
+        wave2=np.array(np.conj(wave1))
+        wave2[:,ihalf:]=-np.array(np.conj(wave1))[:,1]
+        return wave2
+    
+    def check_T(self,wave1p,wave1m):
+        Sewing=np.conj(wave1m.T)@np.conj(wave1p)
+        pauliz=np.array([[1,0],[0,-1]])
+        if np.abs(np.mean(Sewing-pauliz))>1e-6:
+            print("T failed")
+            print(Sewing)
+        return None
+    
+    def impose_C2(self,wave1):
+        
+        II=np.eye(self.Dim)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauli0,np.kron(II, paulix))
+        
+        wave2=np.array(op@wave1)
+        return wave2
+    
+    def check_C2(self,wave1p,wave1m):
+        II=np.eye(self.Dim)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauli0,np.kron(II, paulix))
+        
+        Sewing=np.conj(wave1m.T)@(op@wave1p)
+        if np.abs(np.mean(Sewing-pauli0))>1e-6:
+            print("C2 failed")
+            print(Sewing)
+        return None
     ###########DOS FOR DEBUGGING
 
     
@@ -1497,13 +1577,7 @@ class HartreeBandStruc:
         self.Ene_valley_min_dec=self.hmin.ExtendE(self.Ene_valley_min_1bz_dec , self.umkl)
 
 
-        
-
-        #TODO
-        #
-        
-
-        #refStates
+    
 
         print("im here clearly", np.shape(self.psi_plus))
         
@@ -1583,22 +1657,22 @@ def main() -> int:
     
 
     #JY params 
-    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=0.75
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
-
-    #Andrei params 
-    hbvf = 19.81/(8*np.pi/3); # eV
+    hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=1
-    up = 0.110; # eV
+    kappa=0.75
+    up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
+
+    #Andrei params 
+    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hvkd=hbvf*q
+    # kappa=1
+    # up = 0.110; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     
     print("hbvf is ..",hbvf )
     print("q is...", q)
@@ -1665,7 +1739,7 @@ def main() -> int:
     plt.colorbar()
     plt.savefig('disp_m2.png')
     plt.close()
-
+    
     
     
     # HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0, umkl)
