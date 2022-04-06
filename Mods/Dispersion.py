@@ -8,7 +8,27 @@ import MoireLattice
 from scipy.interpolate import interp1d
 from scipy.linalg import circulant
 import scipy.linalg as la
-  
+
+
+# test symmetry for the form factors chiral
+# implement chiral for decoupled
+# implement bubble without HF
+
+# For HF
+# Calculate projectors
+# isolate HF active sector
+# form factors
+# filter q points
+# Select projector decoup or simple subs depending on scheme
+# manipulate projectors for dirac points
+# Slater components Delta
+# Permute indices FF
+# Make coulomb interaction
+# Fock Term
+# Hartree term
+# normal ordered
+# Background ?
+# Build matrix in band space
 
 class Ham_BM():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH, Interlay=None):
@@ -538,9 +558,6 @@ class Dispersion():
             self.check_T(wave1p,wave1m)
             self.check_C2(wave1p,wave1m)
 
-            
-        #test symmetry for the form factors
-        #start implementing the projector- understand the role of non-normal ordered
     
         e=time.time()
         print("time to diag over MBZ", e-s)
