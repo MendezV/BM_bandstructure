@@ -13,8 +13,8 @@ import scipy.linalg as la
 # implement particle hole for decoupled #for later
 
 # For HF
-# Calculate projectors
-# isolate HF active sector
+# Calculate projectors X
+# isolate HF active sector -- problems here
 # form factors X
 # filter q points X
 # Select projector decoup or simple subs depending on scheme
