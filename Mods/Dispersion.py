@@ -636,25 +636,26 @@ class Dispersion():
     def gauge_fix(self, wave1):
         #using c2T symmetry to fix the phases of the wavefuncs
         ihalf=int(self.nbands/2)
-        
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         #lower half of the spectrum
         testw=np.array(wave1[:,:ihalf])
         testw2=self.hpl.c2zT_psi(testw)
         
         ang_low=np.angle(np.conj(testw.T)@testw2)
-        testw_new=testw@np.exp(1j*ang_low/2)
+        testw_new=testw*np.exp(1j*ang_low/2)
         wave1[:,:ihalf]=np.array(testw_new)
         
         #upper half of the spectrum
         testw=np.array(wave1[:,ihalf:])
         testw2=self.hpl.c2zT_psi(testw)
         
-        ang_low=np.angle(np.conj(testw.T)@testw2)
-        testw_new=1j*testw@np.exp(1j*ang_low/2)  #extra factor of i to make the representation act as n_z
+        ang_up=np.angle(np.conj(testw.T)@testw2)
+        testw_new=1j*testw*np.exp(1j*ang_up/2)  #extra factor of i to make the representation act as n_z
         wave1[:,ihalf:]=np.array(testw_new)
         
         #testing the representation of c2T
-        Sewing=np.conj((wave1[:,(ihalf-1):(ihalf+1)]).T)@self.hpl.c2zT_psi((wave1[:,(ihalf-1):(ihalf+1)]))
+        Sewing=np.conj((wave1[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1[:,inde1:inde2]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("c2T failed")
@@ -673,7 +674,7 @@ class Dispersion():
         #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
         if self.hpl.kappa==0.0:
-            Sewing2=np.real( np.conj(wave1.T)@(self.hpl.Csub_psi(wave1)) )
+            Sewing2=np.real( np.conj(wave1[:,inde1:inde2].T)@(self.hpl.Csub_psi(wave1[:,inde1:inde2])) )
             paulix=np.array([[0,1],[1,0]])
             if np.abs(np.mean(Sewing2-paulix))>1e-6:
                 print("chiral sublattice failed")
@@ -683,11 +684,14 @@ class Dispersion():
         return wave1
     
     def check_C2T(self,wave1):
-        ihalf=int(self.nbands/2)
+  
         pauliz=np.array([[1,0],[0,-1]])
+        ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         
 
-        Sewing=np.conj((wave1[:,(ihalf-1):(ihalf+1)]).T)@self.hpl.c2zT_psi((wave1[:,(ihalf-1):(ihalf+1)]))
+        Sewing=np.conj((wave1[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1[:,inde1:inde2]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("c2T failed")
@@ -730,6 +734,8 @@ class Dispersion():
     def check_Cstar(self, wave1p, wave1m):
         II=np.eye(self.Dim)
         ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -738,7 +744,7 @@ class Dispersion():
         
         op=np.kron(pauliy,np.kron(II, paulix))
         
-        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@(op@(wave1p[:,(ihalf-1):(ihalf+1)]))
+        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(wave1p[:,inde1:inde2]))
         if np.abs(np.mean(Sewing-paulix))>1e-6:
             print("C star failed")
             print(Sewing)
@@ -752,7 +758,10 @@ class Dispersion():
     
     def check_T(self,wave1p,wave1m):
         ihalf=int(self.nbands/2)
-        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@np.conj((wave1p[:,(ihalf-1):(ihalf+1)]))
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@np.conj((wave1p[:,inde1:inde2]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("T failed")
@@ -776,6 +785,8 @@ class Dispersion():
     def check_C2(self,wave1p,wave1m):
         II=np.eye(self.Dim)
         ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -784,7 +795,7 @@ class Dispersion():
         
         op=np.kron(pauli0,np.kron(II, paulix))
         
-        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@(op@(wave1p[:,(ihalf-1):(ihalf+1)]))
+        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(wave1p[:,inde1:inde2]))
         if np.abs(np.mean(Sewing-pauli0))>1e-6:
             print("C2 failed")
             print(Sewing)
@@ -1442,6 +1453,12 @@ class HartreeBandStruc:
         self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
         self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
         
+        self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
+        self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
+        
+        self.L00m=self.FFm.denqFF_s()
+        self.FFp.plotFF(self.L00m, "-1NemqFFT_a")
+        
         
         ################################
         #Constructing projector
@@ -1665,49 +1682,50 @@ def main() -> int:
 
     [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
     
-    
-    f=Ene_valley_plus[:,0]
-    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
-    plt.colorbar()
-    eps=np.mean(abs(np.diff(f)))*0.5
-    aa=np.where(np.abs(f-mu)<eps)[0]
-    # print(aa, eps)
-    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
-    plt.savefig('disp_p1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
-    plt.close()
+    for mu in mu_values:
+        print(mu)
+        f=Ene_valley_plus[:,0]
+        plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+        plt.colorbar()
+        eps=np.mean(abs(np.diff(f)))*0.5
+        aa=np.where(np.abs(f-mu)<eps)[0]
+        # print(aa, eps)
+        plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+        plt.savefig('disp_p1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'_'+str(mu)+'.png')
+        plt.close()
 
-    f=Ene_valley_plus[:,1]
-    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
-    plt.colorbar()
-    eps=np.mean(abs(np.diff(f)))*0.5
-    aa=np.where(np.abs(f-mu)<eps)[0]
-    # print(aa, eps)
-    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
-    plt.savefig('disp_p2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
-    plt.close()
+        f=Ene_valley_plus[:,1]
+        plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+        plt.colorbar()
+        eps=np.mean(abs(np.diff(f)))*0.5
+        aa=np.where(np.abs(f-mu)<eps)[0]
+        # print(aa, eps)
+        plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+        plt.savefig('disp_p2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'_'+str(mu)+'.png')
+        plt.close()
 
-    
-    f=Ene_valley_min[:,0]
-    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
-    plt.colorbar()
-    eps=np.mean(abs(np.diff(f)))*0.5
-    aa=np.where(np.abs(f-mu)<eps)[0]
-    # print(aa, eps)
-    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
-    plt.savefig('disp_m1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
-    plt.close()
-    
-    f=Ene_valley_min[:,1]
-    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
-    plt.colorbar()
-    eps=np.mean(abs(np.diff(f)))*0.5
-    aa=np.where(np.abs(f-mu)<eps)[0]
-    # print(aa, eps)
-    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
-    plt.savefig('disp_m2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
-    plt.close()
-    
-    
+        
+        f=Ene_valley_min[:,0]
+        plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+        plt.colorbar()
+        eps=np.mean(abs(np.diff(f)))*0.5
+        aa=np.where(np.abs(f-mu)<eps)[0]
+        # print(aa, eps)
+        plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+        plt.savefig('disp_m1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'_'+str(mu)+'.png')
+        plt.close()
+        
+        f=Ene_valley_min[:,1]
+        plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+        plt.colorbar()
+        eps=np.mean(abs(np.diff(f)))*0.5
+        aa=np.where(np.abs(f-mu)<eps)[0]
+        # print(aa, eps)
+        plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+        plt.savefig('disp_m2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'_'+str(mu)+'.png')
+        plt.close()
+        
+        
     hpl_decoupled=Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     HB=HartreeBandStruc( lq, nbands, hpl, hmin, hpl_decoupled,hmin_decoupled, 4)
