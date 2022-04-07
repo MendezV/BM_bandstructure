@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class MoireTriangLattice:
 
-    def __init__(self, Npoints, theta, normed):
+    def __init__(self, Npoints, theta, normed, c6sym, umkl):
 
         self.Npoints = Npoints
         self.theta = theta
@@ -53,12 +53,17 @@ class MoireTriangLattice:
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
             self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
             
-        #G processes
-        self.MGS_1=[[0,1],[1,0],[0,-1],[-1,0],[-1,-1],[1,1]] #1G
-        self.MGS1=self.MGS_1+[[-1,-2],[-2,-1],[-1,1],[1,2],[2,1],[1,-1]] #1G and possible corners
-        self.MGS_2=self.MGS1+[[-2,-2],[0,-2],[2,0],[2,2],[0,2],[-2,0]] #2G
-        self.MGS2=self.MGS_2+[[-2,-3],[-1,-3],[1,-2],[2,-1],[3,1],[3,2],[2,3],[1,3],[-1,2],[-2,1],[-3,-1],[-3,-2]] #2G and possible corners
-        self.MGS_3=self.MGS2+[[-3,-3],[0,-3],[3,0],[3,3],[0,3],[-3,0]] #3G
+
+        self.umkl=umkl
+        if c6sym:
+            [self.KX1bz,self.KY1bz]=self.Generate_lattice()
+        else:
+            [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
+        [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+        self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
+        self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
+        self.NpoiQ=np.size(self.KQX); print(self.NpoiQ, "Q numer of sampling lattice points")
 
 
     def __repr__(self):
@@ -237,42 +242,7 @@ class MoireTriangLattice:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
 
-    def Generate_Umklapp_lattice(self, KX, KY, numklaps):
-        if numklaps>=0.9:
-            Npoi=np.size(KX)
-            [GM1,GM2]=self.GMvec
-            if numklaps==1:
-                GSu=self.MGS_1
-            elif numklaps==2:
-                GSu=self.MGS_2
-            elif numklaps==3:
-                GSu=self.MGS_3
-            else:
-                GSu=[]
 
-            K_um=[]
-            #adding original samples
-            for i in range(Npoi):
-                K_um.append([round(KX[i], 8),round(KY[i], 8)])
-
-            #extending for different moire lattice vectors
-            for mg in GSu:
-                for i in range(Npoi):
-                    K_um.append([round(KX[i]+mg[0]*GM1[0]+mg[1]*GM2[0], 8),round(KY[i]+mg[0]*GM1[1]+mg[1]*GM2[1], 8)])
-
-            unique_data =np.array( [list(i) for i in set(tuple(i) for i in K_um)])
-            print("K umkplapp unique grid ",np.shape(unique_data))
-            KumX=unique_data[:,0]
-            KumY=unique_data[:,1]
-            # plt.scatter(KumX,KumY)
-            # plt.scatter(KX,KY)
-            # plt.show()
-            
-            return [KumX,KumY]
-        else:
-            return [KX,KY]
-
-    
     #returns the lattice vectors that span the sampling lattice when multiplied by integers                                              
     def Generating_vec_samp_lattice(self, scale_fac_latt):
         [GM1,GM2]=self.GM_vec()
@@ -670,7 +640,8 @@ class MoireTriangLattice:
         [GM1, GM2]=self.GMvec
         KXu=[]
         KYu=[]
-        
+
+
         for GG in Gu:
             KXu=KXu+[KX+GG[0]*GM1[0]+GG[1]*GM2[0]]
             KYu=KYu+[KY+GG[0]*GM1[1]+GG[1]*GM2[1]]
