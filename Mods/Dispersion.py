@@ -10,14 +10,13 @@ from scipy.linalg import circulant
 import scipy.linalg as la
 
 
-# implement particle hole for decoupled
-# implement bubble without HF
+# implement particle hole for decoupled #for later
 
 # For HF
 # Calculate projectors
 # isolate HF active sector
-# form factors
-# filter q points
+# form factors X
+# filter q points X
 # Select projector decoup or simple subs depending on scheme
 # manipulate projectors for dirac points
 # Slater components Delta
@@ -492,13 +491,24 @@ class Ham_BM():
 
     
     def ExtendE(self,E_k , umklapp):
-        Gu=self.latt.Umklapp_List(umklapp)
+        Gu=self.latt.Umklapp_List(umklapp) 
         
         Elist=[]
         for GG in Gu:
             Elist=Elist+[E_k]
             
         return np.vstack(Elist)
+    
+    def ExtendPsi(self, psi_p, umklapp):
+        psilist=[]
+        Gu=self.latt.Umklapp_List(umklapp)
+        for GG in Gu:
+            shi1=int(GG[0])
+            shi2=int(GG[1])
+            psishift=self.trans_psi(psi_p, shi1, shi2)
+            psilist=psilist+[psishift]
+        psi=np.vstack(psilist)
+        return psi
 
 
 class Dispersion():
@@ -565,7 +575,7 @@ class Dispersion():
 
 
 
-        return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
+        return [psi_plus,Ene_valley_plus,psi_min[::-1,:,:],Ene_valley_min[::-1,:]]
     
     def precompute_E_psi_karg(self,KX,KY):
     
@@ -632,7 +642,7 @@ class Dispersion():
         testw2=self.hpl.c2zT_psi(testw)
         
         ang_low=np.angle(np.conj(testw.T)@testw2)
-        testw_new=testw*np.exp(1j*ang_low/2)
+        testw_new=testw@np.exp(1j*ang_low/2)
         wave1[:,:ihalf]=np.array(testw_new)
         
         #upper half of the spectrum
@@ -640,11 +650,11 @@ class Dispersion():
         testw2=self.hpl.c2zT_psi(testw)
         
         ang_low=np.angle(np.conj(testw.T)@testw2)
-        testw_new=1j*testw*np.exp(1j*ang_low/2)  #extra factor of i to make the representation act as n_z
+        testw_new=1j*testw@np.exp(1j*ang_low/2)  #extra factor of i to make the representation act as n_z
         wave1[:,ihalf:]=np.array(testw_new)
         
         #testing the representation of c2T
-        Sewing=np.conj(wave1.T)@self.hpl.c2zT_psi(wave1)
+        Sewing=np.conj((wave1[:,(ihalf-1):(ihalf+1)]).T)@self.hpl.c2zT_psi((wave1[:,(ihalf-1):(ihalf+1)]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("c2T failed")
@@ -673,11 +683,11 @@ class Dispersion():
         return wave1
     
     def check_C2T(self,wave1):
-
+        ihalf=int(self.nbands/2)
         pauliz=np.array([[1,0],[0,-1]])
         
 
-        Sewing=np.conj(wave1.T)@self.hpl.c2zT_psi(wave1)
+        Sewing=np.conj((wave1[:,(ihalf-1):(ihalf+1)]).T)@self.hpl.c2zT_psi((wave1[:,(ihalf-1):(ihalf+1)]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("c2T failed")
@@ -719,6 +729,7 @@ class Dispersion():
           
     def check_Cstar(self, wave1p, wave1m):
         II=np.eye(self.Dim)
+        ihalf=int(self.nbands/2)
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -727,7 +738,7 @@ class Dispersion():
         
         op=np.kron(pauliy,np.kron(II, paulix))
         
-        Sewing=np.conj(wave1m.T)@(op@wave1p)
+        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@(op@(wave1p[:,(ihalf-1):(ihalf+1)]))
         if np.abs(np.mean(Sewing-paulix))>1e-6:
             print("C star failed")
             print(Sewing)
@@ -740,7 +751,8 @@ class Dispersion():
         return wave2
     
     def check_T(self,wave1p,wave1m):
-        Sewing=np.conj(wave1m.T)@np.conj(wave1p)
+        ihalf=int(self.nbands/2)
+        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@np.conj((wave1p[:,(ihalf-1):(ihalf+1)]))
         pauliz=np.array([[1,0],[0,-1]])
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("T failed")
@@ -763,6 +775,7 @@ class Dispersion():
     
     def check_C2(self,wave1p,wave1m):
         II=np.eye(self.Dim)
+        ihalf=int(self.nbands/2)
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -771,7 +784,7 @@ class Dispersion():
         
         op=np.kron(pauli0,np.kron(II, paulix))
         
-        Sewing=np.conj(wave1m.T)@(op@wave1p)
+        Sewing=np.conj((wave1m[:,(ihalf-1):(ihalf+1)]).T)@(op@(wave1p[:,(ihalf-1):(ihalf+1)]))
         if np.abs(np.mean(Sewing-pauli0))>1e-6:
             print("C2 failed")
             print(Sewing)
@@ -1209,14 +1222,8 @@ class FormFactors():
         #if we only diagonalized in the FBZ and we need to translate the wavefunctions
         #if umklapp==-1 we don't do this
         if umklapp>=0:
-            psilist=[]
-            Gu=latt.Umklapp_List(umklapp+1)
-            for GG in Gu:
-                shi1=int(GG[0])
-                shi2=int(GG[1])
-                psishift=ham.trans_psi(psi_p, shi1, shi2)
-                psilist=psilist+[psishift]
-            self.psi=np.vstack(psilist)
+            psi=ham.ExtendPsi(psi_p, umklapp+1)
+            self.psi=psi
             self.cpsi=np.conj(self.psi)
             print("shapes of the wavefunctions in the form factor umklapp class after translation, ",np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
         else:
@@ -1382,37 +1389,67 @@ class FormFactors():
 class HartreeBandStruc:
     
     
-    def __init__(self, latt, nbands, hpl, hmin, nremote_bands):
+    def __init__(self, latt, nbands, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands):
 
         
-        #changes to eliominate arg KX KY put KX1bz first, then call umklapp lattice and put slef in KX, KY
-        #change to implement dos 
+        self.latt=latt
+        
+        
+        self.nbands_init=nbands#4*hpl.Dim
         self.nbands=nbands
+        self.nremote_bands=nremote_bands
+        self.tot_nbands=nbands+nremote_bands
+        
         self.hpl=hpl
         self.hmin=hmin
         
-        self.latt=latt
+        self.hpl_decoupled=hpl_decoupled
+        self.hmin_decoupled=hmin_decoupled
+        
+        
 
-        self.nremote_bands=nremote_bands
+        
 
         ################################
         #dispersion attributes
         ################################
 
-        self.nbands=nbands
-        self.hpl=hpl
-        self.hmin=hmin
-        disp=Dispersion( latt, nbands, hpl, hmin)
-        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(self.latt.KX1bz,self.latt.KY1bz)
+        disp=Dispersion( latt, self.nbands_init, hpl, hmin)
+        [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
         self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
 
+        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+        self.psi_min=self.hpl.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
         ################################
         #generating form factors
         ################################
-        self.FFp=FormFactors(self.psi_plus, 1, latt, self.latt.umkl,self.hpl)
-        self.FFm=FormFactors(self.psi_min, -1, latt, self.latt.umkl,self.hmin)
+        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
+        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin)
+        
+        
+        ################################
+        #reference attributes
+        ################################
+
+        disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
+        [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+
+        self.Ene_valley_plus_decoupled=self.hpl.ExtendE(self.Ene_valley_plus_decoupled_1bz , self.latt.umkl+1)
+        self.Ene_valley_min_decoupled=self.hmin.ExtendE(self.Ene_valley_min_decoupled_1bz , self.latt.umkl+1)
+
+        self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
+        self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+        
+        
+        ################################
+        #Constructing projector
+        ################################
+        Pp,Pm=self.Proy(self.psi_plus, self.psi_min)
+        Pp0,Pm0=self.Proy(self.psi_plus_decoupled, self.psi_min_decoupled)
+        
+        #
         
         # [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(KQX,KQY)
         # self.FFp=FormFactors(self.psi_plus, 1, latt, self.umkl+2,self.hpl)
@@ -1438,43 +1475,51 @@ class HartreeBandStruc:
         #         #     print("problem in FF PHS at", i , j)
         
         
-        self.FFp1=FormFactors(self.psi_plus, 1, latt, self.latt.umkl,self.hpl)
-        self.L00p1=self.FFp1.NemqFFL_a()
-        self.L00p2=self.FFp1.NemqFFT_a()
-        self.FFp.plotFF(self.L00p2, "-1NemqFFT_a")
+        # self.FFp1=FormFactors(self.psi_min, -1, latt, self.latt.umkl,self.hpl)
+        # self.L00p1=self.FFp1.NemqFFL_a()
+        # self.L00p2=self.FFp1.NemqFFT_a()
+        # self.FFp.plotFF(self.L00p2, "-1NemqFFT_a")
         
         
-        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(self.latt.KQX,self.latt.KQY)
-        self.FFp2=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
-        self.L00pp1=self.FFp2.NemqFFL_a()
-        self.L00pp2=self.FFp2.NemqFFT_a()
-        self.FFp.plotFF(self.L00pp2, "1NemqFFT_a")
+        # [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(self.latt.KQX,self.latt.KQY)
+        # self.FFp2=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
+        # self.L00pp1=self.FFp2.NemqFFL_a()
+        # self.L00pp2=self.FFp2.NemqFFT_a()
+        # self.FFp.plotFF(self.L00pp2, "1NemqFFT_a")
         
-        # self.L00p=self.FFp.NemqFFL_a()
-        self.FFp.plotFF(np.abs(self.L00p1)-np.abs(self.L00pp1), "diffNemqFFL_a")
-        # self.L00p=self.FFp.NemqFFL_s()
-        self.FFp.plotFF(np.abs(self.L00p2)-np.abs(self.L00pp2), "diffNemqFFT_a")
-        # self.L00p=self.FFp.NemqFFT_a()
-        # self.FFp.plotFF(self.L00p, "NemqFFT_a")
-        # self.L00p=self.FFp.NemqFFT_s()
-        # self.FFp.plotFF(self.L00p, "NemqFFT_s")
+        # # self.L00p=self.FFp.NemqFFL_a()
+        # self.FFp.plotFF(np.abs(self.L00p1)-np.abs(self.L00pp1), "diffNemqFFL_a")
+        # # self.L00p=self.FFp.NemqFFL_s()
+        # self.FFp.plotFF(np.abs(self.L00p2)-np.abs(self.L00pp2), "diffNemqFFT_a")
+        # # self.L00p=self.FFp.NemqFFT_a()
+        # # self.FFp.plotFF(self.L00p, "NemqFFT_a")
+        # # self.L00p=self.FFp.NemqFFT_s()
+        # # self.FFp.plotFF(self.L00p, "NemqFFT_s")
         
         
-        #refStates
-        # [self.psi_plus_dec,self.Ene_valley_plus_1bz_dec,self.psi_min_dec,self.Ene_valley_min_1bz_dec]=disp.precompute_E_psi_dec()
+        
 
-        # self.Ene_valley_plus_dec=self.hpl.ExtendE(self.Ene_valley_plus_1bz_dec , self.umkl)
-        # self.Ene_valley_min_dec=self.hmin.ExtendE(self.Ene_valley_min_1bz_dec , self.umkl)
-
-
-    
-
-        print("im here clearly", np.shape(self.psi_plus))
+        print("im here clearly", np.shape(self.psi_plus),4*hpl.Dim)
         
     
-    def Proy(self,psi):
-        P=psi.T @psi
-        return P
+    def Proy(self,psi_plus, psi_minus):
+        Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        halfb=int(self.nbands_init/2)
+        for k in range(self.latt.NpoiQ):
+            vec=psi_plus[k,:,:]
+            first=np.conj(vec.T)@(vec[:,halfb])
+            second=np.conj((vec[:,halfb]).T)@vec
+            Pp[k,:,:]=first@second
+            
+            vec=psi_minus[k,:,:]
+            first=np.conj(vec.T)@(vec[:,halfb])
+            second=np.conj((vec[:,halfb]).T)@vec
+            Pp[k,:,:]=first@second
+            
+        return Pp,Pm
+        
+        
         
 
     
@@ -1519,6 +1564,12 @@ def main() -> int:
     except (ValueError, IndexError):
         raise Exception("Input double to modulate the twist angle")
 
+    try:
+        modulation_kappa=float(sys.argv[4])
+
+    except (ValueError, IndexError):
+        raise Exception("Input double to modulate kappa")
+
     print("\n \n")
     print("lattice sampling...")
     #Lattice parameters 
@@ -1549,7 +1600,7 @@ def main() -> int:
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=0.75
+    kappa=modulation_kappa
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
@@ -1612,32 +1663,54 @@ def main() -> int:
     # plt.savefig(f"contour_{mu}.png")
     # plt.close()
 
-    # [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
-    # plt.scatter(lq.KX1bz, lq.KY1bz, c=Ene_valley_plus[:,0])
-    # plt.colorbar()
-    # plt.savefig('disp_p1.png')
-    # plt.close()
+    [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
+    
+    
+    f=Ene_valley_plus[:,0]
+    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+    plt.colorbar()
+    eps=np.mean(abs(np.diff(f)))*0.5
+    aa=np.where(np.abs(f-mu)<eps)[0]
+    # print(aa, eps)
+    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+    plt.savefig('disp_p1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
+    plt.close()
+
+    f=Ene_valley_plus[:,1]
+    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+    plt.colorbar()
+    eps=np.mean(abs(np.diff(f)))*0.5
+    aa=np.where(np.abs(f-mu)<eps)[0]
+    # print(aa, eps)
+    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+    plt.savefig('disp_p2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
+    plt.close()
 
     
-    # plt.scatter(lq.KX1bz, lq.KY1bz, c=Ene_valley_plus[:,1])
-    # plt.colorbar()
-    # plt.savefig('disp_p2.png')
-    # plt.close()
-
+    f=Ene_valley_min[:,0]
+    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+    plt.colorbar()
+    eps=np.mean(abs(np.diff(f)))*0.5
+    aa=np.where(np.abs(f-mu)<eps)[0]
+    # print(aa, eps)
+    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+    plt.savefig('disp_m1_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
+    plt.close()
     
-    # plt.scatter(-lq.KX1bz, -lq.KY1bz, c=Ene_valley_min[:,0])
-    # plt.colorbar()
-    # plt.savefig('disp_m1.png')
-    # plt.close()
+    f=Ene_valley_min[:,1]
+    plt.scatter(lq.KX1bz, lq.KY1bz, c=f)
+    plt.colorbar()
+    eps=np.mean(abs(np.diff(f)))*0.5
+    aa=np.where(np.abs(f-mu)<eps)[0]
+    # print(aa, eps)
+    plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
+    plt.savefig('disp_m2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'.png')
+    plt.close()
     
-    # plt.scatter(-lq.KX1bz, -lq.KY1bz, c=Ene_valley_min[:,1])
-    # plt.colorbar()
-    # plt.savefig('disp_m2.png')
-    # plt.close()
     
-    
-    
-    HB=HartreeBandStruc( lq, nbands, hpl, hmin, 0)
+    hpl_decoupled=Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
+    hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
+    HB=HartreeBandStruc( lq, nbands, hpl, hmin, hpl_decoupled,hmin_decoupled, 4)
     
 if __name__ == '__main__':
     import sys
