@@ -10,16 +10,16 @@ from scipy.linalg import circulant
 import scipy.linalg as la
 
 
-# implement particle hole for decoupled #for later
 
 # For HF
+
 # Calculate projectors X
 # isolate HF active sector -- problems here
 # form factors X
 # filter q points X
 # Select projector decoup or simple subs depending on scheme
 # manipulate projectors for dirac points
-# Slater components Delta
+# Slater components Delta X
 # Permute indices FF
 # Make coulomb interaction
 # Fock Term
@@ -541,7 +541,7 @@ class Dispersion():
             
             E1,wave1=self.hpl.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            wave1p=self.gauge_fix( wave1)
+            wave1p=self.gauge_fix( wave1, E1)
             self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
@@ -593,7 +593,7 @@ class Dispersion():
         for l in range(Npoi):
             E1,wave1=self.hpl.eigens(KX[l],KY[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            wave1p=self.gauge_fix( wave1)
+            wave1p=self.gauge_fix( wave1, E1)
             self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
@@ -633,7 +633,7 @@ class Dispersion():
 
     ###########Gauge fixing the wavefunctions
     
-    def gauge_fix(self, wave1):
+    def gauge_fix(self, wave1, E1):
         #using c2T symmetry to fix the phases of the wavefuncs
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
@@ -642,24 +642,30 @@ class Dispersion():
         testw=np.array(wave1[:,:ihalf])
         testw2=self.hpl.c2zT_psi(testw)
         
-        ang_low=np.angle(np.conj(testw.T)@testw2)
-        testw_new=testw*np.exp(1j*ang_low/2)
+        # ang_low=np.angle(np.conj(testw.T)@testw2)
+        ang_low=np.angle(np.sum(np.conj(testw)*testw2,axis=0)) #phase of the dot product of the columns of wave1  with the C2T transformed columns
+        reshape_ang_low=np.vstack([ang_low]*np.shape(testw)[0] )  #making the shapes match with the wavefunciton array
+        testw_new=testw*np.exp(1j*reshape_ang_low/2) #"substracting" the phase for each of the columns
         wave1[:,:ihalf]=np.array(testw_new)
         
         #upper half of the spectrum
         testw=np.array(wave1[:,ihalf:])
         testw2=self.hpl.c2zT_psi(testw)
         
-        ang_up=np.angle(np.conj(testw.T)@testw2)
-        testw_new=1j*testw*np.exp(1j*ang_up/2)  #extra factor of i to make the representation act as n_z
+        # ang_up=np.angle(np.conj(testw.T)@testw2)
+        ang_up=np.angle(np.sum(np.conj(testw)*testw2,axis=0)) #phase of the dot product of the columns of wave1 with the C2T transformed columns
+        reshape_ang_up=np.vstack([ang_up]*np.shape(testw)[0] )  #making the shapes match with the wavefunciton array
+        testw_new=1j*testw*np.exp(1j*reshape_ang_up/2) #"substracting" the phase for each of the columns, #extra factor of i to make the representation act as n_z
         wave1[:,ihalf:]=np.array(testw_new)
         
         #testing the representation of c2T
         Sewing=np.conj((wave1[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1[:,inde1:inde2]))
         pauliz=np.array([[1,0],[0,-1]])
+        
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("c2T failed")
             print(Sewing)
+            print(E1[inde2]-E1[inde1])
         
         #using C sublattice to fix an additional relative minus sign
         testw=np.array(wave1)
@@ -669,7 +675,9 @@ class Dispersion():
         # print(Sewing2)
         
         #multiplying the sign to the upper half of the spectrum
-        wave1[:,ihalf:]=wave1[:,ihalf:]*np.sign(Sewing2[0,1])
+        Sign=np.real(np.exp(1j*np.angle(Sewing2[0,1]))) #avoids zero in the decoupled limit
+        wave1[:,ihalf:]=wave1[:,ihalf:]*Sign
+
         
         #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
@@ -1400,13 +1408,13 @@ class FormFactors():
 class HartreeBandStruc:
     
     
-    def __init__(self, latt, nbands, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands):
+    def __init__(self, latt,  hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract, cons):
 
         
         self.latt=latt
         
         
-        self.nbands_init=nbands#4*hpl.Dim
+        self.nbands_init=4*hpl.Dim
         self.nbands=nbands
         self.nremote_bands=nremote_bands
         self.tot_nbands=nbands+nremote_bands
@@ -1416,6 +1424,12 @@ class HartreeBandStruc:
         
         self.hpl_decoupled=hpl_decoupled
         self.hmin_decoupled=hmin_decoupled
+        
+        self.subs=substract
+        
+        
+        
+        Coulomb0 = eps_inv*(electric_charge^2*screening_length)/(sqrt(3)*epsilon*mev*aM^2);
         
         
 
@@ -1443,6 +1457,9 @@ class HartreeBandStruc:
         ################################
         #reference attributes
         ################################
+        
+        print('\n')
+        print('calculating refernce states...')
 
         disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
         [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
@@ -1453,11 +1470,11 @@ class HartreeBandStruc:
         self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
         self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
         
-        self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
-        self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
+        # self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
+        # self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
         
-        self.L00m=self.FFm.denqFF_s()
-        self.FFp.plotFF(self.L00m, "-1NemqFFT_a")
+        # self.L00m=self.FFm.denqFF_s()
+        # self.FFp.plotFF(self.L00m, "-1NemqFFT_a")
         
         
         ################################
@@ -1465,6 +1482,13 @@ class HartreeBandStruc:
         ################################
         Pp,Pm=self.Proy(self.psi_plus, self.psi_min)
         Pp0,Pm0=self.Proy(self.psi_plus_decoupled, self.psi_min_decoupled)
+        
+        if self.subs==1:
+            proj=self.Slater_comp(Pp)
+        else:
+            proj=self.Slater_comp(Pp0)
+        
+        
         
         #
         
@@ -1519,7 +1543,7 @@ class HartreeBandStruc:
         print("im here clearly", np.shape(self.psi_plus),4*hpl.Dim)
         
     
-    def Proy(self,psi_plus, psi_minus):
+    def Proy_slat_comp(self,psi_plus, psi_minus):
         Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         halfb=int(self.nbands_init/2)
@@ -1534,7 +1558,18 @@ class HartreeBandStruc:
             second=np.conj((vec[:,halfb]).T)@vec
             Pp[k,:,:]=first@second
             
+            
         return Pp,Pm
+    
+    def Slater_comp(self, P):
+        
+        Delta=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
+        ihalfm1=int(self.tot_nbands/2)-int(self.nbands/2)
+        for k in range(self.latt.NpoiQ):
+            Delta[k,:ihalfm1,:ihalfm1]=np.eye(ihalfm1)
+        proj=P-Delta
+        return proj
+        
         
         
         
@@ -1681,7 +1716,7 @@ def main() -> int:
     # plt.close()
 
     [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
-    
+    """
     for mu in mu_values:
         print(mu)
         f=Ene_valley_plus[:,0]
@@ -1724,7 +1759,7 @@ def main() -> int:
         plt.scatter(lq.KX1bz[aa],lq.KY1bz[aa], c='r', s=3)
         plt.savefig('disp_m2_'+str(modulation_kappa)+'_'+str(modulation_theta)+'_'+str(mu)+'.png')
         plt.close()
-        
+    """
         
     hpl_decoupled=Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
