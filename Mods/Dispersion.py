@@ -1217,7 +1217,7 @@ class Dispersion():
 
     
 class FormFactors():
-    def __init__(self, psi_p, xi, latt, umklapp, ham):
+    def __init__(self, psi_p, xi, latt, umklapp, ham, Bands=None):
         self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
         self.cpsi_p=np.conj(psi_p)
         self.latt=latt
@@ -1238,16 +1238,29 @@ class FormFactors():
         self.qmin_y=self.latt.KQY[1]-self.latt.KQY[0]
         self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
         
+        if Bands is None:
+            self.Bands = np.shape(self.psi_p)[2]
+            inindex=0
+            finindex=self.Bands
+            print("calculating form factors with all bands is input wavefunction")
+        else:
+            self.Bands= Bands
+            initBands=np.shape(self.psi_p)[2]
+            inindex=int(initBands/2)-int(Bands/2)
+            finindex=int(initBands/2)+int(Bands/2)
+            print(f"truncating wavefunction and calculating form factors with only {Bands} bands")
+            
+        
         #if we only diagonalized in the FBZ and we need to translate the wavefunctions
         #if umklapp==-1 we don't do this
         if umklapp>=0:
             psi=ham.ExtendPsi(psi_p, umklapp+1)
-            self.psi=psi
+            self.psi=psi[:,:,inindex:finindex]
             self.cpsi=np.conj(self.psi)
             print("shapes of the wavefunctions in the form factor umklapp class after translation, ",np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
         else:
-            self.psi=psi_p
-            self.cpsi=np.conj(psi_p)
+            self.psi=psi_p[:,:,inindex:finindex]
+            self.cpsi=np.conj(self.psi)
             print("shapes of the wavefunctions in the form factor umklapp class with no translation, ",np.shape(self.psi), np.shape(psi_p), np.shape(self.kx))
             
 
@@ -1427,9 +1440,9 @@ class HartreeBandStruc:
         
         self.subs=substract
         
-        
-        
-        Coulomb0 = eps_inv*(electric_charge^2*screening_length)/(sqrt(3)*epsilon*mev*aM^2);
+
+        [self.V0, self.d_screening_norm]=cons
+    
         
         
 
@@ -1450,10 +1463,14 @@ class HartreeBandStruc:
         ################################
         #generating form factors
         ################################
-        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
-        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin)
+        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,2)
+        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,2)
+        
+        self.LamP=self.FFp.denqFF_s()
+        self.LamM=self.FFm.denqFF_s()
         
         
+
         ################################
         #reference attributes
         ################################
@@ -1470,8 +1487,8 @@ class HartreeBandStruc:
         self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
         self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
         
-        # self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
-        # self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
+        self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
+        self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
         
         # self.L00m=self.FFm.denqFF_s()
         # self.FFp.plotFF(self.L00m, "-1NemqFFT_a")
@@ -1480,13 +1497,15 @@ class HartreeBandStruc:
         ################################
         #Constructing projector
         ################################
-        Pp,Pm=self.Proy(self.psi_plus, self.psi_min)
-        Pp0,Pm0=self.Proy(self.psi_plus_decoupled, self.psi_min_decoupled)
+        Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
+        Pp0,Pm0=self.Proy_slat_comp(self.psi_plus_decoupled, self.psi_min_decoupled)
         
         if self.subs==1:
             proj=self.Slater_comp(Pp)
         else:
             proj=self.Slater_comp(Pp0)
+            
+        
         
         
         
@@ -1563,11 +1582,16 @@ class HartreeBandStruc:
     
     def Slater_comp(self, P):
         
+        ihalf=int(self.nbands_init/2)
+        inde1=ihalf - int(self.tot_nbands/2)
+        inde2=ihalf + int(self.tot_nbands/2)
+        
+        
         Delta=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
         ihalfm1=int(self.tot_nbands/2)-int(self.nbands/2)
         for k in range(self.latt.NpoiQ):
             Delta[k,:ihalfm1,:ihalfm1]=np.eye(ihalfm1)
-        proj=P-Delta
+        proj=P[:,inde1:inde2,inde1:inde2]-Delta
         return proj
         
         
@@ -1678,36 +1702,46 @@ def main() -> int:
     
     #electron parameters
     nbands=2
+    nremote_bands=4
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
     e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
-    kappa_di=3.03
+    eps_inv = 1/10
+    d_screening=20*(1e-9)/a_graphene
+    d_screening_norm=d_screening*lq.qnor()
+    epsilon_0 = 8.85*1e-12
+    ev_conv = e_el
+    Vcoul=( e_el*e_el*eps_inv*d_screening/(2*epsilon_0*a_graphene) )
+    V0= (  Vcoul/lq.VolMBZ )/ev_conv
+    print(V0, 'la energia de coulomb en mev')
     
     hpl=Ham_BM(hvkd, alph, 1, lq, kappa, PH,1)
     hmin=Ham_BM(hvkd, alph, -1, lq, kappa, PH,1)
 
     #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
     # Ndos=100
-    print("\n \n")
-    print("chem pot determination...")
-    Ndos=18
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,c6sym,umkl)
-    disp=Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=7
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) at the magic angle
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, False,True)
-    filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
-    filling=fillings[filling_index]
-    print("\n \n")
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
-    print("\n \n")
+    # print("\n \n")
+    # print("chem pot determination...")
+    # Ndos=18
+    # ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,c6sym,umkl)
+    # disp=Dispersion( ldos, nbands, hpl, hmin)
+    # Nfils=7
+    # # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) at the magic angle
+    # [fillings,mu_values]=disp.mu_filling_array(Nfils, False, False,True)
+    # filling_index=int(sys.argv[1]) 
+    # mu=mu_values[filling_index]
+    # filling=fillings[filling_index]
+    # print("\n \n")
+    # print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    # print("\n \n")
     
-    disp=Dispersion( lq, nbands, hpl, hmin)
-    disp.High_symmetry()
+    ## Dispersion along high symmetry directions
+    # disp=Dispersion( lq, nbands, hpl, hmin)
+    # disp.High_symmetry()
     
+    ## Fermi surface contour plot
     # mu=mu_values[int(Nfils/2)]
     # filling=fillings[int(Nfils/2)]
     # [xFS_dense,yFS_dense]=disp.FS_contour(100, mu, hpl)
@@ -1715,8 +1749,9 @@ def main() -> int:
     # plt.savefig(f"contour_{mu}.png")
     # plt.close()
 
-    [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
+    
     """
+    [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]=disp.precompute_E_psi()
     for mu in mu_values:
         print(mu)
         f=Ene_valley_plus[:,0]
@@ -1763,7 +1798,9 @@ def main() -> int:
         
     hpl_decoupled=Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
-    HB=HartreeBandStruc( lq, nbands, hpl, hmin, hpl_decoupled,hmin_decoupled, 4)
+    
+    substract=1
+    HB=HartreeBandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
     
 if __name__ == '__main__':
     import sys
