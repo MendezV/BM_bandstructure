@@ -1,4 +1,5 @@
 from decimal import MIN_EMIN
+from tkinter.messagebox import NO
 import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
@@ -14,14 +15,14 @@ import scipy.linalg as la
 # For HF
 
 # Calculate projectors X
-# isolate HF active sector -- problems here
+# isolate HF active sector X
 # form factors X
 # filter q points X
-# Select projector decoup or simple subs depending on scheme
+# Select projector decoup or simple subs depending on scheme X
 # manipulate projectors for dirac points
 # Slater components Delta X
-# Permute indices FF
-# Make coulomb interaction
+# Permute indices FF X
+# Make coulomb interaction X
 # Fock Term
 # Hartree term
 # normal ordered
@@ -1418,7 +1419,7 @@ class FormFactors():
         return None
     
        
-class HartreeBandStruc:
+class HF_BandStruc:
     
     
     def __init__(self, latt,  hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract, cons):
@@ -1431,6 +1432,12 @@ class HartreeBandStruc:
         self.nbands=nbands
         self.nremote_bands=nremote_bands
         self.tot_nbands=nbands+nremote_bands
+        
+        self.ini_band=int(self.nbands_init/2)-int(self.tot_nbands/2)
+        self.fini_band=int(self.nbands_init/2)+int(self.tot_nbands/2)
+        
+        self.ini_band_HF=int(self.tot_nbands/2)-int(self.nbands/2)
+        self.fini_band_HF=int(self.tot_nbands/2)+int(self.nbands/2)
         
         self.hpl=hpl
         self.hmin=hmin
@@ -1455,19 +1462,21 @@ class HartreeBandStruc:
         disp=Dispersion( latt, self.nbands_init, hpl, hmin)
         [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
 
         self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
         self.psi_min=self.hpl.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
         ################################
         #generating form factors
         ################################
-        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,2)
-        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,2)
+        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
+        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
         
-        self.LamP=self.FFp.denqFF_s()
-        self.LamM=self.FFm.denqFF_s()
+        self.LamP=np.transpose(self.FFp.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
+        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
+        self.LamM=np.transpose(self.FFm.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
+        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
         
         
 
@@ -1481,17 +1490,10 @@ class HartreeBandStruc:
         disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
         [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
-        self.Ene_valley_plus_decoupled=self.hpl.ExtendE(self.Ene_valley_plus_decoupled_1bz , self.latt.umkl+1)
-        self.Ene_valley_min_decoupled=self.hmin.ExtendE(self.Ene_valley_min_decoupled_1bz , self.latt.umkl+1)
-
         self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
         self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
         
-        self.FFp=FormFactors(self.psi_plus_decoupled, 1, latt, -1,self.hpl_decoupled)
-        self.FFm=FormFactors(self.psi_min_decoupled, -1, latt, -1,self.hmin_decoupled)
         
-        # self.L00m=self.FFm.denqFF_s()
-        # self.FFp.plotFF(self.L00m, "-1NemqFFT_a")
         
         
         ################################
@@ -1505,62 +1507,41 @@ class HartreeBandStruc:
         else:
             proj=self.Slater_comp(Pp0)
             
+        self.V=self.Vq()
+        print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
         
-        
-        
-        
-        #
-        
-        # [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(KQX,KQY)
-        # self.FFp=FormFactors(self.psi_plus, 1, latt, self.umkl+2,self.hpl)
-        # self.FFm=FormFactors(self.psi_min, -1, latt, self.umkl+2,self.hmin)
+        s=time.time()
+        Fock=self.Fock(proj)
+        e=time.time()
+        print(f'time for Fock {e-s}')
 
-        # self.L00p=self.FFp.denqFF_s()
-        # self.L00m=self.FFm.denqFF_s()
-        
-        
-        # self.L00m=self.FFm.NemqFFL_a()
-        
-        #checking symmetries of the form factors, only check Cstar when sure I set PH=True
-        # # paulix=np.array([[0,1],[1,0]])
-        # pauliz=np.array([[1,0],[0,-1]])
-        # for i in range(np.shape(self.L00p)[0]):
-        #     for j in range(np.shape(self.L00m)[0]):
-        #         diff=np.mean(self.L00m[i,:,j,:]-pauliz@np.conj(self.L00p[i,:,j,:])@pauliz)
-        #         # print(diff)
-        #         if np.abs(diff)>1e-8:
-        #             print("problem in FF TRS at", i , j, "mean value,", diff, np.abs(diff))
-        #         # diff=np.mean(self.L00m[i,:,j,:]-paulix@(self.L00p[i,:,j,:])@paulix)
-        #         # if np.abs(diff)>1e-10:
-        #         #     print("problem in FF PHS at", i , j)
-        
-        
-        # self.FFp1=FormFactors(self.psi_min, -1, latt, self.latt.umkl,self.hpl)
-        # self.L00p1=self.FFp1.NemqFFL_a()
-        # self.L00p2=self.FFp1.NemqFFT_a()
-        # self.FFp.plotFF(self.L00p2, "-1NemqFFT_a")
-        
-        
-        # [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi_karg(self.latt.KQX,self.latt.KQY)
-        # self.FFp2=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
-        # self.L00pp1=self.FFp2.NemqFFL_a()
-        # self.L00pp2=self.FFp2.NemqFFT_a()
-        # self.FFp.plotFF(self.L00pp2, "1NemqFFT_a")
-        
-        # # self.L00p=self.FFp.NemqFFL_a()
-        # self.FFp.plotFF(np.abs(self.L00p1)-np.abs(self.L00pp1), "diffNemqFFL_a")
-        # # self.L00p=self.FFp.NemqFFL_s()
-        # self.FFp.plotFF(np.abs(self.L00p2)-np.abs(self.L00pp2), "diffNemqFFT_a")
-        # # self.L00p=self.FFp.NemqFFT_a()
-        # # self.FFp.plotFF(self.L00p, "NemqFFT_a")
-        # # self.L00p=self.FFp.NemqFFT_s()
-        # # self.FFp.plotFF(self.L00p, "NemqFFT_s")
-        
-        
+        HBMp=np.zeros(np.shape(Fock))
+        HBMp[:,0,0]=self.Ene_valley_plus[:,0]
+        HBMp[:,1,1]=self.Ene_valley_plus[:,1]
+        H0=HBMp-1*Fock
         
 
-        print("im here clearly", np.shape(self.psi_plus),4*hpl.Dim)
+        print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
         
+        s=time.time()
+        EHF=[]
+        for l in range(self.latt.NpoiQ):
+            
+            E1=la.eigvalsh(H0[l,:,:])
+            EHF.append(E1)
+            
+        e=time.time()
+        EE=np.array(EHF)[:, self.ini_band_HF:self.fini_band_HF]
+        print(np.shape(EE), 'shape of the HF eigenvalues')
+        plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,0])
+        plt.colorbar()
+        plt.savefig("EHF1.png")
+        plt.close()
+        
+        plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,1])
+        plt.colorbar()
+        plt.savefig("EHF2.png")
+        plt.close()
     
     def Proy_slat_comp(self,psi_plus, psi_minus):
         Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
@@ -1582,17 +1563,39 @@ class HartreeBandStruc:
     
     def Slater_comp(self, P):
         
-        ihalf=int(self.nbands_init/2)
-        inde1=ihalf - int(self.tot_nbands/2)
-        inde2=ihalf + int(self.tot_nbands/2)
-        
-        
         Delta=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
-        ihalfm1=int(self.tot_nbands/2)-int(self.nbands/2)
+        Id=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
+
         for k in range(self.latt.NpoiQ):
-            Delta[k,:ihalfm1,:ihalfm1]=np.eye(ihalfm1)
-        proj=P[:,inde1:inde2,inde1:inde2]-Delta
+            Delta[k,:self.ini_band_HF,:self.ini_band_HF]=np.eye(self.ini_band_HF)
+            Id[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)
+            
+        proj=P[:,self.ini_band:self.fini_band,self.ini_band:self.fini_band]-Delta-Id/2
         return proj
+    
+    
+    def Vq(self):
+        V0=self.V0/self.latt.Npoi1bz
+        qd=self.d_screening_norm*self.FFp.q
+        Vq=V0*np.tanh(qd)/qd
+        Vq[np.where(qd==0.0)[0]]=V0
+        return Vq
+    
+    def Hartree(self, M):
+        MT=np.transpose(M, (0,2,1))
+        
+        return None
+    
+    def Fock(self, M):
+        MT=np.transpose(M, (0,2,1))
+        X=np.zeros(np.shape(M))+ 1j
+        for k in range(self.latt.NpoiQ):
+            for kq in range(self.latt.NpoiQ):
+                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:])
+            X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
+        return -X
+    
+
         
         
         
@@ -1702,7 +1705,7 @@ def main() -> int:
     
     #electron parameters
     nbands=2
-    nremote_bands=4
+    nremote_bands=10
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
@@ -1714,8 +1717,8 @@ def main() -> int:
     epsilon_0 = 8.85*1e-12
     ev_conv = e_el
     Vcoul=( e_el*e_el*eps_inv*d_screening/(2*epsilon_0*a_graphene) )
-    V0= (  Vcoul/lq.VolMBZ )/ev_conv
-    print(V0, 'la energia de coulomb en mev')
+    V0= (  Vcoul/lq.Vol_WZ() )/ev_conv
+    print(V0, 'la energia de coulomb en ev')
     
     hpl=Ham_BM(hvkd, alph, 1, lq, kappa, PH,1)
     hmin=Ham_BM(hvkd, alph, -1, lq, kappa, PH,1)
@@ -1799,8 +1802,8 @@ def main() -> int:
     hpl_decoupled=Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     
-    substract=1
-    HB=HartreeBandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
+    substract=0 #0 for decoupled layers
+    HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
     
 if __name__ == '__main__':
     import sys
