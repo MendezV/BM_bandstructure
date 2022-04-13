@@ -499,7 +499,7 @@ class MoireTriangLattice:
     #to check whether this is working uncomment the plot statments
     def findpath(self,Kps,KX,KY):
 
-        path=np.empty((0))
+        path=np.empty((0), dtype=int)
         pthK=[]
         HSP_index=[]
         counter_path=0

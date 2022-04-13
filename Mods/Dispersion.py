@@ -1473,13 +1473,18 @@ class HF_BandStruc:
         self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
         self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
         
-        self.LamP=np.transpose(self.FFp.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
-        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
-        self.LamM=np.transpose(self.FFm.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
-        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
+        # self.LamP=np.transpose(self.FFp.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
+        # self.LamP_dag=np.conj(np.transpose(self.LamP,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
+        # self.LamM=np.transpose(self.FFm.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
+        # self.LamM_dag=np.conj(np.transpose(self.LamM,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
         
         
-
+        self.LamP=self.FFp.denqFF_s() #no initial transpose
+        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
+        self.LamM=self.FFm.denqFF_s() #no initial transpose
+        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
+        
+        
         ################################
         #reference attributes
         ################################
@@ -1518,7 +1523,7 @@ class HF_BandStruc:
         HBMp=np.zeros(np.shape(Fock))
         HBMp[:,0,0]=self.Ene_valley_plus[:,0]
         HBMp[:,1,1]=self.Ene_valley_plus[:,1]
-        H0=HBMp-1*Fock
+        H0=HBMp-0*Fock
         
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -1526,8 +1531,8 @@ class HF_BandStruc:
         s=time.time()
         EHF=[]
         for l in range(self.latt.NpoiQ):
-            
-            E1=la.eigvalsh(H0[l,:,:])
+            E1=la.eigvalsh(Fock[l,:,:])
+            # E1=la.eigvalsh(H0[l,:,:])
             EHF.append(E1)
             
         e=time.time()
@@ -1535,29 +1540,42 @@ class HF_BandStruc:
         print(np.shape(EE), 'shape of the HF eigenvalues')
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,0])
         plt.colorbar()
-        plt.savefig("EHF1.png")
+        plt.savefig("EHFV1.png")
         plt.close()
         
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,1])
         plt.colorbar()
-        plt.savefig("EHF2.png")
+        plt.savefig("EHFV2.png")
+        plt.close()
+        
+        [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
+        plt.plot(EE[path,0])
+        plt.plot(EE[path,1])
+        plt.savefig("dispHFV.png")
+        plt.close()
+        
+        plt.plot(self.latt.KQX[path], self.latt.KQY[path])
+        VV=self.latt.boundary()
+        plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
+        plt.plot(VV[:,0], VV[:,1], c='b')
+        plt.savefig("HSP.png")
         plt.close()
     
     def Proy_slat_comp(self,psi_plus, psi_minus):
+        
         Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         halfb=int(self.nbands_init/2)
         for k in range(self.latt.NpoiQ):
             vec=psi_plus[k,:,:]
-            first=np.conj(vec.T)@(vec[:,halfb])
-            second=np.conj((vec[:,halfb]).T)@vec
+            first=np.conj(vec.T)@(vec[:,:halfb])
+            second=np.conj((vec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
             
             vec=psi_minus[k,:,:]
-            first=np.conj(vec.T)@(vec[:,halfb])
-            second=np.conj((vec[:,halfb]).T)@vec
-            Pp[k,:,:]=first@second
-            
+            first=np.conj(vec.T)@(vec[:,:halfb])
+            second=np.conj((vec[:,:halfb]).T)@vec
+            Pm[k,:,:]=first@second
             
         return Pp,Pm
     
@@ -1569,7 +1587,6 @@ class HF_BandStruc:
         for k in range(self.latt.NpoiQ):
             Delta[k,:self.ini_band_HF,:self.ini_band_HF]=np.eye(self.ini_band_HF)
             Id[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)
-            
         proj=P[:,self.ini_band:self.fini_band,self.ini_band:self.fini_band]-Delta-Id/2
         return proj
     
@@ -1583,15 +1600,24 @@ class HF_BandStruc:
     
     def Hartree(self, M):
         MT=np.transpose(M, (0,2,1))
-        
-        return None
+        Numkl=int(self.latt.NpoiQ/self.latt.Npoi1bz) 
+        X=np.zeros(np.shape(M),dtype=type(1j))
+        origin_ID= np.argmin(self.latt.KQX**2 +self.latt.KQY**2 )
+        for G in range(Numkl):
+            VG=[origin_ID+G*self.latt.Npoi1bz ,origin_ID ]
+            for k in range(self.latt.NpoiQ):
+                X[k, :,:]=0
+            X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
+        #trace term only 
+        return X
     
     def Fock(self, M):
         MT=np.transpose(M, (0,2,1))
-        X=np.zeros(np.shape(M))+ 1j
+        X=np.zeros(np.shape(M),dtype=type(1j))
         for k in range(self.latt.NpoiQ):
             for kq in range(self.latt.NpoiQ):
-                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:])
+                # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
+                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k,:,kq,:]@(MT[kq,:,:]@self.LamP[k,:,kq,:]) #no initial transpose
             X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
         return -X
     
@@ -1705,7 +1731,7 @@ def main() -> int:
     
     #electron parameters
     nbands=2
-    nremote_bands=10
+    nremote_bands=0
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
@@ -1804,7 +1830,7 @@ def main() -> int:
     
     substract=0 #0 for decoupled layers
     HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
-    
+
 if __name__ == '__main__':
     import sys
     sys.exit(main())  # next section explains the use of sys.exit
