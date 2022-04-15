@@ -1515,15 +1515,16 @@ class HF_BandStruc:
         self.V=self.Vq()
         print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
         
-        s=time.time()
-        Fock=self.Fock(proj)
-        e=time.time()
-        print(f'time for Fock {e-s}')
+        # s=time.time()
+        # Fock=self.Fock(proj)
+        # e=time.time()
+        # print(f'time for Fock {e-s}')
 
-        HBMp=np.zeros(np.shape(Fock))
+        # HBMp=np.zeros(np.shape(Fock))
+        HBMp=np.zeros(np.shape(proj))
         HBMp[:,0,0]=self.Ene_valley_plus[:,0]
         HBMp[:,1,1]=self.Ene_valley_plus[:,1]
-        H0=HBMp-Fock
+        H0=HBMp#-Fock
         
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -1540,25 +1541,25 @@ class HF_BandStruc:
         print(np.shape(EE), 'shape of the HF eigenvalues')
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,0])
         plt.colorbar()
-        plt.savefig("EHF1_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("EHF10_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,1])
         plt.colorbar()
-        plt.savefig("EHF2_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("EHF20_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
         plt.plot(EE[path,0])
         plt.plot(EE[path,1])
-        plt.savefig("dispHF_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("dispHF0_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.plot(self.latt.KQX[path], self.latt.KQY[path])
         VV=self.latt.boundary()
         plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
         plt.plot(VV[:,0], VV[:,1], c='b')
-        plt.savefig("HSP_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("HSP0_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         print("Bandwith,", np.max(EE[:,1])-np.min(EE[:,0]))

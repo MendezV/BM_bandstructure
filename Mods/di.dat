@@ -1,0 +1,458 @@
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.024074792861938477  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.021848201751708984  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.1
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 15.274095058441162
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.557857036590576
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.621614694595337
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 13.060821294784546
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018906116485595703  s
+Bandwith, 0.000251775395260431
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.022215604782104492  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018604040145874023  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.2
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 13.17322587966919
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.4079389572143555
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 2.8524043560028076
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 10.97588300704956
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.019128799438476562  s
+Bandwith, 8.005832288680979e-05
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.025237560272216797  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018748044967651367  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.3
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 14.249026536941528
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.6754658222198486
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.707443952560425
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 12.946925401687622
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.019260168075561523  s
+Bandwith, 0.00026459016528290703
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.021994590759277344  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018026351928710938  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.4
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 15.709248304367065
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.7150893211364746
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.2784624099731445
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 11.724359512329102
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.019050121307373047  s
+Bandwith, 0.000718393064972107
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.04211020469665527  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.026211261749267578  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.5
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 13.254801988601685
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 4.302215814590454
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.6290647983551025
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 11.827778339385986
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018785953521728516  s
+Bandwith, 0.0013039563103871368
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.02230525016784668  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018436431884765625  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.6
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 14.802069664001465
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.766582489013672
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.8245646953582764
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 11.969038486480713
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.01870894432067871  s
+Bandwith, 0.0020216611282846933
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.02235269546508789  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.017910242080688477  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.7
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 14.72173261642456
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.4592158794403076
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.2682271003723145
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 11.860976934432983
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018418073654174805  s
+Bandwith, 0.0028703561924944437
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.026622772216796875  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.01886439323425293  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.8
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 13.626606702804565
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.2847325801849365
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.49204683303833
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 12.485714197158813
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.01973128318786621  s
+Bandwith, 0.0038459353464292295
+
+ 
+
+lattice sampling...
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.022429943084716797  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018489837646484375  s
+547 1bz numer of sampling lattice points
+3829 X numer of sampling lattice points
+10393 Q numer of sampling lattice points
+taking 1 umklapps
+
+ 
+
+parameters of the hamiltonian...
+hbvf is .. 2.3382685902179845
+q is... 0.07676251561000431
+hvkd is... 0.17949137915699082
+kappa is.. 0.9
+alpha is.. 0.5849863123964439
+the twist angle is .. 0.01832595714594046
+
+ 
+
+0.11619672932818317 la energia de coulomb en ev
+starting dispersion with 547 points..........
+time to diag over MBZ 13.927693128585815
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+truncating wavefunction and calculating form factors with only 2 bands
+shapes of the wavefunctions in the form factor umklapp class with no translation,  (10393, 168, 2) (10393, 168, 168) (10393,)
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.697216272354126
+calculating tensor that stores the overlaps, layer 0, sublattice 0........
+finsihed the overlaps.......... 3.727919816970825
+
+
+calculating refernce states...
+starting dispersion with 547 points..........
+time to diag over MBZ 12.784812211990356
+19
+shapes of the operators for HF (10393, 10393) (10393, 2, 10393, 2) (10393, 2, 2)
+starting dispersion with 547 points..........
+(10393, 2) shape of the HF eigenvalues
+starting sampling in reciprocal space....
+finished sampling in reciprocal space....t= 0.018769264221191406  s
+Bandwith, 0.0049391739849303186
