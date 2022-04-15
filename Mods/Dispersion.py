@@ -1523,7 +1523,7 @@ class HF_BandStruc:
         HBMp=np.zeros(np.shape(Fock))
         HBMp[:,0,0]=self.Ene_valley_plus[:,0]
         HBMp[:,1,1]=self.Ene_valley_plus[:,1]
-        H0=HBMp-0*Fock
+        H0=HBMp-Fock
         
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -1531,8 +1531,8 @@ class HF_BandStruc:
         s=time.time()
         EHF=[]
         for l in range(self.latt.NpoiQ):
-            E1=la.eigvalsh(Fock[l,:,:])
-            # E1=la.eigvalsh(H0[l,:,:])
+            # E1=la.eigvalsh(Fock[l,:,:])
+            E1=la.eigvalsh(H0[l,:,:])
             EHF.append(E1)
             
         e=time.time()
@@ -1540,26 +1540,28 @@ class HF_BandStruc:
         print(np.shape(EE), 'shape of the HF eigenvalues')
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,0])
         plt.colorbar()
-        plt.savefig("EHFV1.png")
+        plt.savefig("EHF1_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,1])
         plt.colorbar()
-        plt.savefig("EHFV2.png")
+        plt.savefig("EHF2_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
         plt.plot(EE[path,0])
         plt.plot(EE[path,1])
-        plt.savefig("dispHFV.png")
+        plt.savefig("dispHF_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.plot(self.latt.KQX[path], self.latt.KQY[path])
         VV=self.latt.boundary()
         plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
         plt.plot(VV[:,0], VV[:,1], c='b')
-        plt.savefig("HSP.png")
+        plt.savefig("HSP_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
+        
+        print("Bandwith,", np.max(EE[:,1])-np.min(EE[:,0]))
     
     def Proy_slat_comp(self,psi_plus, psi_minus):
         
@@ -1579,7 +1581,7 @@ class HF_BandStruc:
             
         return Pp,Pm
     
-    def Slater_comp(self, P):
+    def Slater_comp(self, preP):
         
         Delta=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
         Id=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
@@ -1587,7 +1589,19 @@ class HF_BandStruc:
         for k in range(self.latt.NpoiQ):
             Delta[k,:self.ini_band_HF,:self.ini_band_HF]=np.eye(self.ini_band_HF)
             Id[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)
-        proj=P[:,self.ini_band:self.fini_band,self.ini_band:self.fini_band]-Delta-Id/2
+            
+        #isolating bands
+        P=preP[:,self.ini_band:self.fini_band,self.ini_band:self.fini_band]
+        
+        #guaranteeing degeneracy at K and K'
+        Dirpoints=self.latt.all_dirac_ind()
+        for k in Dirpoints:
+            P[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)/2
+            
+        proj=P-Delta-Id/2
+        
+        # for k in Dirpoints:
+        #     print(proj[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF])
         return proj
     
     
@@ -1599,7 +1613,7 @@ class HF_BandStruc:
         return Vq
     
     def Hartree(self, M):
-        MT=np.transpose(M, (0,2,1))
+        MT=M#np.transpose(M, (0,2,1))
         Numkl=int(self.latt.NpoiQ/self.latt.Npoi1bz) 
         X=np.zeros(np.shape(M),dtype=type(1j))
         origin_ID= np.argmin(self.latt.KQX**2 +self.latt.KQY**2 )
@@ -1617,7 +1631,7 @@ class HF_BandStruc:
         for k in range(self.latt.NpoiQ):
             for kq in range(self.latt.NpoiQ):
                 # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
-                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k,:,kq,:]@(MT[kq,:,:]@self.LamP[k,:,kq,:]) #no initial transpose
+                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
             X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
         return -X
     
@@ -1830,7 +1844,12 @@ def main() -> int:
     
     substract=0 #0 for decoupled layers
     HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
-
+    # plt.scatter(lq.KQX,lq.KQY)
+    # VV=lq.all_dirac_ind()
+    # print(np.shape(VV))
+    # plt.scatter(lq.KQX[VV],lq.KQY[VV])
+    # plt.savefig("lattice.png")
+    # plt.show()
 if __name__ == '__main__':
     import sys
     sys.exit(main())  # next section explains the use of sys.exit

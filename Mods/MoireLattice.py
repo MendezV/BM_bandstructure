@@ -743,3 +743,30 @@ class MoireTriangLattice:
         else:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
+    
+    def all_dirac_ind(self):
+        
+        [GM1,GM2]=self.GM_vec()
+        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+            
+            
+        indices=[]
+        numG=int(self.NpoiQ/self.Npoi1bz)
+        print(numG)
+        for i in range(len(Vertices_list)):
+            x=self.KX1bz-Vertices_list[i][0]/Gnorm
+            y=self.KY1bz-Vertices_list[i][1]/Gnorm
+            indi=np.argmin(x**2+y**2)
+            indices.append(indi)
+            
+            for j in range(numG):
+                indices.append(indi+j*self.Npoi1bz)
+            
+        return np.array(indices,dtype=int)
