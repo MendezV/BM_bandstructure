@@ -10,6 +10,7 @@ from mpl_toolkits import mplot3d
 import concurrent.futures
 import os
 import pandas as pd
+import Dispersion
 
 #TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
 #TODO: cyprians calculation along momentum cut (in ee bubble method)
@@ -92,7 +93,7 @@ class ep_Bubble:
     """
     ################################
     
-    def __init__(self, latt, nbands, hpl, hmin, symmetric, mode, cons , test, umkl):
+    def __init__(self, latt, nbands, HB, symmetric, mode, cons , test, umkl):
 
         
         ################################
@@ -101,49 +102,25 @@ class ep_Bubble:
         self.latt=latt
         # print(latt.Npoints, "points in the lattice")
         self.umkl=umkl
-        [self.KX1bz, self.KY1bz]=latt.Generate_lattice_2() #for the integration grid, we integrate over these
-        [self.KX,self.KY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl) #for the q external momenta
-        [self.KQX,self.KQY]=latt.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl+1) #for the momentum transfer lattice
-        self.Npoi1bz=np.size(self.KX1bz)
-        self.Npoi=np.size(self.KX)
-        self.NpoiQ=np.size(self.KQX)
         
-        self.Ik=latt.insertion_index( self.KX1bz,self.KY1bz, self.KQX, self.KQY)
+        self.Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         print("qq",self.qscale)
-        self.dS_in=1/self.Npoi1bz
+        self.dS_in=1/self.latt.Npoi1bz
         
         
         ################################
         #dispersion attributes
         ################################
         self.nbands=nbands
-        self.hpl=hpl
-        self.hmin=hmin
-        disp=Hamiltonian.Dispersion( latt, nbands, hpl, hmin)
-        [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+        self.HB=HB
+        self.Ene_valley_plus_1bz=HB.E_HFp
+        self.Ene_valley_min_1bz=HB.E_HFm
+        self.Ene_valley_plus=HB.E_HFp_ex
+        self.Ene_valley_min=HB.E_HFm_ex
+
         
-        # self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.umkl+1)
-        # self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.umkl+1)
-        
-        [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_karg(self.KQX,self.KQY)
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,0], s=3)
-        plt.colorbar()
-        plt.savefig("disp1.png")
-        plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_plus[:,1],s=3)
-        plt.colorbar()
-        plt.savefig("disp2.png")
-        plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,0], s=3)
-        plt.colorbar()
-        plt.savefig("disp3.png")
-        plt.close()
-        plt.scatter(self.KQX,self.KQY, c=self.Ene_valley_min[:,1],s=3)
-        plt.colorbar()
-        plt.savefig("disp4.png")
-        plt.close()
         
         ################################
         ###selecting eta
@@ -173,212 +150,46 @@ class ep_Bubble:
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
         self.mode=mode
         self.symmetric=symmetric
-        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.hpl.kappa)+"_theta_"+str(self.latt.theta)
+        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.HB.hpl.kappa)+"_theta_"+str(self.latt.theta)+"_modeHF_"+str(HB.mode)
 
         
         ################################
         #generating form factors
         ################################
-        # self.FFp=Hamiltonian.FormFactors_umklapp(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        # self.FFm=Hamiltonian.FormFactors_umklapp(self.psi_min, -1, latt, self.umkl+1,self.hmin)
-        
-        self.FFp=Hamiltonian.FormFactors(self.psi_plus, 1, latt, self.umkl+1,self.hpl)
-        self.FFm=Hamiltonian.FormFactors(self.psi_min, -1, latt, self.umkl+1,self.hmin)
 
-        
         if symmetric=="s":
             if mode=="L":
-                self.L00p=self.FFp.denqFFL_s()
-                self.L00m=self.FFm.denqFFL_s()
-                self.Lnemp=self.FFp.NemqFFL_s()
-                self.Lnemm=self.FFm.NemqFFL_s()
+                self.L00p=self.HB.FFp.denqFFL_s()
+                self.L00m=self.HB.FFm.denqFFL_s()
+                self.Lnemp=self.HB.FFp.NemqFFL_s()
+                self.Lnemm=self.HB.FFm.NemqFFL_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
             elif mode=="T": 
-                self.Lnemp=self.FFp.NemqFFT_s()
-                self.Lnemm=self.FFm.NemqFFT_s()
+                self.Lnemp=self.HB.FFp.NemqFFT_s()
+                self.Lnemm=self.HB.FFm.NemqFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
             elif mode=="dens":
-                self.Omega_FFp=self.FFp.denqFF_s()
-                self.Omega_FFm=self.FFm.denqFF_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
                 
             else:
-                self.Omega_FFp=self.FFp.denqFF_s()
-                self.Omega_FFm=self.FFm.denqFF_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             
         else: # a- mode
             if mode=="L":
-                self.L00p=self.FFp.denqFFL_a()
-                self.L00m=self.FFm.denqFFL_a()
-                self.Lnemp=self.FFp.NemqFFL_a()
-                self.Lnemm=self.FFm.NemqFFL_a()
+                self.L00p=self.HB.FFp.denqFFL_a()
+                self.L00m=self.HB.FFm.denqFFL_a()
+                self.Lnemp=self.HB.FFp.NemqFFL_a()
+                self.Lnemm=self.HB.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
             elif mode=="T":
-                self.Lnemp=self.FFp.NemqFFT_a()
-                self.Lnemm=self.FFm.NemqFFT_a()
+                self.Lnemp=self.HB.FFp.NemqFFT_a()
+                self.Lnemm=self.HB.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
             elif mode=="dens":
-                self.Omega_FFp=self.FFp.denqFF_s()
-                self.Omega_FFm=self.FFm.denqFF_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             else:
-                self.Omega_FFp=self.FFp.denqFF_a()
-                self.Omega_FFm=self.FFm.denqFF_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
-        
-        ################################
-        #testing form factors for symmetry
-        ################################
-        if test:
-            
-            K=[]
-            KP=[]
-            cos1=[]
-            cos2=[]
-            for s in range(self.NpoiQ):
-                kp=np.argmin( (self.KQX-self.KQX[s])**2 +(self.KQY-self.KQY[s])**2)
-                undet=0
-                K.append(self.KQX[kp])
-                KP.append(self.KQY[kp])
-                for k in range(self.Npoi1bz):
-                    ks=np.argmin( (self.KQX-self.KX1bz[k])**2 +(self.KQY-self.KY1bz[k])**2)
-                    undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[ks,:,kp,:])**2))  
-                cos1.append(undet/self.Npoi1bz)
-                
-            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
-            del K[kp]
-            del KP[kp]
-            del cos1[kp]
-
-            plt.scatter(K,KP, c=cos1, s=6)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_0p"+self.name+".png")
-            plt.close()
-
-
-
-            print("testing symmetry of the form factors...")
-            [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
-            diffarp=[]
-            diffarm=[]
-            K=[]
-            KP=[]
-            cos1=[]
-            cos2=[]
-            for s in range(self.Npoi):
-                kp=np.argmin( (self.KQX-self.KX[s])**2 +(self.KQY-self.KY[s])**2)
-                undet=0
-                dosdet=0
-                K.append(self.KQX[kp])
-                KP.append(self.KQY[kp])
-                for k in range(self.NpoiQ):
-                    
-                    #Regular FF
-                    # Plus Valley FF Omega
-                    undet=undet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                    dosdet=dosdet+np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                    # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                    # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos1.append(undet/self.NpoiQ)
-                diffarp.append( undet/self.NpoiQ   - dosdet/self.NpoiQ   )
-
-
-            #DELETING THE GAMMA POINT
-            
-            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
-            del K[kp]
-            del KP[kp]
-            del cos1[kp]
-            
-            plt.scatter(K,KP, c=cos1, s=6)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_p"+self.name+".png")
-            plt.close()
-            
-            diffarp=[]
-            diffarm=[]
-            K=[]
-            KP=[]
-            cos1=[]
-            cos2=[]
-            
-            kp=np.argmin( (self.KQX)**2 +(self.KQY)**2)+4
-            undet=0
-            dosdet=0
-            
-            for k in range(self.NpoiQ):
-                K.append(self.KQX[k])
-                KP.append(self.KQY[k])
-                
-                #Regular FF
-                # Plus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos1.append(undet)
-                diffarp.append( undet   - dosdet   )
-                
-            #DELETING THE GAMMA POINT
-            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
-            del K[kp]
-            del KP[kp]
-            del cos1[kp]
-            
-            plt.scatter(K,KP, c=cos1, s=6)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_2p"+self.name+".png")
-            plt.close()
-            
-            
-            
-            
-            print("testing symmetry of the form factors...")
-            [KXc3z,KYc3z, Indc3z]=self.latt.C3zLatt(self.KQX,self.KQY)
-            diffarp=[]
-            diffarm=[]
-            K=[]
-            KP=[]
-            cos1=[]
-            cos2=[]
-            kp=np.argmin(self.KQX**2 +self.KQY**2)+4
-            for k in range(self.NpoiQ):
-                K.append(self.KQX[k])
-                KP.append(self.KQY[k])
-                #Regular FF
-                # Plus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[k,:,kp,:])**2))  
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFp[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFp[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos1.append(undet)
-                diffarp.append( undet   - dosdet   )
-                # Minus Valley FF Omega
-                undet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[k,:,kp,:])**2))
-                dosdet=np.abs(np.linalg.det(np.abs(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:])**2))
-                # undet=np.abs(np.linalg.det(self.Omega_FFm[k,:,kp,:]))
-                # dosdet=np.abs(np.linalg.det(self.Omega_FFm[int(Indc3z[k]),:,int(Indc3z[kp]),:]))
-                cos2.append(undet)
-                diffarm.append( undet   - dosdet   )
-            
-            #DELETING THE GAMMA POINT
-            kp=np.argmin( np.array(K)**2 +np.array(KP)**2)
-            del K[kp]
-            del KP[kp]
-            del cos1[kp]
-            del cos2[kp]
-
-            plt.scatter(K,KP, c=cos1, s=6)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_3p"+self.name+".png")
-            plt.close()
-            
-            plt.scatter(K,KP, c=cos2,s=6)
-            plt.colorbar()
-            plt.savefig("TestC3_symm_det_4m"+self.name+".png")
-            plt.close()
-
-      
-            print("finished testing symmetry of the form factors...")
-        
         
 
 
@@ -429,16 +240,21 @@ class ep_Bubble:
 
     def OmegaL(self):
         
-        Omega_FFp=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        
+        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
                 
         return [Omega_FFp,Omega_FFm]
 
     def OmegaT(self):
 
-        Omega_FFp=(self.beta_ep*self.Lnemp)
-        Omega_FFm=(self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=(self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=(self.beta_ep*self.Lnemm)
 
+        
+        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+        
         return [Omega_FFp,Omega_FFm]
 
 
@@ -508,12 +324,12 @@ class ep_Bubble:
                 qx=kpath[int(l), 0]
                 qy=kpath[int(l), 1]
                 
-                Ikq=self.latt.insertion_index( self.KX1bz+qx,self.KY1bz+qy, self.KQX, self.KQY)
+                Ikq=self.latt.insertion_index( self.latt.KX1bz+qx,self.latt.KY1bz+qy, self.latt.KQX, self.latt.KQY)
 
             
                 #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.Npoi1bz)])
+                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.latt.Npoi1bz)])
+                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.latt.Npoi1bz)])
 
 
                 integrand_var=0
@@ -553,14 +369,14 @@ class ep_Bubble:
         print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
         print("residual of the fit...", res)
         
-        # self.plot_res( integ, self.KX1bz,self.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_lh_")
+        # self.plot_res( integ, self.latt.KX1bz,self.latt.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_lh_")
         
         return [integ, res, c]
 
     def extract_cs(self, integ, prop_BZ):
         qq=self.qscale/self.agraph
         scaling_fac= self.Wupsilon/(qq*qq*self.mass)
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.KX,self.KY, prop_BZ)
+        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.latt.KX,self.latt.KY, prop_BZ)
         Gmat=np.array([ KX_m**2,KY_m**2]).T
         GTG=Gmat.T@Gmat
         d=np.real(integ[ind])
@@ -599,7 +415,7 @@ class ep_Bubble:
         
         identifier=add_tag+str(Nsamp)+self.name
         Nfills=np.size(filling)
-        Nss=np.size(self.KX)
+        Nss=np.size(self.latt.KX)
 
         #products of the run
         Pibub=np.hstack(integ)
@@ -611,8 +427,8 @@ class ep_Bubble:
             res_list=res_list+[res[i]]*Nss
             filling_list=filling_list+[filling[i]]*Nss
             
-        KXall=np.hstack([self.KX]*Nfills)
-        KYall=np.hstack([self.KY]*Nfills)
+        KXall=np.hstack([self.latt.KX]*Nfills)
+        KYall=np.hstack([self.latt.KY]*Nfills)
         carr=np.array(c_list)
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
@@ -624,7 +440,7 @@ class ep_Bubble:
         
         #constants
         thetas_arr=np.array([self.latt.theta]*(Nss*Nfills))
-        kappa_arr=np.array([self.hpl.kappa]*(Nss*Nfills))
+        kappa_arr=np.array([self.HB.hpl.kappa]*(Nss*Nfills))
 
             
         df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 })
@@ -644,7 +460,7 @@ class ep_Bubble:
         qp=np.arange(np.size(fillings))
         s=time.time()
         omega=[1e-14]
-        kpath=np.array([self.KX,self.KY]).T
+        kpath=np.array([self.latt.KX,self.latt.KY]).T
         
         arglist=[]
         for i, qpval in enumerate(qp):
@@ -719,29 +535,29 @@ def main() -> int:
         raise Exception("third arg has to be the mode that one wants to simulate either L or T")
 
     try:
-        modulation_thet=float(sys.argv[4])
+        modulation_theta=float(sys.argv[4])
 
     except (ValueError, IndexError):
         raise Exception("Fourth arguments is the twist angle")
 
     try:
-        modulation_kap=float(sys.argv[5])
+        modulation_kappa=float(sys.argv[5])
 
     except (ValueError, IndexError):
         raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
 
     
+    print("\n \n")
+    print("lattice sampling...")
     #Lattice parameters 
-    #lattices with different normalizations 
-    theta=modulation_thet*np.pi/180  # magic angle 
-    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0, True,1) 
-    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,True,1) #this one 
-    [KX,KY]=lq.Generate_lattice_2()
-    Npoi=np.size(KX); print(Npoi, "numer of sampling lattice points")
+    #lattices with different normalizations
+    theta=modulation_theta*np.pi/180  # magic angle
+    c6sym=True
+    umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
+    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one
     [q1,q2,q3]=l.q
-    q=la.norm(q1)
-    print("qq",q)
-    umkl=1
+    q=np.sqrt(q1@q1)
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
@@ -750,61 +566,63 @@ def main() -> int:
     # hbvf = 2.1354; # eV
     # hvkd=hbvf*q
     # kappa_p=0.0797/0.0975
-    # kappa=modulation_kap*kappa_p
+    # kappa=kappa_p
     # up = 0.0975; # eV
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
     PH=True
     
+
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
-    kappa=modulation_kap*0.75 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
+    kappa=modulation_kappa
     up = 0.105; # eV
     u = kappa*up; # eV
     alpha=up/hvkd
     alph=alpha
 
-    # #Andrei params 
+    #Andrei params 
     # hbvf = 19.81/(8*np.pi/3); # eV
     # hvkd=hbvf*q
-    # kappa=modulation_kap*1
+    # kappa=1
     # up = 0.110; # eV
     # u = kappa*up; # eV
     # alpha=up/hvkd
     # alph=alpha
-    
-    #dirac params 
-    # hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    # hvkd=hbvf*q
-    # kappa=modulation_kap*0.0 #0.75 has magic angle at 1.06 and 0.3 has magic angle at 1.05 (W/O HF)
-    # up = 0.105; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha*0
-    
+    print("\n \n")
+    print("parameters of the hamiltonian...")
     print("hbvf is ..",hbvf )
     print("q is...", q)
     print("hvkd is...", hvkd)
     print("kappa is..", kappa)
     print("alpha is..", alph)
     print("the twist angle is ..", theta)
+    print("\n \n")
 
     #electron parameters
     nbands=2
+    nremote_bands=0
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
     e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
-    kappa_di=3.03
+    eps_inv = 1/10
+    d_screening=20*(1e-9)/a_graphene
+    d_screening_norm=d_screening*lq.qnor()
+    epsilon_0 = 8.85*1e-12
+    ev_conv = e_el
+    Vcoul=( e_el*e_el*eps_inv*d_screening/(2*epsilon_0*a_graphene) )
+    V0= (  Vcoul/lq.Vol_WZ() )/ev_conv
+    print(V0, 'la energia de coulomb en ev')
+    print("\n \n")
 
     #phonon parameters
     c_light=299792458 #m/s
     M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
-    hhbar=6.582119569e-16 #(in eV s)
     alpha_ep=0 # in ev
     beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
     if mode=="L":
@@ -813,8 +631,6 @@ def main() -> int:
         c_phonon=13600 #m/s
     else:
         c_phonon=21400 #m/s
-    
-    
     
     #calculating effective coupling
     A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
@@ -835,41 +651,31 @@ def main() -> int:
     print("area ratio", A1mbz/A1bz, (2*np.sin(theta/2))**2   )
     print("correct factor by which the interaction is reduced",np.sqrt(2)/(2*np.sin(theta/2)))
     print("c tilde",np.sqrt((Wupsilon/W)*(1/(qq**2))*(1/mass) ))
+    print("\n \n")
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
     cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
-
-    hpl=Hamiltonian.Ham_BM_p(hvkd, alph, 1, lq, kappa, PH, 0) #last argument is whether or not we have interlayer hopping
-    hmin=Hamiltonian.Ham_BM_m(hvkd, alph, -1, lq, kappa, PH, 0 ) #last argument is whether or not we have interlayer hopping
     
-    #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-    Ndos=10
-    ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,True,1)
-    [ Kxp, Kyp]=ldos.Generate_lattice()
-    disp=Hamiltonian.Dispersion( ldos, nbands, hpl, hmin)
-    Nfils=20
-    # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-    [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
-    filling_index=int(sys.argv[1]) 
-    mu=mu_values[filling_index]
-    filling=fillings[filling_index]
-    print("CHEMICAL POTENTIALS AND FILLINGS", mu_values, fillings)
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+    #Hartree fock correction to the bandstructure
+    hpl=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
+    hmin=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
+    
+    
+    hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
+    hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
+        
+    substract=0 #0 for decoupled layers
+    mu=0
+    filling=0
+    mode_HF=1
+    HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
     #BUBBLE CALCULATION
     test_symmetry=True
-    B1=ep_Bubble(lq, nbands, hpl, hmin,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    # omega=[1e-14]
-    # kpath=np.array([KX,KY]).T
-    # integ=B1.Compute(mu, omega, kpath)
-    # popt, res, c, resc=B1.extract_cs( integ, 0.2)
-    # B1.plot_res(Wupsilon*integ, KX, KY, VV, filling, Nsamp, c , res, "")
-    # print(np.mean(popt),c, resc, c_phonon)
-    # print("effective speed of sound down renormalization...", c)
-    # print("residual of the fit...", res)
+    B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
 
     

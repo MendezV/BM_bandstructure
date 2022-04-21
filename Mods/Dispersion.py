@@ -1422,7 +1422,7 @@ class FormFactors():
 class HF_BandStruc:
     
     
-    def __init__(self, latt,  hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract, cons):
+    def __init__(self, latt,  hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract, cons, mode):
 
         
         self.latt=latt
@@ -1446,15 +1446,11 @@ class HF_BandStruc:
         self.hmin_decoupled=hmin_decoupled
         
         self.subs=substract
-        
+        self.mode=mode        
 
         [self.V0, self.d_screening_norm]=cons
     
         
-        
-
-        
-
         ################################
         #dispersion attributes
         ################################
@@ -1472,12 +1468,6 @@ class HF_BandStruc:
         ################################
         self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
         self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
-        
-        # self.LamP=np.transpose(self.FFp.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
-        # self.LamP_dag=np.conj(np.transpose(self.LamP,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
-        # self.LamM=np.transpose(self.FFm.denqFF_s(),(0,2,1,3) ) #reshaped arrays, spatial indices come first, band indices after
-        # self.LamM_dag=np.conj(np.transpose(self.LamM,(0,1,3,2) )) #reshaped arrays, spatial indices come first, band indices after
-        
         
         self.LamP=self.FFp.denqFF_s() #no initial transpose
         self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
@@ -1515,54 +1505,105 @@ class HF_BandStruc:
         self.V=self.Vq()
         print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
         
-        # s=time.time()
-        # Fock=self.Fock(proj)
-        # e=time.time()
-        # print(f'time for Fock {e-s}')
+        s=time.time()
+        Fock=self.Fock(proj)
+        e=time.time()
+        print(f'time for Fock {e-s}')
 
         # HBMp=np.zeros(np.shape(Fock))
         HBMp=np.zeros(np.shape(proj))
         HBMp[:,0,0]=self.Ene_valley_plus[:,0]
         HBMp[:,1,1]=self.Ene_valley_plus[:,1]
-        H0=HBMp#-Fock
+        H0=HBMp-Fock*mode
         
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
         
         s=time.time()
-        EHF=[]
+        EHFp=[]
+        U_transf=[]
+        EHFm=[]
+        U_transfm=[]
+        
+        paulix=np.array([[0,1],[1,0]])
+        
+        diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
+        for ib in range(int(self.nbands/2)):
+            diagI[ib,int(self.nbands/2-1-ib)]=1;
+        sx=np.kron(paulix,diagI)
+        
         for l in range(self.latt.NpoiQ):
-            # E1=la.eigvalsh(Fock[l,:,:])
-            E1=la.eigvalsh(H0[l,:,:])
-            EHF.append(E1)
+            Hpl=H0[l,:,:]
+            Hmin=-sx@Hpl@sx
+            # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
+            (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
+
+            EHFp.append(Eigvals)
+            U_transf.append(Eigvect)
             
+            (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
+            EHFm.append(Eigvals)
+            U_transfm.append(Eigvect)
+            
+            
+        Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        self.E_HFp=np.array(EHFp)[Ik, self.ini_band_HF:self.fini_band_HF]
+        self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+        self.Up=np.array(U_transf)
+        
+        self.E_HFm=np.array(EHFm)[Ik, self.ini_band_HF:self.fini_band_HF]
+        self.E_HFm_ex=self.hpl.ExtendE(self.E_HFm, self.latt.umkl+1)
+        self.Um=np.array(U_transfm)
         e=time.time()
-        EE=np.array(EHF)[:, self.ini_band_HF:self.fini_band_HF]
-        print(np.shape(EE), 'shape of the HF eigenvalues')
-        plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,0])
+        print(f'time for Diag {e-s}')
+
+
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,0], s=40)
         plt.colorbar()
-        plt.savefig("EHF10_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("EHF1p_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
-        plt.scatter(self.latt.KQX,self.latt.KQY, c=EE[:,1])
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,1], s=40)
         plt.colorbar()
-        plt.savefig("EHF20_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("EHF2p_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,0], s=40)
+        plt.colorbar()
+        plt.savefig("EHF1m_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,1], s=40)
+        plt.colorbar()
+        plt.savefig("EHF2m_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        
+        #############################
+        # high symmetry path
+        #############################
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
-        plt.plot(EE[path,0])
-        plt.plot(EE[path,1])
-        plt.savefig("dispHF0_kappa"+str(self.hpl.kappa)+".png")
+        pth=np.arange(np.size(path))
+        plt.plot(self.E_HFm_ex[path,0], ls='--', c='r')
+        plt.plot(self.E_HFm_ex[path,1], ls='--', c='r')
+        plt.scatter(pth,self.E_HFm_ex[path,0], c='r', s=9)
+        plt.scatter(pth,self.E_HFm_ex[path,1], c='r', s=9)
+        plt.plot(self.E_HFp_ex[path,0], c='b')
+        plt.plot(self.E_HFp_ex[path,1], c='b')
+        plt.scatter(pth,self.E_HFp_ex[path,0], c='b', s=9)
+        plt.scatter(pth,self.E_HFp_ex[path,1], c='b', s=9)
+        plt.savefig("dispHFp_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.plot(self.latt.KQX[path], self.latt.KQY[path])
         VV=self.latt.boundary()
         plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
         plt.plot(VV[:,0], VV[:,1], c='b')
-        plt.savefig("HSP0_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("HSPp_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
-        print("Bandwith,", np.max(EE[:,1])-np.min(EE[:,0]))
+        print("Bandwith,", np.max(self.E_HFp_ex[:,1])-np.min(self.E_HFp_ex[:,0]))
     
     def Proy_slat_comp(self,psi_plus, psi_minus):
         
@@ -1636,15 +1677,33 @@ class HF_BandStruc:
             X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
         return -X
     
+    def Form_factor_unitary(self, FormFactor_p, FormFactor_m):
+
+        FormFactor_new_p=FormFactor_p 
+        FormFactor_new_m=FormFactor_m
+        for kq in range(self.latt.NpoiQ):
+            
+            Ukqp=self.Up[kq,:,:]
+            Ukqm=self.Um[kq,:,:]
+            
+            Ukqp_dag=np.conj(Ukqp.T)
+            Ukqm_dag=np.conj(Ukqm.T)
+            
+            for k in range(self.latt.NpoiQ):
+                
+                
+                Ukp=self.Up[k,:,:]
+                Ukm=self.Um[k,:,:]
+                
+                FormFactor_new_p[kq,:,k,:]=Ukqp_dag@((FormFactor_p[kq,:,k,:])@Ukp)
+                FormFactor_new_m[kq,:,k,:]=Ukqm_dag@((FormFactor_m[kq,:,k,:])@Ukm)
+        
+        return [FormFactor_new_p,FormFactor_new_m]
+    
 
         
         
-        
-        
 
-    
- 
-    
         
 
 def main() -> int:
@@ -1844,7 +1903,8 @@ def main() -> int:
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     
     substract=0 #0 for decoupled layers
-    HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm])
+    mode=1
+    HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode)
     # plt.scatter(lq.KQX,lq.KQY)
     # VV=lq.all_dirac_ind()
     # print(np.shape(VV))
