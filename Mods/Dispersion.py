@@ -234,8 +234,8 @@ class Ham_BM():
         # T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
         
         T1=pauli0*self.kappa+paulix
-        T2=pauli0*self.kappa+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
-        T3=pauli0*self.kappa+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
+        T2=pauli0*self.kappa+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
+        T3=pauli0*self.kappa+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
 
 
         U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
@@ -1903,7 +1903,7 @@ def main() -> int:
     hmin_decoupled=Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     
     substract=0 #0 for decoupled layers
-    mode=1
+    mode=0
     HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled,hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode)
     # plt.scatter(lq.KQX,lq.KQY)
     # VV=lq.all_dirac_ind()

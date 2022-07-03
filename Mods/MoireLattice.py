@@ -21,10 +21,10 @@ class MoireTriangLattice:
         #some symmetries:
         #C2z
         th1=np.pi
-        self.C2z=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation matrix 
+        self.C2z=np.array([[np.cos(th1),-np.sin(th1)],[np.sin(th1),np.cos(th1)]]) #rotation matrix 
         #C3z
         th1=2*np.pi/3
-        self.C3z=np.array([[np.cos(th1),np.sin(th1)],[-np.sin(th1),np.cos(th1)]]) #rotation matrix 
+        self.C3z=np.array([[np.cos(th1),-np.sin(th1)],[np.sin(th1),np.cos(th1)]]) #rotation matrix 
         #C2x inv
         self.C2x=np.array([[1,0],[0,-1]]) #rotation matrix 
 
@@ -118,8 +118,8 @@ class MoireTriangLattice:
     #lowest order q vectors that contribute to the moire potential (plus valley)
     def qvect(self):
 
-        astar1=self.b@self.rot_min #top layer rotated -theta
-        astar2=self.b@self.rot_plus  #bottom layer rotated +theta
+        astar1=self.b@self.rot_min #top layer rotated +theta
+        astar2=self.b@self.rot_plus  #bottom layer rotated -theta
         Kplus1=+(2*astar1[0,:]+astar1[1,:])/3  #K of top layer
         Kplus2=+(2*astar2[0,:]+astar2[1,:])/3 #K of bottom layer
         q1=Kplus1-Kplus2
