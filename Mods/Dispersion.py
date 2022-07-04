@@ -1565,8 +1565,9 @@ class HF_BandStruc:
             self.E_HFm=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
             self.E_HFm_ex=self.Ene_valley_min[:, self.ini_band_HF:self.fini_band_HF]
             # self.Um=np.array(U_transfm)
-    
-        self.plots_bands()
+
+        #plots of the Bandstructre if needed
+        # self.plots_bands()
     
     
     def plots_bands(self):
