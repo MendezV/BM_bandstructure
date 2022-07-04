@@ -3,7 +3,6 @@ import scipy
 from scipy import linalg as la
 import time
 import sys
-import Hamiltonian
 import MoireLattice
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
@@ -12,8 +11,7 @@ import os
 import pandas as pd
 import Dispersion
 
-#TODO: plot dets see if this controls width -- cannnot be if there is filling dependence 
-#TODO: cyprians calculation along momentum cut (in ee bubble method)
+
 
 # Print iterations progress
 def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
@@ -36,8 +34,6 @@ def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, 
     # Print New Line on Complete
     if iteration == total: 
         print()
-
-
 
         
 class ep_Bubble:
