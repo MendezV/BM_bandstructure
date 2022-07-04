@@ -512,36 +512,51 @@ def main() -> int:
 
     """
     
+    #####
+    # Parameters Diag: samples
+    ####
     try:
-        filling_index=int(sys.argv[1]) 
+        Nsamp=int(sys.argv[1])
+
+    except (ValueError, IndexError):
+        raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
+
+    #####
+    # Electron parameters: filling angle kappa HF
+    ####
+    
+    try:
+        filling_index=int(sys.argv[2]) 
 
     except (ValueError, IndexError):
         raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
 
     try:
-        Nsamp=int(sys.argv[2])
-
-    except (ValueError, IndexError):
-        raise Exception("Input int for the number of k-point samples total kpoints =(arg[2])**2")
-
-
-    try:
-        mode=(sys.argv[3])
-
-    except (ValueError, IndexError):
-        raise Exception("third arg has to be the mode that one wants to simulate either L or T")
-
-    try:
-        modulation_theta=float(sys.argv[4])
+        modulation_theta=float(sys.argv[3])
 
     except (ValueError, IndexError):
         raise Exception("Fourth arguments is the twist angle")
 
     try:
-        modulation_kappa=float(sys.argv[5])
+        modulation_kappa=float(sys.argv[4])
 
     except (ValueError, IndexError):
         raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+    
+    try:
+        mode_HF=int(sys.argv[5])
+
+    except (ValueError, IndexError):
+        raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+    #####
+    # Phonon parameters: polarization L or T
+    ####
+    
+    try:
+        mode=(sys.argv[6])
+
+    except (ValueError, IndexError):
+        raise Exception("third arg has to be the mode that one wants to simulate either L or T")
 
     
     print("\n \n")
@@ -663,17 +678,32 @@ def main() -> int:
     hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
         
-    substract=0 #0 for decoupled layers
-    mu=0
-    filling=0
-    mode_HF=1
-    HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
-    
-    #BUBBLE CALCULATION
-    test_symmetry=True
-    B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
+    if mode_HF==1:
+        
+        substract=0 #0 for decoupled layers
+        mu=0
+        filling=0
+        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        
+        
+        #BUBBLE CALCULATION
+        test_symmetry=True
+        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
+        
+    else:
+        
+        substract=0 #0 for decoupled layers
+        mu=0
+        filling=0
+        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        
+        
+        #BUBBLE CALCULATION
+        test_symmetry=True
+        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
 
     return 0
 
