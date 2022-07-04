@@ -674,8 +674,6 @@ def main() -> int:
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta)
 
-    
-    
     return 0
 
 if __name__ == '__main__':
