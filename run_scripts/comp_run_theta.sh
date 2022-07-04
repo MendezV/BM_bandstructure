@@ -34,8 +34,8 @@ for param_val in ${param_arr[@]}; do
 
 	#moving seeds, parameters and TBG_landau.out to the new dir
 	echo "started copy of job files...."
-    cp Bubble_ep.py "${dir}"
-    cp Hamiltonian.py  "${dir}"
+    cp Bubble_ep_HF.py "${dir}"
+    cp Dispersion.py  "${dir}"
     cp MoireLattice.py  "${dir}"
     cp params_thet2  "${dir}"
 	cp -r dispersions "${dir}"

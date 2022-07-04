@@ -25,7 +25,8 @@ module load anaconda3/2020.11
 
 
 #running
-srun python3 -u Bubble_ep.py 0 30 T ${param_val} 1
+#lattice filling angle kappa HFmode polarization
+srun python3 -u Bubble_ep.py 30 0 ${param_val} 0.7 0 T
 
 ##moving data out
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"

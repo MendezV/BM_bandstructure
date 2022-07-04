@@ -8,8 +8,8 @@
 #
 ###########################
 
-#generic parameters 
-Lattice_size=24
+#default parameters, one of these is systematically replaced with the values in the parameter_file
+Lattice_size=30
 filling_seed=0
 twist_angle=1.05
 kappa=0.7
@@ -17,8 +17,9 @@ Mode_HF=0
 phonon_polarization='T'
 
 #needed prerequisites for the run
-parameter_file='params_thet'
+parameter_file='params_thet2_2'
 dire_to_mods='../Mods/'
+pow=$PWD
 
 #Reading parameter file
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
@@ -48,16 +49,15 @@ for param_val in ${param_arr[@]}; do
     cp ${dire_to_mods}Bubble_ep_HF.py "${dire}"
     cp ${dire_to_mods}Dispersion.py  "${dire}"
     cp ${dire_to_mods}MoireLattice.py  "${dire}"
-    cp ${dire_to_mods}${parameter_file}  "${dire}"
+    cp ${parameter_file}  "${dire}"
 	cp -r dispersions "${dire}"
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 	echo "parameters: L " ${Lattice_size} " nu " ${filling_seed} " th " ${param_val} " kap " ${kappa} " HF " ${Mode_HF} " phLT " ${phonon_polarization} >> output.out
 
-	nohup time python3 -u Bubble_ep_HF.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out
-	nohup time python3 -u Bubble_ep_HF.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out	
+	nohup time python3 -u Bubble_ep_HF.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out &
 	
-	cd "../../../Mods"
+	cd "${pow}"
 	sleep 1
 
 done
