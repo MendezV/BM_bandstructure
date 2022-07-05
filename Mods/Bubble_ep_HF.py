@@ -659,45 +659,48 @@ def main() -> int:
     
     hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
+    
+    TQMC=0.001*np.array([1/0.1,1/0.2,1/0.5,1,1/2,1/4]) #in ev
+    
+    if mode_HF==1:
         
-    for T in [0]:
-        if mode_HF==1:
-            
-            substract=0 #0 for decoupled layers
-            mu=0
-            filling=0
-            HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-            
-            
-            #BUBBLE CALCULATION
-            test_symmetry=True
-            B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        substract=0 #0 for decoupled layers
+        mu=0
+        filling=0
+        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        
+        
+        #BUBBLE CALCULATION
+        test_symmetry=True
+        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        for T in TQMC:
             B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta, T) #no sweeep for now, it only works with neutrality
-            
-        else:
-            
-            #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-            Ndos=30
-            ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,True,0)
-            [ Kxp, Kyp]=ldos.Generate_lattice()
-            disp=Dispersion.Dispersion( ldos, nbands, hpl, hmin)
-            Nfils=20
-            # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-            [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
-            mu=mu_values[filling_index]
-            filling=fillings[filling_index]
-            print("CHEMICAL POTENTIALS AND FILLINGS", mu_values, fillings)
-            print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
-            
-            substract=0 #0 for decoupled layers
-            mu=0
-            filling=0
-            HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-            
-            
-            #BUBBLE CALCULATION
-            test_symmetry=True
-            B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        
+    else:
+        
+        #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
+        Ndos=30
+        ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,True,0)
+        [ Kxp, Kyp]=ldos.Generate_lattice()
+        disp=Dispersion.Dispersion( ldos, nbands, hpl, hmin)
+        Nfils=20
+        # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
+        [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
+        mu=mu_values[filling_index]
+        filling=fillings[filling_index]
+        print("CHEMICAL POTENTIALS AND FILLINGS", mu_values, fillings)
+        print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
+        
+        substract=0 #0 for decoupled layers
+        mu=0
+        filling=0
+        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        
+        
+        #BUBBLE CALCULATION
+        test_symmetry=True
+        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+        for T in TQMC:
             B1.Fill_sweep( mu_values, fillings, VV, Nsamp, c_phonon, theta,T)
 
     return 0

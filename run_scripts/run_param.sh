@@ -12,7 +12,7 @@
 Lattice_size=30
 filling_seed=0
 twist_angle=1.05
-kappa=0.5
+kappa=0.7
 Mode_HF=0
 phonon_polarization='T'
 
@@ -25,7 +25,7 @@ pow=$PWD
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="thetasweep"  #JOBNAME importan to declare -has to be descriptive
+jobname="thetasweep_betasweep"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
