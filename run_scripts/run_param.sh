@@ -12,7 +12,7 @@
 Lattice_size=30
 filling_seed=0
 twist_angle=1.05
-kappa=0.7
+kappa=0.5
 Mode_HF=0
 phonon_polarization='T'
 

@@ -261,27 +261,6 @@ class ep_Bubble:
     def deltad(self, x, epsil):
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
-    # def integrand_ZT(self,nkq,nk,ekn,ekm,w,mu):
-    #     edkq=ekn[nkq]-mu
-    #     edk=ekm[nk]-mu
-
-    #     #zero temp
-    #     nfk=np.heaviside(-edk,0.5) # at zero its 1
-    #     nfkq=np.heaviside(-edkq,0.5) #at zero is 1
-
-    #     ####delta
-    #     # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-    #     # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-    #     # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-    #     # return (fac_p+fac_p2)
-        
-    #     ####iepsilon
-    #     eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
-
-    #     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-    #     return (fac_p)
-
 
     def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
         edkq=ekn[nkq]-mu
@@ -450,7 +429,7 @@ class ep_Bubble:
         return None
 
 
-    def Fill_sweep(self,fillings, mu_values,VV, Nsamp, c_phonon,theta, T):
+    def Fill_sweep(self,mu_values,fillings,VV, Nsamp, c_phonon,theta, T):
         
         prop_BZ=0.15
         cs=[]
