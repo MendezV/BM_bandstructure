@@ -390,7 +390,7 @@ class ep_Bubble:
         
         
             
-    def savedata(self, integ, filling,T, Nsamp, c , res, add_tag):
+    def savedata(self, integ, filling , mu_values,T, Nsamp, c , res, add_tag):
         
         identifier=add_tag+str(Nsamp)+self.name
         Nfills=np.size(filling)
@@ -401,16 +401,19 @@ class ep_Bubble:
         c_list=[]
         res_list=[]
         filling_list=[]
+        mu_list=[]
         for i,cph in enumerate(c):
             c_list=c_list+[cph]*Nss
             res_list=res_list+[res[i]]*Nss
             filling_list=filling_list+[filling[i]]*Nss
+            mu_list=mu_list+[mu_values[i]]*Nss
             
         KXall=np.hstack([self.latt.KX]*Nfills)
         KYall=np.hstack([self.latt.KY]*Nfills)
         carr=np.array(c_list)
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
+        muarr=np.array(mu_list)
         disp_m1=np.array([self.Ene_valley_min_1bz[:,0].flatten()]*Nfills).flatten()
         disp_m2=np.array([self.Ene_valley_min_1bz[:,1].flatten()]*Nfills).flatten()
         disp_p1=np.array([self.Ene_valley_plus_1bz[:,0].flatten()]*Nfills).flatten()
@@ -422,7 +425,7 @@ class ep_Bubble:
         kappa_arr=np.array([self.HB.hpl.kappa]*(Nss*Nfills))
 
             
-        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
         df.to_hdf('data'+identifier+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
@@ -465,7 +468,7 @@ class ep_Bubble:
         t=e-s
         print("time for sweep delta", t)
         
-        self.savedata( selfE, fillings,T, Nsamp, cs , rs, "")
+        self.savedata( selfE, fillings, mu_values, T, Nsamp, cs , rs, "")
                 
         return t
         
@@ -660,7 +663,8 @@ def main() -> int:
     hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
     hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     
-    TQMC=0.001*np.array([1/0.1,1/0.2,1/0.5,1,1/2,1/4]) #in ev
+    # TQMC=0.001*np.array([1/0.1,1/0.2,1/0.5,1,1/2,1/4]) #in ev
+    TQMC=[0]
     
     if mode_HF==1:
         
