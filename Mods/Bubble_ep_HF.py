@@ -113,6 +113,8 @@ class ep_Bubble:
         self.HB=HB
         self.Ene_valley_plus_1bz=HB.E_HFp
         self.Ene_valley_min_1bz=HB.E_HFm
+        self.Ene_valley_plus_K=HB.E_HFp_K
+        self.Ene_valley_min_K=HB.E_HFm_K
         self.Ene_valley_plus=HB.E_HFp_ex
         self.Ene_valley_min=HB.E_HFm_ex
 
@@ -414,15 +416,18 @@ class ep_Bubble:
         resarr=np.array(res_list)
         fillingarr=np.array(filling_list)
         muarr=np.array(mu_list)
-        disp_m1=np.array([self.Ene_valley_min_1bz[:,0].flatten()]*Nfills).flatten()
-        disp_m2=np.array([self.Ene_valley_min_1bz[:,1].flatten()]*Nfills).flatten()
-        disp_p1=np.array([self.Ene_valley_plus_1bz[:,0].flatten()]*Nfills).flatten()
-        disp_p2=np.array([self.Ene_valley_plus_1bz[:,1].flatten()]*Nfills).flatten()
+        disp_m1=np.array([self.Ene_valley_min_K[:,0].flatten()]*Nfills).flatten()
+        disp_m2=np.array([self.Ene_valley_min_K[:,1].flatten()]*Nfills).flatten()
+        disp_p1=np.array([self.Ene_valley_plus_K[:,0].flatten()]*Nfills).flatten()
+        disp_p2=np.array([self.Ene_valley_plus_K[:,1].flatten()]*Nfills).flatten()
 
         
         #constants
         thetas_arr=np.array([self.latt.theta]*(Nss*Nfills))
         kappa_arr=np.array([self.HB.hpl.kappa]*(Nss*Nfills))
+        
+        print('checking sizes of the arrays for hdf5 storage')
+        print(Nss,Nfills, Nss*Nfills,np.size(Pibub),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(carr), np.size(resarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
 
             
         df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
@@ -514,25 +519,25 @@ def main() -> int:
         filling_index=int(sys.argv[2]) 
 
     except (ValueError, IndexError):
-        raise Exception("Input integer in the firs argument to choose chemical potential for desired filling")
+        raise Exception("Input integer in the first argument to choose chemical potential for desired filling")
 
     try:
         modulation_theta=float(sys.argv[3])
 
     except (ValueError, IndexError):
-        raise Exception("Fourth arguments is the twist angle")
+        raise Exception("Third argument is the twist angle")
 
     try:
         modulation_kappa=float(sys.argv[4])
 
     except (ValueError, IndexError):
-        raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+        raise Exception("Fourth argument is the value of kappa")
     
     try:
         mode_HF=int(sys.argv[5])
 
     except (ValueError, IndexError):
-        raise Exception("Fifth arguments is a modulation factor from 0 to 1 to change the interaction strength")
+        raise Exception("Fifth argument determines whether HF renormalized bands are used, 1 for HF, 0 for bare")
     #####
     # Phonon parameters: polarization L or T
     ####
@@ -541,7 +546,7 @@ def main() -> int:
         mode=(sys.argv[6])
 
     except (ValueError, IndexError):
-        raise Exception("third arg has to be the mode that one wants to simulate either L or T")
+        raise Exception("sixth arg has to be the mode that one wants to simulate either L or T")
 
     
     print("\n \n")
@@ -550,9 +555,9 @@ def main() -> int:
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
-    umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
-    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one
+    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q
     q=np.sqrt(q1@q1)
     print(f"taking {umkl} umklapps")
@@ -683,11 +688,11 @@ def main() -> int:
     else:
         
         #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-        Ndos=30
+        Ndos=8
         ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,True,0)
         [ Kxp, Kyp]=ldos.Generate_lattice()
         disp=Dispersion.Dispersion( ldos, nbands, hpl, hmin)
-        Nfils=20
+        Nfils=3
         # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
         [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
         mu=mu_values[filling_index]

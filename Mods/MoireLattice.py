@@ -586,6 +586,19 @@ class MoireTriangLattice:
 
 
         return [path,kpath,HSP_index]
+    
+    def embedded_High_symmetry_path_umkls(self):
+        [GM1,GM2]=self.GMvec
+        VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        VV=VV+[VV[0]] #verices
+
+        Kps=[]
+        Kps=Kps+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
+        [path_pre,kpath,HSP_index]=self.findpath(Kps,self.KX1bz,self.KY1bz)
+        path=self.insertion_index(self.KX1bz[path_pre],self.KY1bz[path_pre],self.KX,self.KY)
+
+
+        return [path,kpath,HSP_index,self.KX1bz[path_pre],self.KY1bz[path_pre],self.KX,self.KY]
 
     def kwrap_FBZ(self,kx,ky):
         dmin=kx**2+ky**2
@@ -649,6 +662,7 @@ class MoireTriangLattice:
         KXum=np.concatenate( KXu )
         KYum=np.concatenate( KYu )
         return [KXum, KYum]
+    
     def insertion_index(self, KX,KY, KQX,KQY):
         #list of size Npoi that has the index of K in KQ
         Npoi=np.size(KX)
@@ -657,6 +671,8 @@ class MoireTriangLattice:
             indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
             Ik.append(indmin)
         return Ik
+    
+
     
     def hexagon3(self,pos, Radius_inscribed_hex, KX,KY):
         Y,X = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters

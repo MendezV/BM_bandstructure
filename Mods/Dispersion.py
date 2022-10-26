@@ -1548,26 +1548,34 @@ class HF_BandStruc:
                 
             Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
             self.E_HFp=np.array(EHFp)[Ik, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
             self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
             self.Up=np.array(U_transf)
             
             self.E_HFm=np.array(EHFm)[Ik, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFm_K=self.hpl.ExtendE(self.E_HFm, self.latt.umkl)
             self.E_HFm_ex=self.hpl.ExtendE(self.E_HFm, self.latt.umkl+1)
             self.Um=np.array(U_transfm)
             e=time.time()
             print(f'time for Diag {e-s}')
         else:
-            Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-            self.E_HFp=self.Ene_valley_plus[Ik, self.ini_band_HF:self.fini_band_HF]
+            Ik1bz=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+            Ik=self.latt.insertion_index( self.latt.KX,self.latt.KY, self.latt.KQX,self.latt.KQY)
+            
+            self.E_HFp=self.Ene_valley_plus[Ik1bz, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFp_K=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
             self.E_HFp_ex=self.Ene_valley_plus[:, self.ini_band_HF:self.fini_band_HF]
             # self.Up=np.array(U_transf)
                 
-            self.E_HFm=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFm=self.Ene_valley_min[Ik1bz, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFm_K=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
             self.E_HFm_ex=self.Ene_valley_min[:, self.ini_band_HF:self.fini_band_HF]
+            
+            print(np.size(Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
             # self.Um=np.array(U_transfm)
 
         #plots of the Bandstructre if needed
-        # self.plots_bands()
+        self.plots_bands()
     
     
     def plots_bands(self):
