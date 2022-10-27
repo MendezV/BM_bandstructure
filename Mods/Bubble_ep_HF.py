@@ -179,17 +179,46 @@ class ep_Bubble:
                 self.Lnemp=self.HB.FFp.NemqFFL_a()
                 self.Lnemm=self.HB.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+                
+                ##Plotting form factors
+                self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=0, sublattice=0), mode+'_m2')
+                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=0, sublattice=0), mode+'_p2')
+                
+                
+                # self.HB.FFm.plotFF(self.Lnemp, mode+'_Nemp')
+                # self.HB.FFp.plotFF(self.Lnemm, mode+'_Nemm')
+                # self.HB.FFm.plotFF(self.L00p, mode+'_denp')
+                # self.HB.FFp.plotFF(self.L00m, mode+'_denm')
+                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
+                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
+                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
+                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=0), mode+'_m1')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=0), mode+'_p1')
+                
+                
+                
             elif mode=="T":
                 self.Lnemp=self.HB.FFp.NemqFFT_a()
                 self.Lnemm=self.HB.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+                
+                ##Plotting form factors
+                self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
+                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
+                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
+                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
+                
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
         
-
 
     ################################
     """
@@ -439,7 +468,7 @@ class ep_Bubble:
 
     def Fill_sweep(self,mu_values,fillings,VV, Nsamp, c_phonon,theta, T):
         
-        prop_BZ=0.15
+        prop_BZ=0.3
         cs=[]
         rs=[]
         selfE=[]
@@ -555,7 +584,7 @@ def main() -> int:
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
-    umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umkl=3 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q

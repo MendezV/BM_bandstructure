@@ -9,12 +9,12 @@
 ###########################
 
 #generic parameters 
-Lattice_size=8
+Lattice_size=12
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
 Mode_HF=0
-phonon_polarization='T'
+phonon_polarization='L'
 
 #needed prerequisites for the run
 parameter_file='params'
@@ -24,7 +24,7 @@ dire_to_mods='../Mods/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="thetasweep"  #JOBNAME importan to declare -has to be descriptive
+jobname="plot_T"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
