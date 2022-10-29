@@ -34,7 +34,7 @@ class Ham_BM():
 
         self.hvkd = hvkd
         self.alpha= alpha
-        self.xi = xi
+        self.xi = xi #quick fix turns out I flipped all the formulas below
         
         
         self.latt=latt
@@ -50,6 +50,7 @@ class Ham_BM():
             self.Interlay = 1
         else:
             self.Interlay = Interlay
+            self.gap=0.0  #artificial gap
             
         self.U=self.Interlay*np.matrix(self.InterlayerU())
         self.Dim=int(np.shape(self.U)[0]/2) #momentum lattice dimension for the matrices
@@ -413,6 +414,25 @@ class Ham_BM():
 
         return mat@psi
     
+    def T_psi(self, psi_p):
+        psi=np.conj(psi_p)
+        rot=self.latt.C2z
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        submat=pauli0
+        [block_ttp,block_tbp,block_btp, block_bbp] = self.rot_WF(rot)
+        block_tt=np.kron(block_ttp, submat)
+        block_tb=np.kron(block_tbp, submat)
+        block_bt=np.kron(block_btp, submat)
+        block_bb=np.kron(block_bbp, submat)
+        mat=np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
+
+
+        return mat@psi
+    
     def c2zT_psi(self, psi_p):
         psi=np.conj(psi_p)
         pauli0=np.array([[1,0],[0,1]])
@@ -442,6 +462,24 @@ class Ham_BM():
         
         layer=0
         sublattice=3
+        # mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+        mat=np.kron(np.kron(pau[layer],Qmat), pau[sublattice])
+
+        return  mat@psi
+    
+    #small angle approx antiunitary PH
+    def Cstar_psi(self, psi):
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        pau=[pauli0,paulix,pauliy,pauliz]
+        Qmat=np.eye(self.Dim)
+        
+        layer=2
+        sublattice=1
         # mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
         mat=np.kron(np.kron(pau[layer],Qmat), pau[sublattice])
 
@@ -532,6 +570,7 @@ class Dispersion():
         Ene_valley_min_a=np.empty((0))
         psi_plus_a=[]
         psi_min_a=[]
+        psi_min_a_2=[]
 
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -542,99 +581,60 @@ class Dispersion():
             
             E1,wave1=self.hpl.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
+            # psi_plus_a.append(wave1)
             wave1p=self.gauge_fix( wave1, E1)
             self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
-            # generate explicitly
-            # E1,wave1=self.hmin.eigens(-self.latt.KX1bz[l],-self.latt.KY1bz[l],self.nbands)
-            # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            # wave1m=self.gauge_fix( wave1)
+            ########## generate explicitly
+            E1,wave1=self.hmin.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            # psi_min_a_2.append(wave1)
+            # wave1m=self.gauge_fix( wave1, E1)
+            # self.check_C2T(wave1m)
             # psi_min_a.append(wave1m)
             
-            #with the convention that this is the eigenvalue and eigenvector at -k
-            # infer from C2 or T symmetry, energies
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
+            # ########### with the convention that this is the eigenvalue and eigenvector at -k
+            # ########### infer from C2 or T symmetry, energies
+            # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             
-            # infer from C2 or T symmetry, wavefuncs
-            wave1m=self.impose_C2(wave1p)
+            # # infer from C2, Cstar or T symmetry, wavefuncs
+            # # wave1m=self.impose_C2(wave1p)
+            wave1m=self.impose_T(wave1p)
+            # wave1m=self.impose_Cstar(wave1p)
             self.check_C2T(wave1m)
             psi_min_a.append(wave1m)
             
+            # ######## checks for symmetry
             self.check_T(wave1p,wave1m)
+            self.check_T(wave1m,wave1p)
             self.check_C2(wave1p,wave1m)
-
+            self.check_C2(wave1m,wave1p)
+            
     
         e=time.time()
         print("time to diag over MBZ", e-s)
         ##relevant wavefunctions and energies for the + valley
+        
         psi_plus=np.array(psi_plus_a)
-        # psi_plus,psi_min=self.impose_all_Cstar(psi_plus)
-        psi_min=np.array(psi_min_a)
+        psi_min=np.array(psi_min_a)[::-1,:,:]
+        
+        
         Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.latt.Npoi1bz,self.nbands])
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.latt.Npoi1bz,self.nbands])
 
-
-
-        return [psi_plus,Ene_valley_plus,psi_min[::-1,:,:],Ene_valley_min[::-1,:]]
-    
-    def precompute_E_psi_karg(self,KX,KY):
-    
-        Ene_valley_plus_a=np.empty((0))
-        Ene_valley_min_a=np.empty((0))
-        psi_plus_a=[]
-        psi_min_a=[]
-
-        Npoi=np.size(KX)
-        print(f"starting dispersion with {Npoi} points..........")
+        diff=Ene_valley_min-(-Ene_valley_plus[:,::-1])
+        print('\n symmetry in eigens Cstar*Tr', np.mean(np.sqrt(np.diag(diff.T@diff))),"flips the spectrum and momentum space \n")
         
-        s=time.time()
-       
         
-        for l in range(Npoi):
-            E1,wave1=self.hpl.eigens(KX[l],KY[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            wave1p=self.gauge_fix( wave1, E1)
-            self.check_C2T(wave1p)
-            psi_plus_a.append(wave1p)
-            
-            # generate explicitly
-            # E1,wave1=self.hmin.eigens(-KX[l],-KY[l],self.nbands)
-            # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            # wave1m=self.gauge_fix( wave1)
-            # psi_min_a.append(wave1m)
-            
-            #with the convention that this is the eigenvalue and eigenvector at -k
-            # infer from C2 or T symmetry, energies
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            
-            # infer from C2 or T symmetry, wavefuncs
-            wave1m=self.impose_C2(wave1p)
-            self.check_C2T(wave1m)
-            psi_min_a.append(wave1m)
-            
-            self.check_T(wave1p,wave1m)
-            self.check_C2(wave1p,wave1m)
-
-    
-        e=time.time()
-        print("time to diag over MBZ", e-s)
-        ##relevant wavefunctions and energies for the + valley
-        psi_plus=np.array(psi_plus_a)
-        # psi_plus,psi_min=self.impose_all_Cstar(psi_plus)
-        psi_min=np.array(psi_min_a)
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,self.nbands])
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,self.nbands])
-
-
-
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
-    
+
 
     ###########Gauge fixing the wavefunctions
     
     def gauge_fix(self, wave1, E1):
+        
         #using c2T symmetry to fix the phases of the wavefuncs
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
@@ -692,22 +692,7 @@ class Dispersion():
         
         return wave1
     
-    def check_C2T(self,wave1):
-  
-        pauliz=np.array([[1,0],[0,-1]])
-        ihalf=int(self.nbands/2)
-        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
-        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
-        
 
-        Sewing=np.conj((wave1[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1[:,inde1:inde2]))
-        pauliz=np.array([[1,0],[0,-1]])
-        if np.abs(np.mean(Sewing-pauliz))>1e-6:
-            print("c2T failed")
-            print(Sewing)
-        
-        return None
-    
     def impose_all_Cstar(self, psi_plus):
         
         (Nkpoints, DimV, Nbands)=np.shape(psi_plus)
@@ -723,33 +708,95 @@ class Dispersion():
         
         TopRange=int(np.ceil(Nkpoints/2))
         kpoints=int(Nkpoints)
+        
+        #Cstar (Ph) sends plus to minus (only half of BZ)
         for k in range(TopRange):
             Wm[k,:,:]=op@(psi_plus[k,:,::-1])
-            Wm[kpoints-1-k,:,:]=(psi_plus[k,:,:])@pauliz
         
+        #Time reversal sends other half of the BZ
+        nz=np.kron(pauliz,int(self.nbands/2)) #number of bands has to be even
+        for k in range(TopRange):
+            Wm[kpoints-1-k,:,:]=np.conj(psi_plus[k,:,:])@nz
+        
+        #Cstar sends the second half of the BZ back
         for k in range(TopRange):
             Wp[kpoints-1-k,:,:]=op@(Wm[kpoints-1-k,:,::-1])
 
         for k in range(kpoints):
-            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])
+            
             self.check_C2T(Wp[k,:,:])
             self.check_C2T(Wm[k,:,:])
-
             
-            self.check_T(Wp[k,:,:],Wm[k,:,:])
-            # self.check_C2(Wp[k,:,:],Wm[k,:,:]) # for some reason, this rep of C2 is incompatible with the rep of Cstar
+            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])    
+             
+            #c2 and T send k -> -k        
+            self.check_T(Wp[kpoints-1-k,:,:],Wm[k,:,:])
+            self.check_C2(Wp[kpoints-1-k,:,:],Wm[k,:,:]) 
         return Wp,Wm
-          
-    def check_Cstar(self, wave1p, wave1m):
-        II=np.eye(self.Dim)
+    
+    def impose_all_Cstar_2(self, psi_plus, psi_min):
+        
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
         inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        
+        (Nkpoints, DimV, Nbands)=np.shape(psi_plus)
+        II=np.fliplr(np.eye(self.Dim)) #this is needed because the order of the basis in the minus valley is flipped
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
+        
+        op=np.kron(pauliy,np.kron(II, paulix))
+        
+        Wm=np.zeros(np.shape(psi_plus))+0*1j
+        Wp=np.array(psi_plus)
+        
+        TopRange=int(np.ceil(Nkpoints/2))
+        kpoints=int(Nkpoints)
+        
+        #Cstar (Ph) sends plus to minus (only half of BZ)
+        for k in range(kpoints):
+            Wm[k,:,inde1:ihalf]=np.array(op@(Wp[k,:,ihalf:inde2])[::-1,::-1])
+         
+        
+        #Time reversal sends other half of the BZ
+        nz=np.kron(pauliz,int(self.nbands/2)) #number of bands has to be even
+        for k in range(kpoints):
+            Wp[kpoints-1-k,:,inde1:ihalf]=-np.array(np.conj(Wm[k,:,inde1:ihalf]))
+        
+        #Cstar sends the second half of the BZ back
+        for k in range(kpoints):
+            Wm[k,:,ihalf:inde2]=np.array(op@(Wp[k,:,inde1:ihalf][::-1,::-1]))
+
+        for k in range(kpoints):
+            
+            self.check_C2T(Wp[k,:,:])
+            self.check_C2T(Wm[k,:,:])
+            
+            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])    
+             
+            #c2 and T send k -> -k    
+            print('cstar',k)    
+            self.check_T( Wp[kpoints-1-k,:,:], Wm[k,:,:])
+            self.check_C2( Wp[kpoints-1-k,:,:], Wm[k,:,:]) 
+        return Wp,Wm
+    
+  
+    
+    def check_Cstar(self, wave1p, wave1m):
+        
+        II=np.eye(self.Dim) #this is needed because the order of the basis in the minus valley is flipped
+        
+        ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        #matrices in the micro basis for op and in the band basis for sewing
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
         
         op=np.kron(pauliy,np.kron(II, paulix))
         
@@ -759,28 +806,68 @@ class Dispersion():
             print(Sewing)
         return None
     
-    def impose_T(self,wave1):
+    def impose_T(self,wave1p):
+     
         ihalf=int(self.nbands/2)
-        wave2=np.array(np.conj(wave1))
-        wave2[:,ihalf:]=-np.array(np.conj(wave1))[:,1]
+       
+        
+        wave2=np.array(self.hpl.T_psi(wave1p))
+        wave2[:,ihalf:]=-np.array(self.hpl.T_psi(wave1p))[:,ihalf:]
         return wave2
     
     def check_T(self,wave1p,wave1m):
+        
+        w2=self.hmin.T_psi(wave1m)
+        
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
         inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         
-        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@np.conj((wave1p[:,inde1:inde2]))
+        
         pauliz=np.array([[1,0],[0,-1]])
+        
+        Sewing=np.conj((wave1p[:,inde1:inde2]).T)@(w2[:,inde1:inde2])
+        
         if np.abs(np.mean(Sewing-pauliz))>1e-6:
             print("T failed")
             print(Sewing)
         return None
     
-    def impose_C2(self,wave1):
+    def impose_C2(self,wave1p):
+        
+        wave2=np.array(self.hpl.T_psi(wave1p))
+        
+        return wave2
+    
+    def check_C2(self,wave1p,wave1m):
+        
+      
+        ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        #matrices in the micro basis for op and in the band basis for sewing
+        pauli0=np.array([[1,0],[0,1]])
+        
+        w2=self.hmin.c2z_psi(wave1m)
+        
+        Sewing=np.conj((wave1p[:,inde1:inde2]).T)@(w2[:,inde1:inde2])
+        
+        if np.abs(np.mean(Sewing-pauli0))>1e-6:
+            print("C2 failed")
+            print(Sewing)
+        return None
+    
+    def check_C2T(self,wave1):
         
         II=np.eye(self.Dim)
         
+        
+        ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        #matrices in the micro basis for op and in the band basis for sewing
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
         pauliy=np.array([[0,-1j],[1j,0]])
@@ -788,10 +875,16 @@ class Dispersion():
         
         op=np.kron(pauli0,np.kron(II, paulix))
         
-        wave2=np.array(op@wave1)
-        return wave2
+
+        Sewing=np.conj((wave1[:,inde1:inde2]).T)@np.conj(op@(wave1[:,inde1:inde2]))
+        if np.abs(np.mean(Sewing-pauliz))>1e-6:
+            print("c2T failed")
+            print(Sewing)
+        
+        return None
     
-    def check_C2(self,wave1p,wave1m):
+    
+    def check_norm(self,wave1p):
         II=np.eye(self.Dim)
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
@@ -802,14 +895,34 @@ class Dispersion():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        op=np.kron(pauli0,np.kron(II, paulix))
         
-        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(wave1p[:,inde1:inde2]))
+        Sewing=np.abs(np.conj((wave1p[:,inde1:inde2]).T)@(wave1p[:,inde1:inde2]))
         if np.abs(np.mean(Sewing-pauli0))>1e-6:
-            print("C2 failed")
+            print("norm failed")
             print(Sewing)
         return None
     
+    def check_Overlap(self,wave1,wave2):
+        II=np.eye(self.Dim)
+        ihalf=int(self.nbands/2)
+        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
+        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        pauli0=np.array([[1,0],[0,1]])
+        paulix=np.array([[0,1],[1,0]])
+        pauliy=np.array([[0,-1j],[1j,0]])
+        pauliz=np.array([[1,0],[0,-1]])
+        
+        
+        Sewing=np.abs(np.conj((wave2[:,inde1:inde2]).T)@(wave1[:,inde1:inde2]))
+        if np.abs(np.mean(Sewing-pauli0))>1e-6:
+            print("overlap failed")
+            print(Sewing)
+            
+        else:
+            print("ovelap passed")
+            print(Sewing)
+        return None
     
     ###########DOS FOR DEBUGGING
 
@@ -1398,21 +1511,21 @@ class FormFactors():
             for k in range(self.latt.Npoi1bz):
                 k1=np.argmin( (self.latt.KQX-(self.latt.KX1bz[k]+self.latt.KX[s]))**2 +(self.latt.KQY-(self.latt.KY1bz[k]+self.latt.KY[s]))**2)
                 k2=np.argmin( (self.latt.KQX-self.latt.KX1bz[k])**2 +(self.latt.KQY-self.latt.KY1bz[k])**2)
-                undet=undet+np.abs(np.linalg.det(np.abs(Lambda_Tens[k1,:,k2,:])**2))  
+                undet=undet+np.abs(np.linalg.det(Lambda_Tens[k1,:,k2,:]))**2  
             cos1.append(undet/self.latt.Npoi1bz)
             
 
-        plt.scatter(K,KP, c=cos1)
+        plt.scatter(K,KP, c=cos1,s=4)
         plt.colorbar()
         plt.savefig("FFplot"+msg+".png")
         plt.close()
 
-        plt.scatter(K,cos1)
+        plt.scatter(K,cos1,s=4)
         plt.colorbar()
         plt.savefig("FFplot"+msg+"_kx_cut.png")
         plt.close()
 
-        plt.scatter(KP,cos1)
+        plt.scatter(KP,cos1,s=4)
         plt.colorbar()
         plt.savefig("FFplot"+msg+"_ky_cut.png")
         plt.close()
@@ -1451,45 +1564,47 @@ class HF_BandStruc:
         [self.V0, self.d_screening_norm]=cons
     
         
-        ################################
-        #dispersion attributes
-        ################################
-
-        disp=Dispersion( latt, self.nbands_init, hpl, hmin)
-        [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
-
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-
-        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-        self.psi_min=self.hpl.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
-        ################################
-        #generating form factors
-        ################################
-        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
-        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
-        
-        self.LamP=self.FFp.denqFF_s() #no initial transpose
-        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
-        self.LamM=self.FFm.denqFF_s() #no initial transpose
-        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
-        
-        
-        ################################
-        #reference attributes
-        ################################
-        
-        print('\n')
-        print('calculating refernce states...')
-
-        disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
-        [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
-
-        self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
-        self.psi_min_decoupled=self.hpl.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
-        
         
         if self.mode==1:
+            
+            ################################
+            #dispersion attributes
+            ################################
+
+            disp=Dispersion( latt, self.nbands_init, hpl, hmin)
+            [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+            ################################
+            #generating form factors
+            ################################
+            self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
+            self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
+            
+            self.LamP=self.FFp.denqFF_s() #no initial transpose
+            self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
+            self.LamM=self.FFm.denqFF_s() #no initial transpose
+            self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
+            
+            
+            ################################
+            #reference attributes
+            ################################
+            
+            print('\n')
+            print('calculating refernce states...')
+
+            disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
+            [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            
+      
         
             ################################
             #Constructing projector
@@ -1553,23 +1668,70 @@ class HF_BandStruc:
             self.Up=np.array(U_transf)
             
             self.E_HFm=np.array(EHFm)[Ik, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFm_K=self.hpl.ExtendE(self.E_HFm, self.latt.umkl)
-            self.E_HFm_ex=self.hpl.ExtendE(self.E_HFm, self.latt.umkl+1)
+            self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
+            self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
             self.Um=np.array(U_transfm)
             e=time.time()
             print(f'time for Diag {e-s}')
+            
         else:
+            
+            # different dimensions for the number of bands that we keeps since we do not need to keep
+            # track of extra remote bands as compared to the HF version
+            
+            ################################
+            #dispersion attributes
+            ################################
+
+            disp=Dispersion( latt, self.nbands, hpl, hmin)
+            [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
+
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+            ################################
+            #generating form factors
+            ################################
+            
+            self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
+            self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin)
+            
+            # self.FFp=FormFactors(self.psi_plus_1bz, 1, latt, latt.umkl,self.hpl)
+            # self.FFm=FormFactors(self.psi_min_1bz, -1, latt, latt.umkl,self.hmin)
+            
+            self.LamP=self.FFp.denqFF_s() #no initial transpose
+            self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
+            self.LamM=self.FFm.denqFF_s() #no initial transpose
+            self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
+            
+            
+            ################################
+            #reference attributes
+            ################################
+            
+            print('\n')
+            print('calculating refernce states...')
+
+            disp_decoupled=Dispersion( latt, self.nbands, hpl_decoupled, hmin_decoupled)
+            [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            
+      
             Ik1bz=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
             Ik=self.latt.insertion_index( self.latt.KX,self.latt.KY, self.latt.KQX,self.latt.KQY)
             
-            self.E_HFp=self.Ene_valley_plus[Ik1bz, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFp_K=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFp_ex=self.Ene_valley_plus[:, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFp=self.Ene_valley_plus[Ik1bz, :]
+            self.E_HFp_K=self.Ene_valley_plus[Ik, :]
+            self.E_HFp_ex=self.Ene_valley_plus[:, :]
             # self.Up=np.array(U_transf)
                 
-            self.E_HFm=self.Ene_valley_min[Ik1bz, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFm_K=self.Ene_valley_min[Ik, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFm_ex=self.Ene_valley_min[:, self.ini_band_HF:self.fini_band_HF]
+            self.E_HFm=self.Ene_valley_min[Ik1bz, :]
+            self.E_HFm_K=self.Ene_valley_min[Ik, :]
+            self.E_HFm_ex=self.Ene_valley_min[:, :]
             
             print(np.size(Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
             # self.Um=np.array(U_transfm)

@@ -180,21 +180,21 @@ class ep_Bubble:
                 self.Lnemm=self.HB.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
                 
-                ##Plotting form factors
-                self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=0, sublattice=0), mode+'_m2')
-                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=0, sublattice=0), mode+'_p2')
+                # ##Plotting form factors
+                # self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                # self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=0, sublattice=0), mode+'_m2')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=0, sublattice=0), mode+'_p2')
                 
                 
                 # self.HB.FFm.plotFF(self.Lnemp, mode+'_Nemp')
                 # self.HB.FFp.plotFF(self.Lnemm, mode+'_Nemm')
                 # self.HB.FFm.plotFF(self.L00p, mode+'_denp')
                 # self.HB.FFp.plotFF(self.L00m, mode+'_denm')
-                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
-                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
-                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
-                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
                 # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=0), mode+'_m1')
                 # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=0), mode+'_p1')
                 
@@ -205,13 +205,13 @@ class ep_Bubble:
                 self.Lnemm=self.HB.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
                 
-                ##Plotting form factors
-                self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
-                self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
-                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
-                self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
+                # ##Plotting form factors
+                # self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                # self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
+                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
+                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
                 
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
