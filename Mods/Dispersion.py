@@ -620,6 +620,12 @@ class Dispersion():
         psi_min=np.array(psi_min_a)[::-1,:,:]
         
         
+        #overlap with the T-reversed generated wavefunction is indeed just a phase
+        # psi_min_2=np.array(psi_min_a_2)
+        # for k in range(self.latt.Npoi1bz):
+        #     self.check_Overlap(psi_min_2[k,:,:],psi_min[k,:,:])
+        
+        
         Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.latt.Npoi1bz,self.nbands])
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.latt.Npoi1bz,self.nbands])
 
@@ -1886,6 +1892,241 @@ class HF_BandStruc:
                     FormFactor_new_m[kq,:,k,:]=Ukqm_dag@((FormFactor_m[kq,:,k,:])@Ukm)
             
         return [FormFactor_new_p,FormFactor_new_m]
+    
+
+
+       
+class Phon_bare_BandStruc:
+    
+    
+    def __init__(self, latt,  hpl, hmin, nbands,  cons, field, qins, sym, mode, layersym ):
+
+        
+        self.latt=latt
+        
+        
+        self.nbands_init=4*hpl.Dim
+        self.nbands=nbands
+
+        
+        self.ini_band=int(self.nbands_init/2)-int(self.nbands/2)
+        self.fini_band=int(self.nbands_init/2)+int(self.nbands/2)
+        
+        
+        self.hpl=hpl
+        self.hmin=hmin
+        
+        self.field=field
+        self.qins=qins
+        self.sym=sym     
+
+        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
+
+        
+    
+        ################################
+        #dispersion attributes
+        ################################
+
+        disp=Dispersion( latt, self.nbands_init, hpl, hmin)
+        [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+
+        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+        
+        
+        ################################
+        #generating form factors
+        ################################
+        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.nbands)
+        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.nbands)
+        
+        self.LamP=self.FFp.denqFF_s() #no initial transpose
+        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
+        self.LamM=self.FFm.denqFF_s() #no initial transpose
+        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
+        
+        
+        
+        ################################
+        #generating form factors
+        ################################
+
+        if layersym=="s":
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_s()
+                self.L00m=self.FFm.denqFFL_s()
+                self.Lnemp=self.FFp.NemqFFL_s()
+                self.Lnemm=self.FFm.NemqFFL_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            elif mode=="T": 
+                self.Lnemp=self.FFp.NemqFFT_s()
+                self.Lnemm=self.FFm.NemqFFT_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="dens":
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+                
+            else:
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+            
+        else: # a- mode
+            if mode=="L":
+                self.L00p=self.FFp.denqFFL_a()
+                self.L00m=self.FFm.denqFFL_a()
+                self.Lnemp=self.FFp.NemqFFL_a()
+                self.Lnemm=self.FFm.NemqFFL_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+                   
+            elif mode=="T":
+                self.Lnemp=self.FFp.NemqFFT_a()
+                self.Lnemm=self.FFm.NemqFFT_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+                
+
+            elif mode=="dens":
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+            else:
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_a(), self.FFm.denqFF_a())
+
+        
+
+
+
+        # HBMp=np.zeros(np.shape(Fock))
+        HBMp=np.zeros(np.shape(proj))
+        HBMp[:,0,0]=self.Ene_valley_plus[:,0]
+        HBMp[:,1,1]=self.Ene_valley_plus[:,1]
+        H0=HBMp-Fock*mode
+        
+
+        print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
+        
+        s=time.time()
+        EHFp=[]
+        U_transf=[]
+        EHFm=[]
+        U_transfm=[]
+        
+        paulix=np.array([[0,1],[1,0]])
+        
+        diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
+        for ib in range(int(self.nbands/2)):
+            diagI[ib,int(self.nbands/2-1-ib)]=1;
+        sx=np.kron(paulix,diagI)
+        
+        for l in range(self.latt.NpoiQ):
+            Hpl=H0[l,:,:]
+            Hmin=-sx@Hpl@sx
+            # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
+            (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
+
+            EHFp.append(Eigvals)
+            U_transf.append(Eigvect)
+            
+            (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
+            EHFm.append(Eigvals)
+            U_transfm.append(Eigvect)
+            
+            
+        Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        self.E_HFp=np.array(EHFp)[Ik, self.ini_band:self.fini_band]
+        self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
+        self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+        self.Up=np.array(U_transf)
+        
+        self.E_HFm=np.array(EHFm)[Ik, self.ini_band:self.fini_band]
+        self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
+        self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+        self.Um=np.array(U_transfm)
+        e=time.time()
+        print(f'time for Diag {e-s}')
+
+        #plots of the Bandstructre if needed
+        self.plots_bands()
+    
+    
+    def plots_bands(self):
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,0], s=40)
+        plt.colorbar()
+        plt.savefig("EHF1p_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,1], s=40)
+        plt.colorbar()
+        plt.savefig("EHF2p_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,0], s=40)
+        plt.colorbar()
+        plt.savefig("EHF1m_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,1], s=40)
+        plt.colorbar()
+        plt.savefig("EHF2m_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        
+        #############################
+        # high symmetry path
+        #############################
+        [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
+        pth=np.arange(np.size(path))
+        plt.plot(self.E_HFm_ex[path,0], ls='--', c='r')
+        plt.plot(self.E_HFm_ex[path,1], ls='--', c='r')
+        plt.scatter(pth,self.E_HFm_ex[path,0], c='r', s=9)
+        plt.scatter(pth,self.E_HFm_ex[path,1], c='r', s=9)
+        plt.plot(self.E_HFp_ex[path,0], c='b')
+        plt.plot(self.E_HFp_ex[path,1], c='b')
+        plt.scatter(pth,self.E_HFp_ex[path,0], c='b', s=9)
+        plt.scatter(pth,self.E_HFp_ex[path,1], c='b', s=9)
+        plt.savefig("dispHFp_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        plt.plot(self.latt.KQX[path], self.latt.KQY[path])
+        VV=self.latt.boundary()
+        plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
+        plt.plot(VV[:,0], VV[:,1], c='b')
+        plt.savefig("HSPp_kappa"+str(self.hpl.kappa)+".png")
+        plt.close()
+        
+        print("Bandwith,", np.max(self.E_HFp_ex[:,1])-np.min(self.E_HFp_ex[:,0]))
+        
+        return None
+    
+
+    def OmegaL(self):
+        
+        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        
+        [Omega_FFp,Omega_FFm]=self.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+                
+        return [Omega_FFp,Omega_FFm]
+
+    def OmegaT(self):
+
+        Omega_FFp_pre=(self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=(self.beta_ep*self.Lnemm)
+
+        
+        [Omega_FFp,Omega_FFm]=self.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+        
+        return [Omega_FFp,Omega_FFm]
+    
+    def Form_factor_unitary(self, FormFactor_p, FormFactor_m):
+
+        FormFactor_new_p=FormFactor_p 
+        FormFactor_new_m=FormFactor_m
+        
+        return [FormFactor_new_p,FormFactor_new_m]
+    
+    
     
 
         

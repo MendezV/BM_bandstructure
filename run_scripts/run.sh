@@ -9,7 +9,7 @@
 ###########################
 
 #generic parameters 
-Lattice_size=12
+Lattice_size=6
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
