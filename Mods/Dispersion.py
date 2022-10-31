@@ -1899,7 +1899,7 @@ class HF_BandStruc:
 class Phon_bare_BandStruc:
     
     
-    def __init__(self, latt,  hpl, hmin, nbands,  cons, field, qins, sym, mode, layersym ):
+    def __init__(self, latt,  hpl, hmin, nbands,  cons, field, qins_X, qins_Y, sym, mode, layersym ):
 
         
         self.latt=latt
@@ -1917,7 +1917,8 @@ class Phon_bare_BandStruc:
         self.hmin=hmin
         
         self.field=field
-        self.qins=qins
+        self.qins_X=qins_X
+        self.qins_Y=qins_Y
         self.sym=sym     
 
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
@@ -1931,11 +1932,11 @@ class Phon_bare_BandStruc:
         disp=Dispersion( latt, self.nbands_init, hpl, hmin)
         [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl)
 
-        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl)
+        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl)
         
         
         ################################
@@ -1943,12 +1944,6 @@ class Phon_bare_BandStruc:
         ################################
         self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.nbands)
         self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.nbands)
-        
-        self.LamP=self.FFp.denqFF_s() #no initial transpose
-        self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
-        self.LamM=self.FFm.denqFF_s() #no initial transpose
-        self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
-        
         
         
         ################################
@@ -2034,12 +2029,10 @@ class Phon_bare_BandStruc:
         Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
         self.E_HFp=np.array(EHFp)[Ik, self.ini_band:self.fini_band]
         self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
-        self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
         self.Up=np.array(U_transf)
         
         self.E_HFm=np.array(EHFm)[Ik, self.ini_band:self.fini_band]
         self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
-        self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
         self.Um=np.array(U_transfm)
         e=time.time()
         print(f'time for Diag {e-s}')
@@ -2127,6 +2120,26 @@ class Phon_bare_BandStruc:
         return [FormFactor_new_p,FormFactor_new_m]
     
     
+    def make_mat_phon(self):
+        
+        mat_s=np.zeros([self.latt.Npoi,self.latt.Npoi])
+        matp=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        matm=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        
+        #could be problematic at edges of BZ
+        for k in range(self.latt.Npoi):
+            mat=np.zeros([self.latt.Npoi,self.latt.Npoi])
+            k1=np.argmin( (self.latt.KX-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
+            k2=np.argmin( (self.latt.KX-self.latt.KX[k])**2 +(self.latt.KY-self.latt.KY[k])**2)
+            first_check=np.sqrt( (self.latt.KX[k1]-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
+            if first_check<0.5/self.latt.Npoi:
+                mat[k1,k2]=1
+                mat_s[k1,k2]=1
+                matp=matp+np.kron(mat,self.Omega_FFp[k1,:,k2,:])*self.field
+                matm=matm+np.kron(mat,self.Omega_FFm[k1,:,k2,:])*self.field
+            
+        return [mat_s,matp, matm]
+
     
 
         
