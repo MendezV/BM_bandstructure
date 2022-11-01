@@ -1987,53 +1987,20 @@ class Phon_bare_BandStruc:
                 [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_a(), self.FFm.denqFF_a())
 
         
-
-
-
-        # HBMp=np.zeros(np.shape(Fock))
-        HBMp=np.zeros(np.shape(proj))
-        HBMp[:,0,0]=self.Ene_valley_plus[:,0]
-        HBMp[:,1,1]=self.Ene_valley_plus[:,1]
-        H0=HBMp-Fock*mode
         
+        [mat_s,matp, matm]=self.make_mat_phon()
+        [mat_s_eps,matp2_eps, matm_eps]=self.make_mat_phon()
+        Hp=matp2_eps+matp+np.conj(matp.T)
+        Hm=matm_eps+matm+np.conj(matm.T)
 
-        print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
+        print(f"starting dispersion with {self.latt.Npoi} points..........")
         
         s=time.time()
-        EHFp=[]
-        U_transf=[]
-        EHFm=[]
-        U_transfm=[]
         
-        paulix=np.array([[0,1],[1,0]])
+        (self.Eigvals_p,self.Eigvect_p)= np.linalg.eigh(Hp) 
+        (self.Eigvals_m,self.Eigvect_m)= np.linalg.eigh(Hm) 
         
-        diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
-        for ib in range(int(self.nbands/2)):
-            diagI[ib,int(self.nbands/2-1-ib)]=1;
-        sx=np.kron(paulix,diagI)
-        
-        for l in range(self.latt.NpoiQ):
-            Hpl=H0[l,:,:]
-            Hmin=-sx@Hpl@sx
-            # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
-            (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
-
-            EHFp.append(Eigvals)
-            U_transf.append(Eigvect)
             
-            (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
-            EHFm.append(Eigvals)
-            U_transfm.append(Eigvect)
-            
-            
-        Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-        self.E_HFp=np.array(EHFp)[Ik, self.ini_band:self.fini_band]
-        self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
-        self.Up=np.array(U_transf)
-        
-        self.E_HFm=np.array(EHFm)[Ik, self.ini_band:self.fini_band]
-        self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
-        self.Um=np.array(U_transfm)
         e=time.time()
         print(f'time for Diag {e-s}')
 
@@ -2132,6 +2099,7 @@ class Phon_bare_BandStruc:
             k1=np.argmin( (self.latt.KX-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
             k2=np.argmin( (self.latt.KX-self.latt.KX[k])**2 +(self.latt.KY-self.latt.KY[k])**2)
             first_check=np.sqrt( (self.latt.KX[k1]-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
+            
             if first_check<0.5/self.latt.Npoi:
                 mat[k1,k2]=1
                 mat_s[k1,k2]=1
@@ -2140,6 +2108,20 @@ class Phon_bare_BandStruc:
             
         return [mat_s,matp, matm]
 
+    def make_mat_eps(self):
+        
+        mat_s=np.zeros([self.latt.Npoi,self.latt.Npoi])
+        matp=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        matm=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        
+        #could be problematic at edges of BZ
+        for k in range(self.latt.Npoi):
+            mat=np.zeros([self.latt.Npoi,self.latt.Npoi])
+            mat[k,k]=1
+            matp=matp+np.kron(mat,np.diag(self.Ene_valley_plus[k,:]))
+            matm=matm+np.kron(mat,np.diag(self.Ene_valley_min[k,:]))
+            
+        return [mat_s,matp, matm]
     
 
         
