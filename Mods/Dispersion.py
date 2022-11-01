@@ -1917,9 +1917,15 @@ class Phon_bare_BandStruc:
         self.hmin=hmin
         
         self.field=field
-        self.qins_X=qins_X
-        self.qins_Y=qins_Y
-        self.sym=sym     
+        self.sym=sym     #whether we take all c3 invariant mome
+        if self.sym:
+            self.qins_X=[qins_X]
+            self.qins_Y=[qins_Y]
+            self.nqs=2
+        else:
+            self.qins_X=[qins_X,-qins_X]
+            self.qins_Y=[qins_Y,-qins_Y]
+            self.nqs=2
 
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
 
@@ -1932,11 +1938,11 @@ class Phon_bare_BandStruc:
         disp=Dispersion( latt, self.nbands_init, hpl, hmin)
         [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl)
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
 
-        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl)
-        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl)
+        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
         
         
         ################################
@@ -1996,16 +2002,69 @@ class Phon_bare_BandStruc:
         print(f"starting dispersion with {self.latt.Npoi} points..........")
         
         s=time.time()
+        EHFp=[]
+        U_transf=[]
+        EHFm=[]
+        U_transfm=[]
+        paulix=np.array([[0,1],[1,0]])
+        
+        #if we use TRS to reconstruct minus valley
+        diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
+        for ib in range(int(self.nbands/2)):
+            diagI[ib,int(self.nbands/2-1-ib)]=1;
+        sx=np.kron(paulix,diagI)
         
         (self.Eigvals_p,self.Eigvect_p)= np.linalg.eigh(Hp) 
         (self.Eigvals_m,self.Eigvect_m)= np.linalg.eigh(Hm) 
         
+        ##only works for instabilities that occur at repetitions of Gamma
+        for k in range(self.latt.NpoiQ):
+            H0p=np.diag(self.Ene_valley_plus[k,:])
+            Delt=np.zeros([self.nbands,self.nbands])
+            for q in range(self.nqs):
+                k1=np.argmin( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[q]))**2 +(self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[q]))**2)
+                Delt=Delt+self.Omega_FFp[k1,:,k,:]*self.field
+            Delt=Delt+np.conj(Delt)
+            Hpl=H0p+Delt
+            (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
+
+            EHFp.append(Eigvals)
+            U_transf.append(Eigvect)
             
+            H0min=np.diag(self.Ene_valley_min[k,:])
+            Delt=np.zeros([self.nbands,self.nbands])
+            for q in range(self.nqs):
+                k1=np.argmin( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[q]))**2 +(self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[q]))**2)
+                Delt=Delt+self.Omega_FFm[k1,:,k,:]*self.field
+            Delt=Delt+np.conj(Delt)
+            Hmin=H0min+Delt
+            
+            (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
+            EHFm.append(Eigvals)
+            U_transfm.append(Eigvect)
+                
+                
+        Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        self.E_HFp=np.array(EHFp)[Ik, :]
+        self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
+        self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+        self.Up=np.array(U_transf)
+        
+        self.E_HFm=np.array(EHFm)[Ik, :]
+        self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
+        self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+        self.Um=np.array(U_transfm)
+        
+        #plots of the Bandstructre if needed
+        print(np.size(Ik),np.size(self.E_HFp),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
+        print(self.ini_band,self.fini_band)
+        self.plots_bands()
+        
         e=time.time()
         print(f'time for Diag {e-s}')
 
         #plots of the Bandstructre if needed
-        self.plots_bands()
+        # self.plots_bands()
     
     
     def plots_bands(self):
@@ -2089,18 +2148,18 @@ class Phon_bare_BandStruc:
     
     def make_mat_phon(self):
         
-        mat_s=np.zeros([self.latt.Npoi,self.latt.Npoi])
-        matp=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
-        matm=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        mat_s=np.zeros([self.latt.NpoiQ,self.latt.NpoiQ])
+        matp=np.zeros([self.latt.NpoiQ*self.nbands,self.latt.NpoiQ*self.nbands])
+        matm=np.zeros([self.latt.NpoiQ*self.nbands,self.latt.NpoiQ*self.nbands])
         
         #could be problematic at edges of BZ
-        for k in range(self.latt.Npoi):
-            mat=np.zeros([self.latt.Npoi,self.latt.Npoi])
-            k1=np.argmin( (self.latt.KX-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
-            k2=np.argmin( (self.latt.KX-self.latt.KX[k])**2 +(self.latt.KY-self.latt.KY[k])**2)
-            first_check=np.sqrt( (self.latt.KX[k1]-(self.latt.KX[k]+self.qins_X[0]))**2 +(self.latt.KY-(self.latt.KY[k]+self.qins_Y[0]))**2)
+        for k in range(self.latt.NpoiQ):
+            mat=np.zeros([self.latt.NpoiQ,self.latt.NpoiQ])
+            k1=np.argmin( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[0]))**2 +(self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[0]))**2)
+            k2=np.argmin( (self.latt.KQX-self.latt.KQX[k])**2 +(self.latt.KQY-self.latt.KQY[k])**2)
+            first_check=np.sqrt( (self.latt.KQX[k1]-(self.latt.KQX[k]+self.qins_X[0]))**2 +(self.latt.KQY[k1]-(self.latt.KQY[k]+self.qins_Y[0]))**2)
             
-            if first_check<0.5/self.latt.Npoi:
+            if first_check<0.5/self.latt.NpoiQ:
                 mat[k1,k2]=1
                 mat_s[k1,k2]=1
                 matp=matp+np.kron(mat,self.Omega_FFp[k1,:,k2,:])*self.field
@@ -2110,13 +2169,13 @@ class Phon_bare_BandStruc:
 
     def make_mat_eps(self):
         
-        mat_s=np.zeros([self.latt.Npoi,self.latt.Npoi])
-        matp=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
-        matm=np.zeros([self.latt.Npoi*self.nbands,self.latt.Npoi*self.nbands])
+        mat_s=np.zeros([self.latt.NpoiQ,self.latt.NpoiQ])
+        matp=np.zeros([self.latt.NpoiQ*self.nbands,self.latt.NpoiQ*self.nbands])
+        matm=np.zeros([self.latt.NpoiQ*self.nbands,self.latt.NpoiQ*self.nbands])
         
         #could be problematic at edges of BZ
-        for k in range(self.latt.Npoi):
-            mat=np.zeros([self.latt.Npoi,self.latt.Npoi])
+        for k in range(self.latt.NpoiQ):
+            mat=np.zeros([self.latt.NpoiQ,self.latt.NpoiQ])
             mat[k,k]=1
             matp=matp+np.kron(mat,np.diag(self.Ene_valley_plus[k,:]))
             matm=matm+np.kron(mat,np.diag(self.Ene_valley_min[k,:]))
