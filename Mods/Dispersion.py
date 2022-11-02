@@ -582,33 +582,35 @@ class Dispersion():
             E1,wave1=self.hpl.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
             # psi_plus_a.append(wave1)
-            wave1p=self.gauge_fix( wave1, E1, self.latt.KX1bz[l], self.latt.KY1bz[l])
+            wave1p=self.gauge_fix( wave1, E1, self.latt.KX1bz[l], self.latt.KY1bz[l],self.hpl)
             self.check_C2T(wave1p)
             psi_plus_a.append(wave1p)
             
             ########## generate explicitly
             E1,wave1=self.hmin.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            wave1m=self.gauge_fix( wave1, E1,self.latt.KX1bz[l],self.latt.KY1bz[l])
-            self.check_C2T(wave1m)
-            psi_min_a_2.append(wave1m)
+            # wave1m=self.gauge_fix( wave1, E1,self.latt.KX1bz[l],self.latt.KY1bz[l], self.hmin)
+            # self.check_C2T(wave1m)
+            # psi_min_a_2.append(wave1m)
             
             # # ########### with the convention that this is the eigenvalue and eigenvector at -k
             # # ########### infer from C2 or T symmetry, energies
             # # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
             
-            # # # infer from C2, Cstar or T symmetry, wavefuncs
-            # # # wave1m=self.impose_C2(wave1p)
+            # # infer from C2, Cstar or T symmetry, wavefuncs
+            # # wave1m=self.impose_C2(wave1p)
             # wave1m=self.impose_T(wave1p)
-            # # wave1m=self.impose_Cstar(wave1p)
-            # self.check_C2T(wave1m)
-            # psi_min_a.append(wave1m)
+            wave1m=self.impose_Cstar(wave1p)
+            self.check_C2T(wave1m)
+            psi_min_a.append(wave1m)
             
             # # ######## checks for symmetry
             # self.check_T(wave1p,wave1m)
             # self.check_T(wave1m,wave1p)
             # self.check_C2(wave1p,wave1m)
             # self.check_C2(wave1m,wave1p)
+            self.check_Cstar(wave1p,wave1m)
+            # self.check_Cstar(wave1m,wave1p)
             
     
         e=time.time()
@@ -616,11 +618,11 @@ class Dispersion():
         ##relevant wavefunctions and energies for the + valley
         
         psi_plus=np.array(psi_plus_a)
-        psi_min=np.array(psi_min_a_2)
+        psi_min=np.array(psi_min_a)
         # psi_min=np.array(psi_min_a)[::-1,:,:]
         
         
-        # # overlap with the T-reversed generated wavefunction is indeed just a phase
+        # # overlap with the generated wavefunction is indeed just a phase
         # psi_min_2=np.array(psi_min_a_2)
         # for k in range(self.latt.Npoi1bz):
         #     self.check_Overlap(psi_min_2[k,:,:],psi_min[k,:,:])
@@ -639,7 +641,7 @@ class Dispersion():
 
     ###########Gauge fixing the wavefunctions
     
-    def gauge_fix(self, wave1, E1, Kx, Ky):
+    def gauge_fix(self, wave1, E1, Kx, Ky, ham):
         
         #using c2T symmetry to fix the phases of the wavefuncs
         ihalf=int(self.nbands/2)
@@ -648,7 +650,7 @@ class Dispersion():
         #lower half of the spectrum
         wave1_prime=np.array(wave1)
         testw=np.array(wave1_prime[:,:ihalf])
-        testw2=self.hpl.c2zT_psi(testw)
+        testw2=ham.c2zT_psi(testw)
         
         # ang_low=np.angle(np.conj(testw.T)@testw2)
         ang_low=np.angle(np.sum(np.conj(testw)*testw2,axis=0)) #phase of the dot product of the columns of wave1_prime  with the C2T transformed columns
@@ -658,7 +660,7 @@ class Dispersion():
         
         #upper half of the spectrum
         testw=np.array(wave1_prime[:,ihalf:])
-        testw2=self.hpl.c2zT_psi(testw)
+        testw2=ham.c2zT_psi(testw)
         
         # ang_up=np.angle(np.conj(testw.T)@testw2)
         ang_up=np.angle(np.sum(np.conj(testw)*testw2,axis=0)) #phase of the dot product of the columns of wave1_prime with the C2T transformed columns
@@ -667,7 +669,7 @@ class Dispersion():
         wave1_prime[:,ihalf:]=np.array(testw_new)
         
         #testing the representation of c2T
-        Sewing=np.conj((wave1_prime[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1_prime[:,inde1:inde2]))
+        Sewing=np.conj((wave1_prime[:,inde1:inde2]).T)@ham.c2zT_psi((wave1_prime[:,inde1:inde2]))
         pauliz=np.array([[1,0],[0,-1]])
         
         if np.abs(np.mean(Sewing-pauliz))>1e-8:
@@ -695,7 +697,7 @@ class Dispersion():
             vec=vec@mat1
             wave1_prime[:,inde1:inde2]=vec
             
-            Sewing=np.conj((wave1_prime[:,inde1:inde2]).T)@self.hpl.c2zT_psi((wave1_prime[:,inde1:inde2]))
+            Sewing=np.conj((wave1_prime[:,inde1:inde2]).T)@ham.c2zT_psi((wave1_prime[:,inde1:inde2]))
             pauliz=np.array([[1,0],[0,-1]])
             
             if np.abs(np.mean(Sewing-pauliz))<1e-9:
@@ -709,7 +711,7 @@ class Dispersion():
             
         #using C sublattice to fix an additional relative minus sign
         testw=np.array(wave1_prime)
-        testw2=self.hpl.Csub_psi(testw)
+        testw2=ham.Csub_psi(testw)
         
         Sewing2=np.real((np.conj(testw.T)@testw2))
         # print(Sewing2)
@@ -721,8 +723,8 @@ class Dispersion():
         
         #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
-        if self.hpl.kappa==0.0:
-            Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2].T)@(self.hpl.Csub_psi(wave1_prime[:,inde1:inde2])) )
+        if ham.kappa==0.0:
+            Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2].T)@(ham.Csub_psi(wave1_prime[:,inde1:inde2])) )
             paulix=np.array([[0,1],[1,0]])
             if np.abs(np.mean(Sewing2-paulix))>1e-6:
                 print("chiral sublattice failed")
@@ -732,56 +734,8 @@ class Dispersion():
         return wave1_prime
     
 
-    def impose_all_Cstar(self, psi_plus):
-        
-        (Nkpoints, DimV, Nbands)=np.shape(psi_plus)
-        II=np.eye(self.Dim)
-        
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
-        op=np.kron(pauliy,np.kron(II, paulix))
-        Wm=np.zeros(np.shape(psi_plus))+0*1j
-        Wp=np.array(psi_plus)
-        
-        TopRange=int(np.ceil(Nkpoints/2))
-        kpoints=int(Nkpoints)
-        
-        #Cstar (Ph) sends plus to minus (only half of BZ)
-        for k in range(TopRange):
-            Wm[k,:,:]=op@(psi_plus[k,:,::-1])
-        
-        #Time reversal sends other half of the BZ
-        nz=np.kron(pauliz,int(self.nbands/2)) #number of bands has to be even
-        for k in range(TopRange):
-            Wm[kpoints-1-k,:,:]=np.conj(psi_plus[k,:,:])@nz
-        
-        #Cstar sends the second half of the BZ back
-        for k in range(TopRange):
-            Wp[kpoints-1-k,:,:]=op@(Wm[kpoints-1-k,:,::-1])
-
-        for k in range(kpoints):
-            
-            self.check_C2T(Wp[k,:,:])
-            self.check_C2T(Wm[k,:,:])
-            
-            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])    
-             
-            #c2 and T send k -> -k        
-            self.check_T(Wp[kpoints-1-k,:,:],Wm[k,:,:])
-            self.check_C2(Wp[kpoints-1-k,:,:],Wm[k,:,:]) 
-        return Wp,Wm
-    
-    def impose_all_Cstar_2(self, psi_plus, psi_min):
-        
-        ihalf=int(self.nbands/2)
-        inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
-        inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
-        
-        
-        (Nkpoints, DimV, Nbands)=np.shape(psi_plus)
-        II=np.fliplr(np.eye(self.Dim)) #this is needed because the order of the basis in the minus valley is flipped
+    def impose_Cstar(self,wave1p):
+        II=np.eye(self.Dim) #this is needed because the order of the basis in the minus valley is flipped
         
         pauli0=np.array([[1,0],[0,1]])
         paulix=np.array([[0,1],[1,0]])
@@ -789,41 +743,9 @@ class Dispersion():
         pauliz=np.array([[1,0],[0,-1]])
         
         op=np.kron(pauliy,np.kron(II, paulix))
+        wave2=np.array(op@( np.conj(self.hpl.T_psi(wave1p)) ))[:,::-1]
         
-        Wm=np.zeros(np.shape(psi_plus))+0*1j
-        Wp=np.array(psi_plus)
-        
-        TopRange=int(np.ceil(Nkpoints/2))
-        kpoints=int(Nkpoints)
-        
-        #Cstar (Ph) sends plus to minus (only half of BZ)
-        for k in range(kpoints):
-            Wm[k,:,inde1:ihalf]=np.array(op@(Wp[k,:,ihalf:inde2])[::-1,::-1])
-         
-        
-        #Time reversal sends other half of the BZ
-        nz=np.kron(pauliz,int(self.nbands/2)) #number of bands has to be even
-        for k in range(kpoints):
-            Wp[kpoints-1-k,:,inde1:ihalf]=-np.array(np.conj(Wm[k,:,inde1:ihalf]))
-        
-        #Cstar sends the second half of the BZ back
-        for k in range(kpoints):
-            Wm[k,:,ihalf:inde2]=np.array(op@(Wp[k,:,inde1:ihalf][::-1,::-1]))
-
-        for k in range(kpoints):
-            
-            self.check_C2T(Wp[k,:,:])
-            self.check_C2T(Wm[k,:,:])
-            
-            self.check_Cstar( Wp[k,:,:],Wm[k,:,:])    
-             
-            #c2 and T send k -> -k    
-            print('cstar',k)    
-            self.check_T( Wp[kpoints-1-k,:,:], Wm[k,:,:])
-            self.check_C2( Wp[kpoints-1-k,:,:], Wm[k,:,:]) 
-        return Wp,Wm
-    
-  
+        return wave2
     
     def check_Cstar(self, wave1p, wave1m):
         
@@ -839,7 +761,7 @@ class Dispersion():
         
         op=np.kron(pauliy,np.kron(II, paulix))
         
-        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(wave1p[:,inde1:inde2]))
+        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(np.conj(self.hpl.T_psi(wave1p))[:,inde1:inde2]))
         if np.abs(np.mean(Sewing-paulix))>1e-6:
             print("C star failed")
             print(Sewing)
@@ -1550,6 +1472,7 @@ class FormFactors():
             for k in range(self.latt.Npoi1bz):
                 k1=np.argmin( (self.latt.KQX-(self.latt.KX1bz[k]+self.latt.KX[s]))**2 +(self.latt.KQY-(self.latt.KY1bz[k]+self.latt.KY[s]))**2)
                 k2=np.argmin( (self.latt.KQX-self.latt.KX1bz[k])**2 +(self.latt.KQY-self.latt.KY1bz[k])**2)
+                # undet=undet+np.abs(np.trace(Lambda_Tens[k1,:,k2,:]))**2  
                 undet=undet+np.abs(np.linalg.det(Lambda_Tens[k1,:,k2,:]))**2  
             cos1.append(undet/self.latt.Npoi1bz)
             
@@ -1994,7 +1917,9 @@ class Phon_bare_BandStruc:
         ################################
         #generating form factors
         ################################
-
+        self.OGFFP=self.FFp.calcFormFactor( layer=0, sublattice=0)
+        self.OGFFM=self.FFm.calcFormFactor( layer=0, sublattice=0)
+        
         if layersym=="s":
             if mode=="L":
                 self.L00p=self.FFp.denqFFL_s()
@@ -2019,11 +1944,21 @@ class Phon_bare_BandStruc:
                 self.Lnemp=self.FFp.NemqFFL_a()
                 self.Lnemm=self.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+                
+                ##Plotting form factors
+                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                self.FFm.plotFF(self.OGFFM, mode+'_m2')
+                self.FFp.plotFF(self.OGFFP, mode+'_p2')
                    
             elif mode=="T":
                 self.Lnemp=self.FFp.NemqFFT_a()
                 self.Lnemm=self.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+                
+                ##Plotting form factors
+                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
                 
 
             elif mode=="dens":
@@ -2059,11 +1994,13 @@ class Phon_bare_BandStruc:
         
         ##only works for instabilities that occur at repetitions of Gamma
         Ik_pre=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        plt.scatter(self.latt.KQX,self.latt.KQY)
+        plt.scatter(self.latt.KX1bz,self.latt.KY1bz)
         for k in Ik_pre:
             
             H0p=np.diag(self.Ene_valley_plus[k,:])
-            Delt_p=np.zeros([self.nbands,self.nbands])
-            Delt_m=np.zeros([self.nbands,self.nbands])
+            Delt_p=np.zeros([self.nbands,self.nbands])+1j*1e-20
+            Delt_m=np.zeros([self.nbands,self.nbands])+1j*1e-20
             c=0
             # plt.scatter(self.latt.KQX,self.latt.KQY)
             for q in range(self.nqs):
@@ -2076,8 +2013,10 @@ class Phon_bare_BandStruc:
                 
                 if first_check<0.5/self.latt.NpoiQ:
                     c=c+1
-                    Delt_p=Delt_p+self.Omega_FFp[k1,:,k,:]*self.field
-                    Delt_m=Delt_m+self.Omega_FFm[k1,:,k,:]*self.field
+                    # Delt_p=Delt_p+self.Omega_FFp[k1,:,k,:]*self.field
+                    # Delt_m=Delt_m+self.Omega_FFm[k1,:,k,:]*self.field
+                    Delt_p=Delt_p+self.OGFFP[k1,:,k,:]*self.field
+                    Delt_m=Delt_m+self.OGFFM[k1,:,k,:]*self.field
             # plt.scatter( self.latt.KQX[k]  ,self.latt.KQY[k]) 
             # plt.show()
             if c<self.nqs:
@@ -2093,11 +2032,26 @@ class Phon_bare_BandStruc:
             H0min=np.diag(self.Ene_valley_min[k,:])
             
             Hmin=H0min*0+Delt_m
+            # print('\n')
+            # print(self.latt.KQX[k],self.latt.KQY[k])
+            # print('\n')
+            # print('rel_1',np.abs(Delt_p+sx@(Delt_m@sx)))
+            # print('\n')
+            # print('rel_2',np.abs(Delt_p-sx@(Delt_m@sx)))
+            # print('\n')
+            
+            if np.mean(np.abs(Delt_p+sx@(Delt_m@sx)))>1e-8:
+                plt.scatter(self.latt.KQX[k],self.latt.KQY[k], c='r')
+                print('\n')
+                print('rel_1',np.mean(np.abs(Delt_p+sx@(Delt_m@sx))))
+                print('rel_2',np.mean(np.abs(Delt_p-sx@(Delt_m@sx))))
+                print('\n')
             
             (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
             EHFm.append(Eigvals)
             U_transfm.append(Eigvect)
-                
+            
+        plt.show()
                 
         Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX[Ik_pre],self.latt.KQY[Ik_pre])
         self.E_HFp=np.array(EHFp)[Ik, :]

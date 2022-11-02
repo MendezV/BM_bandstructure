@@ -113,7 +113,7 @@ def main() -> int:
     #Lattice parameters 
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
-    c6sym=True
+    c6sym=False
     umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
