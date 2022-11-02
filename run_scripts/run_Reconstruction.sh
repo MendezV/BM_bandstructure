@@ -9,12 +9,12 @@
 ###########################
 
 #generic parameters 
-Lattice_size=12
+Lattice_size=20
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
 Mode_HF=2
-phonon_polarization='L'
+phonon_polarization='T'
 
 #needed prerequisites for the run
 parameter_file='params'

@@ -241,11 +241,11 @@ def main() -> int:
         substract=0 #0 for decoupled layers
         mu=0
         filling=0
-        field=0.3
+        field=1
         layersym="a"
         qins_X=lq.GMvec[0][0]
         qins_Y=lq.GMvec[0][1]
-        sym=False
+        sym=True
         HB=Dispersion.Phon_bare_BandStruc( lq,  hpl, hmin, nbands,  cons, field, qins_X, qins_Y, sym, mode, layersym )
         
     else:
