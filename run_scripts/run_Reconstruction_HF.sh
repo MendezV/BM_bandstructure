@@ -9,11 +9,11 @@
 ###########################
 
 #generic parameters 
-Lattice_size=3
+Lattice_size=6
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
-Mode_HF=2
+Mode_HF=1
 phonon_polarization='L'
 
 #needed prerequisites for the run

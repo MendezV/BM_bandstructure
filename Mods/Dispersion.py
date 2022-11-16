@@ -1,5 +1,3 @@
-from decimal import MIN_EMIN
-from tkinter.messagebox import NO
 import numpy as np
 import MoireLattice
 import matplotlib.pyplot as plt
@@ -9,7 +7,7 @@ import MoireLattice
 from scipy.interpolate import interp1d
 from scipy.linalg import circulant
 import scipy.linalg as la
-
+from mpl_toolkits import mplot3d
 
 
 # For HF
@@ -1343,23 +1341,28 @@ class FormFactors():
         return "Form factors for valley {xi}".format( xi=self.xi)
 
     def matmult(self, layer, sublattice):
-        pauli0=np.array([[1,0],[0,1]])
-        paulix=np.array([[0,1],[1,0]])
-        pauliy=np.array([[0,-1j],[1j,0]])
-        pauliz=np.array([[1,0],[0,-1]])
+        if layer==0 and sublattice==0:
+            return self.psi
+            
+        else:
+            pauli0=np.array([[1,0],[0,1]])
+            paulix=np.array([[0,1],[1,0]])
+            pauliy=np.array([[0,-1j],[1j,0]])
+            pauliz=np.array([[1,0],[0,-1]])
 
-        pau=[pauli0,paulix,pauliy,pauliz]
-        Qmat=np.eye(self.Nu)
-        
+            pau=[pauli0,paulix,pauliy,pauliz]
+            Qmat=np.eye(self.Nu)
+            
 
-        mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
-        
-        psimult=[]
-        for i in range(np.shape(self.psi)[0]):
-            psimult=psimult+[mat@self.psi[i,:,:]]
-        mult_psi=np.array(psimult)
+            mat=np.kron(pau[layer],np.kron(Qmat, pau[sublattice]))
+            
+            psimult=[]
+            for i in range(np.shape(self.psi)[0]):
+                psimult=psimult+[mat@self.psi[i,:,:]]
+            mult_psi=np.array(psimult)
 
-        return  mult_psi#mat@self.psi
+            return  mult_psi
+            
 
     def calcFormFactor(self, layer, sublattice):
         s=time.time()
@@ -1441,7 +1444,7 @@ class FormFactors():
         return Nem_FFT
 
     ########### Symmetric displacement of the layers
-    def denqFF_s(self):
+    def denFF_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)
         return L00
 
@@ -1493,6 +1496,74 @@ class FormFactors():
         plt.close()
         return None
     
+    def TenstoMat(self,Lambda_Tens):
+        shape=np.shape(Lambda_Tens)
+        nbands=shape[1]
+        Nk=shape[0]
+        NnK=Nk*nbands
+        Nops=self.latt.Npoi
+        
+        Lambda_Mat=np.zeros([Nops,NnK,NnK])+(1e-17)*1j
+        
+        for q in range(Nops):
+            for k in range(self.latt.Npoi1bz):
+                k1=np.argmin( (self.latt.KQX-(self.latt.KX1bz[k]+self.latt.KX[q]))**2 +(self.latt.KQY-(self.latt.KY1bz[k]+self.latt.KY[q]))**2)
+                k2=np.argmin( (self.latt.KQX-self.latt.KX1bz[k])**2 +(self.latt.KQY-self.latt.KY1bz[k])**2)
+                for nband in range(nbands):
+                    for mband in range(nbands):
+                        Lambda_Mat[q,k1+nband*Nk,k2+mband*Nk]=Lambda_Tens[k1,nband,k2,mband]
+        return Lambda_Mat
+    
+    
+    def plotMatEig(self, Lambda_Tens):
+        
+        Lambda_Mat=self.TenstoMat(Lambda_Tens)
+        Nops=self.latt.Npoi
+        shape=np.shape(Lambda_Mat)
+        NnK=shape[1]
+        eiglist=[]
+        xdata,ydata=np.meshgrid(np.arange(NnK),np.arange(NnK))
+        for q in range(Nops):
+            
+            (Eigvals2,Eigvect2)= np.linalg.eigh(Lambda_Mat[q,:,:]+np.conj(Lambda_Mat[q,:,:].T))  #returns sorted eigenvalues
+            eiglist.append(Eigvals2[0])
+            qp=np.argmin( (self.latt.KX+self.latt.KX[q])**2 +(self.latt.KY+self.latt.KY[q])**2)
+            first_check=np.sqrt( (self.latt.KX[qp]+self.latt.KX[q])**2 +(self.latt.KY[qp]+self.latt.KY[q])**2)
+            
+            if first_check<0.5/Nops:
+                
+                fig = plt.figure()
+                ax = plt.axes(projection='3d')
+                print('theshapes',np.shape(xdata), np.shape(Lambda_Mat[qp,:,:]), NnK,self.latt.KX[qp]+self.latt.KX[q],self.latt.KY[qp]+self.latt.KY[q])
+                which=np.where(np.abs(np.real(Lambda_Mat[qp,:,:]).T) >1e-8)
+                zdata=np.real(Lambda_Mat[qp,:,:]).T[which]
+                xxdata=xdata[which]
+                yydata=ydata[which]
+                ax.scatter3D(xxdata,yydata, zdata );
+                which=np.where(np.abs( np.real(Lambda_Mat[q,:,:]) ) >1e-8)
+                zdata= np.real(Lambda_Mat[q,:,:])[which]
+                xxdata=xdata[which]
+                yydata=ydata[which]
+                ax.scatter3D(xxdata,yydata,zdata );
+                plt.show()
+                
+                fig = plt.figure()
+                ax = plt.axes(projection='3d')
+                
+                # ax.scatter3D(xdata,ydata, np.imag(Lambda_Mat[qp,:,:]-np.conj(Lambda_Mat[q,:,:].T)));
+                # plt.show()
+        
+        
+        
+        
+        
+        zdata = eiglist
+        xdata = self.latt.KX
+        ydata = self.latt.KY
+        ax.scatter3D(xdata, ydata, zdata);
+        plt.show()
+        return eiglist
+
        
 class HF_BandStruc:
     
@@ -1547,9 +1618,9 @@ class HF_BandStruc:
             self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
             self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
             
-            self.LamP=self.FFp.denqFF_s() #no initial transpose
+            self.LamP=self.FFp.denFF_s() #no initial transpose
             self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
-            self.LamM=self.FFm.denqFF_s() #no initial transpose
+            self.LamM=self.FFm.denFF_s() #no initial transpose
             self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
             
             
@@ -1663,9 +1734,9 @@ class HF_BandStruc:
             # self.FFp=FormFactors(self.psi_plus_1bz, 1, latt, latt.umkl,self.hpl)
             # self.FFm=FormFactors(self.psi_min_1bz, -1, latt, latt.umkl,self.hmin)
             
-            self.LamP=self.FFp.denqFF_s() #no initial transpose
+            self.LamP=self.FFp.denFF_s() #no initial transpose
             self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
-            self.LamM=self.FFm.denqFF_s() #no initial transpose
+            self.LamM=self.FFm.denFF_s() #no initial transpose
             self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
             
             
@@ -1892,6 +1963,7 @@ class Phon_bare_BandStruc:
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
 
         
+        #TODO: check that the form factors are working properly when I increase the number of bands
     
         ################################
         #dispersion attributes
@@ -1910,16 +1982,76 @@ class Phon_bare_BandStruc:
         ################################
         #generating form factors
         ################################
-        self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.nbands)
-        self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.nbands)
+        self.FFp=FormFactors(self.psi_plus[:,:,self.ini_band:self.fini_band], 1, latt, -1,self.hpl)
+        self.FFm=FormFactors(self.psi_min[:,:,self.ini_band:self.fini_band], -1, latt, -1,self.hmin)
         
+        
+        
+        # s=time.time()
+        # EHFp=[]
+        # U_transf=[]
+        # EHFm=[]
+        # U_transfm=[]
+        # [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
+        # Ik_pre=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        # for k in Ik_pre:
+        #     hpl=0+0*1j
+        #     hmin=0+0*1j
+        #     for q in range(self.nqs):
+        #         k1=np.argmin( np.sqrt( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[q]))**2 + (self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[q]))**2 ) )
+        #         first_check=np.sqrt( (self.latt.KQX[k1]-(self.latt.KQX[k]+self.qins_X[q]))**2 +(self.latt.KQY[k1]-(self.latt.KQY[k]+self.qins_Y[q]))**2  )
+                
+        #         k2=np.argmin( np.sqrt( (self.latt.KQX-(-self.latt.KQX[k]))**2 + (self.latt.KQY-(-self.latt.KQY[k]))**2  ) )
+        #         second_check=np.sqrt( (self.latt.KQX[k2]-(-self.latt.KQX[k] ))**2 +(self.latt.KQY[k2]-(-self.latt.KQY[k] ))**2)
+                
+        #         k3=np.argmin( np.sqrt( (self.latt.KQX-(-self.latt.KQX[k]-self.qins_X[q]))**2 + (self.latt.KQY-(-self.latt.KQY[k]-self.qins_Y[q]))**2 ) )
+        #         third_check=np.sqrt( (self.latt.KQX[k1]-(-self.latt.KQX[k]-self.qins_X[q]))**2 +(self.latt.KQY[k1]-(-self.latt.KQY[k]-self.qins_Y[q]))**2  )
+                
+                
+        #         if first_check<0.5/self.latt.NpoiQ:
+                    
+        #             hpl=hpl+self.Omega_FFp[k1,:,k,:]
+        #             hmin=hmin+self.Omega_FFm[k1,:,k,:]
+                    
+        #             print('\n')
+        #             print(self.qins_X[q],self.qins_Y[q],self.latt.KQX[k],self.latt.KQY[k])
+        #             print('check sum',self.latt.KQX[k1],self.latt.KQY[k1],self.latt.KQX[k]+self.qins_X[q],self.latt.KQY[k]+self.qins_Y[q])
+        #             print('minus sum', self.latt.KQX[k3],self.latt.KQY[k3])
+        #             print('minus vec og',self.latt.KQX[k2],self.latt.KQY[k2])
+                    
+        #             print('p: ',self.Omega_FFp[k1,:,k,:])
+        #             print('\n')
+        #             print('pm: ',self.Omega_FFp[k3,:,k2,:])
+        #             (Eigvals,Eigvect)= np.linalg.eig(self.Omega_FFp[k1,:,k,:])  #returns sorted eigenvalues
+        #             (Eigvals2,Eigvect2)= np.linalg.eig(self.Omega_FFp[k3,:,k2,:])  #returns sorted eigenvalues
+        #             print('eigs.....',Eigvals,Eigvals2)
+        #             print('\n')
+        #             print('\n')
+        #             print('m: ',self.Omega_FFm[k1,:,k,:])
+        #             print('\n')
+        #             print('mm: ',self.Omega_FFm[k3,:,k2,:])
+        #             print('\n')
+        #             (Eigvals,Eigvect)= np.linalg.eig(self.Omega_FFm[k1,:,k,:])  #returns sorted eigenvalues
+        #             (Eigvals2,Eigvect2)= np.linalg.eig(self.Omega_FFm[k3,:,k2,:])  #returns sorted eigenvalues
+        #             print('eigs.....',Eigvals,Eigvals2)
+            
+        #     print('\n')
+        #     print('\n')
+                
+        #     (Eigvals,Eigvect)= np.linalg.eig(hpl)  #returns sorted eigenvalues
+        #     print('total eigs p:',Eigvals)  
+        #     EHFp.append(Eigvals)
+        #     U_transf.append(Eigvect)
+            
+        #     (Eigvals,Eigvect)= np.linalg.eig(hmin)  #returns sorted eigenvalues
+        #     EHFm.append(Eigvals)
+        #     U_transfm.append(Eigvect)
+        #     print('total eigs m:',Eigvals) 
         
         ################################
         #generating form factors
         ################################
-        self.OGFFP=self.FFp.calcFormFactor( layer=0, sublattice=0)
-        self.OGFFM=self.FFm.calcFormFactor( layer=0, sublattice=0)
-        
+       
         if layersym=="s":
             if mode=="L":
                 self.L00p=self.FFp.denqFFL_s()
@@ -1932,10 +2064,10 @@ class Phon_bare_BandStruc:
                 self.Lnemm=self.FFm.NemqFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
             elif mode=="dens":
-                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
                 
             else:
-                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
             
         else: # a- mode
             if mode=="L":
@@ -1948,8 +2080,7 @@ class Phon_bare_BandStruc:
                 ##Plotting form factors
                 self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
                 self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                self.FFm.plotFF(self.OGFFM, mode+'_m2')
-                self.FFp.plotFF(self.OGFFP, mode+'_p2')
+                
                    
             elif mode=="T":
                 self.Lnemp=self.FFp.NemqFFT_a()
@@ -1962,11 +2093,19 @@ class Phon_bare_BandStruc:
                 
 
             elif mode=="dens":
-                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_s(), self.FFm.denqFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
+                
+                ##Plotting form factors
+                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_a(), self.FFm.denqFF_a())
 
         
+        
+        e=self.FFp.plotMatEig(self.Omega_FFp)
+        # e=self.FFp.plotMatEig(self.Omega_FFm)
         
         # [mat_s,matp, matm]=self.make_mat_phon()
         # [mat_s_eps,matp2_eps, matm_eps]=self.make_mat_phon()
@@ -1977,126 +2116,147 @@ class Phon_bare_BandStruc:
         # (self.Eigvals_m,self.Eigvect_m)= np.linalg.eigh(Hm) 
         
 
-        print(f"starting dispersion with {self.latt.Npoi} points..........")
+        # print(f"starting dispersion with {self.latt.Npoi} points..........")
         
-        s=time.time()
-        EHFp=[]
-        U_transf=[]
-        EHFm=[]
-        U_transfm=[]
-        paulix=np.array([[0,1],[1,0]])
+        # s=time.time()
+        # EHFp=[]
+        # U_transf=[]
+        # EHFm=[]
+        # U_transfm=[]
+        # paulix=np.array([[0,1],[1,0]])
         
-        #if we use TRS to reconstruct minus valley
-        diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
-        for ib in range(int(self.nbands/2)):
-            diagI[ib,int(self.nbands/2-1-ib)]=1;
-        sx=np.kron(paulix,diagI)
+        # #if we use TRS to reconstruct minus valley
+        # diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
+        # for ib in range(int(self.nbands/2)):
+        #     diagI[ib,int(self.nbands/2-1-ib)]=1;
+        # sx=np.kron(paulix,diagI)
         
-        ##only works for instabilities that occur at repetitions of Gamma
-        Ik_pre=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-        plt.scatter(self.latt.KQX,self.latt.KQY)
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz)
-        for k in Ik_pre:
+        # ##only works for instabilities that occur at repetitions of Gamma
+        # Ik_pre=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+        # plt.scatter(self.latt.KQX,self.latt.KQY)
+        # plt.scatter(self.latt.KX1bz,self.latt.KY1bz)
+        # for k in Ik_pre:
             
-            H0p=np.diag(self.Ene_valley_plus[k,:])
-            Delt_p=np.zeros([self.nbands,self.nbands])+1j*1e-20
-            Delt_m=np.zeros([self.nbands,self.nbands])+1j*1e-20
-            c=0
-            # plt.scatter(self.latt.KQX,self.latt.KQY)
-            for q in range(self.nqs):
-                k1=np.argmin( np.sqrt( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[q]))**2 + (self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[q]))**2 ) )
-                first_check=np.sqrt( (self.latt.KQX[k1]-(self.latt.KQX[k]+self.qins_X[q]))**2 +(self.latt.KQY[k1]-(self.latt.KQY[k]+self.qins_Y[q]))**2)
+        #     H0p=np.diag(self.Ene_valley_plus[k,:])
+        #     Delt_p=np.zeros([self.nbands,self.nbands])+1j*1e-20
+        #     Delt_m=np.zeros([self.nbands,self.nbands])+1j*1e-20
+        #     c=0
+        #     # plt.scatter(self.latt.KQX,self.latt.KQY)
+        #     for q in range(self.nqs):
+        #         k1=np.argmin( np.sqrt( (self.latt.KQX-(self.latt.KQX[k]+self.qins_X[q]))**2 + (self.latt.KQY-(self.latt.KQY[k]+self.qins_Y[q]))**2 ) )
+        #         first_check=np.sqrt( (self.latt.KQX[k1]-(self.latt.KQX[k]+self.qins_X[q]))**2 +(self.latt.KQY[k1]-(self.latt.KQY[k]+self.qins_Y[q]))**2)
             
                 
-                # plt.scatter( self.latt.KQX[k] + self.qins_X[q]  ,self.latt.KQY[k]+self.qins_Y[q], c='b')
-                # plt.scatter( self.latt.KQX[k1]  ,self.latt.KQY[k1], c='r')              
+        #         # plt.scatter( self.latt.KQX[k] + self.qins_X[q]  ,self.latt.KQY[k]+self.qins_Y[q], c='b')
+        #         # plt.scatter( self.latt.KQX[k1]  ,self.latt.KQY[k1], c='r')  
                 
-                if first_check<0.5/self.latt.NpoiQ:
-                    c=c+1
-                    # Delt_p=Delt_p+self.Omega_FFp[k1,:,k,:]*self.field
-                    # Delt_m=Delt_m+self.Omega_FFm[k1,:,k,:]*self.field
-                    Delt_p=Delt_p+self.OGFFP[k1,:,k,:]*self.field
-                    Delt_m=Delt_m+self.OGFFM[k1,:,k,:]*self.field
-            # plt.scatter( self.latt.KQX[k]  ,self.latt.KQY[k]) 
-            # plt.show()
-            if c<self.nqs:
-                print('not all points plus')
+                
+                
+                
+        #         k2=np.argmin( np.sqrt( (self.latt.KQX-(-self.latt.KQX[k]))**2 + (self.latt.KQY-(-self.latt.KQY[k]))**2  ) )
+        #         second_check=np.sqrt( (self.latt.KQX[k2]-(-self.latt.KQX[k] ))**2 +(self.latt.KQY[k2]-(-self.latt.KQY[k] ))**2)
+                
+        #         k3=np.argmin( np.sqrt( (self.latt.KQX-(-self.latt.KQX[k]-self.qins_X[q]))**2 + (self.latt.KQY-(-self.latt.KQY[k]-self.qins_Y[q]))**2 ) )
+        #         third_check=np.sqrt( (self.latt.KQX[k1]-(-self.latt.KQX[k]-self.qins_X[q]))**2 +(self.latt.KQY[k1]-(-self.latt.KQY[k]-self.qins_Y[q]))**2  )
+                
+                
+        #         print('p: ',self.Omega_FFp[k1,:,k,:])
+        #         print('\n')
+        #         print('pm: ',self.Omega_FFp[k3,:,k2,:])
+        #         (Eigvals,Eigvect)= np.linalg.eig(self.Omega_FFp[k1,:,k,:])  #returns sorted eigenvalues
+        #         (Eigvals2,Eigvect2)= np.linalg.eig(self.Omega_FFp[k3,:,k2,:])  #returns sorted eigenvalues
+        #         print('eigs.....',Eigvals,Eigvals2)
+        #         print('\n')
+        #         print('\n')
+        #         print('m: ',self.Omega_FFm[k1,:,k,:])
+        #         print('\n')
+        #         print('mm: ',self.Omega_FFm[k3,:,k2,:])
+        #         print('\n')            
+        #         print('m: ',self.Omega_FFm[k1,:,k,:])
+        #         print('\n')
+        #         (Eigvals,Eigvect)= np.linalg.eig(self.Omega_FFm[k1,:,k,:])  #returns sorted eigenvalues
+        #         (Eigvals2,Eigvect2)= np.linalg.eig(self.Omega_FFm[k3,:,k2,:])  #returns sorted eigenvalues
+        #         print('eigs.....',Eigvals,Eigvals2)
+                
+        #         if first_check<0.5/self.latt.NpoiQ:
+        #             c=c+1
+        #             Delt_p=Delt_p+self.Omega_FFp[k1,:,k,:]*self.field
+        #             Delt_m=Delt_m+self.Omega_FFm[k1,:,k,:]*self.field
+                    
+        #     # plt.scatter( self.latt.KQX[k]  ,self.latt.KQY[k]) 
+        #     # plt.show()
+        #     if c<self.nqs:
+        #         print('not all points plus')
                     
             
-            Hpl=H0p*0+Delt_p
-            (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
+        #     Hpl=H0p*0+Delt_p
+        #     (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
 
-            EHFp.append(Eigvals)
-            U_transf.append(Eigvect)
+        #     EHFp.append(Eigvals)
+        #     U_transf.append(Eigvect)
             
-            H0min=np.diag(self.Ene_valley_min[k,:])
+        #     H0min=np.diag(self.Ene_valley_min[k,:])
             
-            Hmin=H0min*0+Delt_m
-            # print('\n')
-            # print(self.latt.KQX[k],self.latt.KQY[k])
-            # print('\n')
-            # print('rel_1',np.abs(Delt_p+sx@(Delt_m@sx)))
-            # print('\n')
-            # print('rel_2',np.abs(Delt_p-sx@(Delt_m@sx)))
-            # print('\n')
+        #     Hmin=H0min*0+Delt_m
+        #     # print('\n')
+        #     # print(self.latt.KQX[k],self.latt.KQY[k])
+        #     # print('\n')
+        #     # print('rel_1',np.abs(Delt_p+sx@(Delt_m@sx)))
+        #     # print('\n')
+        #     # print('rel_2',np.abs(Delt_p-sx@(Delt_m@sx)))
+        #     # print('\n')
             
-            if np.mean(np.abs(Delt_p+sx@(Delt_m@sx)))>1e-8:
-                plt.scatter(self.latt.KQX[k],self.latt.KQY[k], c='r')
-                print('\n')
-                print('rel_1',np.mean(np.abs(Delt_p+sx@(Delt_m@sx))))
-                print('rel_2',np.mean(np.abs(Delt_p-sx@(Delt_m@sx))))
-                print('\n')
+        #     if np.mean(np.abs(Hpl+sx@(Hmin@sx)))>1e-8:
+        #         plt.scatter(self.latt.KQX[k],self.latt.KQY[k], c='r')
+        #         print('\n')
+        #         print('rel_1',np.mean(np.abs(Delt_p+sx@(Delt_m@sx))))
+        #         print('rel_2',np.mean(np.abs(Delt_p-sx@(Delt_m@sx))))
+        #         print('\n')
             
-            (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
-            EHFm.append(Eigvals)
-            U_transfm.append(Eigvect)
-            
-        plt.show()
+        #     (Eigvals,Eigvect)= np.linalg.eigh(Hmin)  #returns sorted eigenvalues
+        #     EHFm.append(Eigvals)
+        #     U_transfm.append(Eigvect)
+         
+        # plt.show()
+      
                 
-        Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX[Ik_pre],self.latt.KQY[Ik_pre])
-        self.E_HFp=np.array(EHFp)[Ik, :]
-        self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
-        self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
-        self.Up=np.array(U_transf)
+        # Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX[Ik_pre],self.latt.KQY[Ik_pre])
+        # self.E_HFp=np.array(EHFp)[Ik, :]
+        # self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
+        # self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+        # self.Up=np.array(U_transf)
         
-        self.E_HFm=np.array(EHFm)[Ik, :]
-        self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
-        self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
-        self.Um=np.array(U_transfm)
+        # self.E_HFm=np.array(EHFm)[Ik, :]
+        # self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
+        # self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+        # self.Um=np.array(U_transfm)
         
-        #plots of the Bandstructre if needed
-        print(np.size(Ik),np.shape(self.E_HFp),np.shape(self.E_HFm), 'sizes of the energy arrays in HF module')
-        self.plots_bands()
-        
-        e=time.time()
-        print(f'time for Diag {e-s}')
-
-        #plots of the Bandstructre if needed
+        # #plots of the Bandstructre if needed
+        # print(np.size(Ik),np.shape(self.E_HFp),np.shape(self.E_HFm), 'sizes of the energy arrays in HF module')
         # self.plots_bands()
-    
+        
+        # e=time.time()
+        # print(f'time for Diag {e-s}')
+
+        # #plots of the Bandstructre if needed
+        # # self.plots_bands()
+        
     
     def plots_bands(self):
         
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,0], s=40)
-        plt.colorbar()
-        plt.savefig("EHF1p_kappa"+str(self.hpl.kappa)+".png")
-        plt.close()
-        
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,1], s=40)
-        plt.colorbar()
-        plt.savefig("EHF2p_kappa"+str(self.hpl.kappa)+".png")
-        plt.close()
-        
-        
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,0], s=40)
-        plt.colorbar()
-        plt.savefig("EHF1m_kappa"+str(self.hpl.kappa)+".png")
-        plt.close()
-        
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,1], s=40)
-        plt.colorbar()
-        plt.savefig("EHF2m_kappa"+str(self.hpl.kappa)+".png")
-        plt.close()
+        for nsb in range(self.nbands):
+            plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,nsb], s=40)
+            plt.colorbar()
+            plt.savefig("EHF"+str(nsb)+"p_kappa"+str(self.hpl.kappa)+".png")
+            plt.close()
+            
+            
+            
+            plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,nsb], s=40)
+            plt.colorbar()
+            plt.savefig("EHF"+str(nsb)+"m_kappa"+str(self.hpl.kappa)+".png")
+            plt.close()
+            
         
         
         #############################
@@ -2104,15 +2264,16 @@ class Phon_bare_BandStruc:
         #############################
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
         pth=np.arange(np.size(path))
-        plt.plot(self.E_HFm_ex[path,0], ls='--', c='r')
-        plt.plot(self.E_HFm_ex[path,1], ls='--', c='r')
-        plt.scatter(pth,self.E_HFm_ex[path,0], c='r', s=9)
-        plt.scatter(pth,self.E_HFm_ex[path,1], c='r', s=9)
-        plt.plot(self.E_HFp_ex[path,0], c='b')
-        plt.plot(self.E_HFp_ex[path,1], c='b')
-        plt.scatter(pth,self.E_HFp_ex[path,0], c='b', s=9)
-        plt.scatter(pth,self.E_HFp_ex[path,1], c='b', s=9)
-        plt.savefig("dispHFp_kappa"+str(self.hpl.kappa)+".png")
+        
+        for nsb in range(self.nbands):
+            plt.plot(self.E_HFp_ex[path,nsb], c='b')
+            plt.scatter(pth,self.E_HFp_ex[path,nsb], c='b', s=9)
+            
+        for nsb in range(self.nbands):
+            plt.plot(self.E_HFm_ex[path,nsb], ls='--', c='r')
+            plt.scatter(pth,self.E_HFm_ex[path,nsb], c='r', s=9)
+            
+        plt.savefig("disp_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.plot(self.latt.KQX[path], self.latt.KQY[path])
