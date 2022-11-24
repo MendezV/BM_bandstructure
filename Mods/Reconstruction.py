@@ -113,8 +113,8 @@ def main() -> int:
     #Lattice parameters 
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
-    c6sym=True
-    umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    c6sym=False
+    umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz #fock corrections converge at large umklapp of 4
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q
@@ -170,7 +170,7 @@ def main() -> int:
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
     e_el=1.6021766*(10**(-19))  #in joule/ev
     ee2=(hbarc/a_graphene)/alpha
-    eps_inv = 1/10
+    eps_inv = 1.0/6.5
     d_screening=20*(1e-9)/a_graphene
     d_screening_norm=d_screening*lq.qnor()
     epsilon_0 = 8.85*1e-12

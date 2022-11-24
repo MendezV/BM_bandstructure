@@ -33,7 +33,7 @@ class MoireTriangLattice:
             self.VolMBZ=self.Vol_MBZ()
             self.q=self.qvect()
             self.GMs=self.GM()
-
+            
         elif normed==1:
             [GM1,GM2]=self.GM_vec()
             [q1,q2,q3]=self.qvect()
@@ -42,7 +42,7 @@ class MoireTriangLattice:
             self.GMs=self.GM()/Gnorm
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
             self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
-
+            
         else:
             [GM1,GM2]=self.GM_vec()
             [q1,q2,q3]=self.qvect()
@@ -53,19 +53,34 @@ class MoireTriangLattice:
             self.VolMBZ=self.Vol_MBZ()/(Gnorm**2)
             self.q=[q1/Gnorm,q2/Gnorm,q3/Gnorm]
             
-
+            
         self.umkl=umkl
+        self.c6sym=c6sym
         if c6sym:
-            [self.KX1bz,self.KY1bz]=self.Generate_lattice()
+            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+            [self.KQX1,self.KQY1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+            self.KQX,self.KQY=self.c3symmetrize(self.KQX1,self.KQY1)
         else:
             [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
-        [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
-        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+            [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+
+        
+        
         self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
         self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
         self.NpoiQ=np.size(self.KQX); print(self.NpoiQ, "Q numer of sampling lattice points")
 
+        #Mpoints
+        self.M1=-self.GMvec[1]/2
+        self.M2=self.GMvec[0]/2
+        self.M3=self.GMvec[0]/2+self.GMvec[1]/2
 
+        #Kpoints
+        self.K1=(2*self.GMvec[0]+self.GMvec[1])/3
+        self.K2=(-self.GMvec[1]+self.GMvec[0]) /3
+
+        
     def __repr__(self):
         return "lattice( LX={w}, twist_angle={c})".format(h=self.Npoints, c=self.theta)
 
@@ -672,7 +687,14 @@ class MoireTriangLattice:
             Ik.append(indmin)
         return Ik
     
-
+    def insertion_index_mean_stripe(self, KX,KY, KQX,KQY):
+        #list of size Npoi that has the index of K in KQ
+        Npoi=np.size(KX)
+        Ik=[]
+        for j in range(Npoi):
+            indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
+            Ik.append(indmin)
+        return Ik
     
     def hexagon3(self,pos, Radius_inscribed_hex, KX,KY):
         Y,X = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
@@ -724,7 +746,7 @@ class MoireTriangLattice:
         kxx=[]
         kyy=[]
 
-        uc=1+0.5/LP
+        uc=1+0.5/LP #to make the window slightly inclusive 1+epsilon
         dc=1-0.5/LP
         
         kx,ky,KXp, KYp=self.hexagon3([KXp, KYp], uc*k_window_sizey, KXp, KYp)
@@ -760,29 +782,221 @@ class MoireTriangLattice:
             Gnorm=self.qnor() #normalized to the q1 vector
         return [KX/Gnorm,KY/Gnorm]
     
+
     def all_dirac_ind(self):
         
-        [GM1,GM2]=self.GM_vec()
-        Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
-        
-        if self.normed==0:
-            Gnorm=1
-        elif self.normed==1:
-            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+                
+        if self.c6sym:
+            [GM1,GM2]=self.GM_vec()
+            Vertices_list, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+            
+            if self.normed==0:
+                Gnorm=1
+            elif self.normed==1:
+                Gnorm=self.GM() #normalized to the reciprocal lattice vector
+            else:
+                Gnorm=self.qnor() #normalized to the q1 vector
+                
+                
+            indices=[]
+            numG=int(self.NpoiQ/self.Npoi1bz)
+            print(numG)
+            for i in range(len(Vertices_list)):
+                x=self.KX1bz-Vertices_list[i][0]/Gnorm
+                y=self.KY1bz-Vertices_list[i][1]/Gnorm
+                indi=np.argmin(x**2+y**2)
+                indices.append(indi)
+                
+                for j in range(numG):
+                    indices.append(indi+j*self.Npoi1bz)
         else:
-            Gnorm=self.qnor() #normalized to the q1 vector
-            
-            
-        indices=[]
-        numG=int(self.NpoiQ/self.Npoi1bz)
-        print(numG)
-        for i in range(len(Vertices_list)):
-            x=self.KX1bz-Vertices_list[i][0]/Gnorm
-            y=self.KY1bz-Vertices_list[i][1]/Gnorm
-            indi=np.argmin(x**2+y**2)
-            indices.append(indi)
-            
-            for j in range(numG):
-                indices.append(indi+j*self.Npoi1bz)
+            [GM1,GM2]=self.GMvec
+            indices=[]
+            Ulist=self.Umklapp_List(self.umkl+1)
+            LP=self.Npoints
+            for U in Ulist:
+                G=GM1*U[0]+GM2*U[1]
+                kx=self.KX-(G[0]-self.K1[0])
+                ky=self.KY-(G[1]-self.K1[1])
+                
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
+                
+                if check<1e-3/LP:
+                    indices.append(indi)
+                    
+                kx=self.KX-(G[0]-self.K2[0])
+                ky=self.KY-(G[1]-self.K2[1])
+                
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
+                
+                if check<1e-3/LP:
+                    indices.append(indi)
+    
             
         return np.array(indices,dtype=int)
+    
+    def all_dirac_ind_q(self,kkx,kky):
+        
+
+        [GM1,GM2]=self.GMvec
+        indices=[]
+        Ulist=self.Umklapp_List(self.umkl+2)
+        LP=self.Npoints
+        for U in Ulist:
+            G=GM1*U[0]+GM2*U[1]
+            kx=kkx-(G[0]-self.K1[0])
+            ky=kky-(G[1]-self.K1[1])
+            
+            indi=np.argmin(kx**2 +ky**2)
+            kxc=kx[indi]
+            kyc=ky[indi]
+            check=np.sqrt(kxc**2 + kyc**2)
+            
+            if check<1e-3/LP:
+                indices.append(indi)
+                
+            kx=kkx-(G[0]-self.K2[0])
+            ky=kky-(G[1]-self.K2[1])
+            
+            indi=np.argmin(kx**2 +ky**2)
+            kxc=kx[indi]
+            kyc=ky[indi]
+            check=np.sqrt(kxc**2 + kyc**2)
+            
+            if check<1e-3/LP:
+                indices.append(indi)
+    
+            
+        return np.array(indices,dtype=int)
+
+
+    def c3symmetrize(self, Kx, Ky):
+        print("size of q before symmetr...",np.size(Kx))
+        q=(Kx+1j*Ky)*np.exp(1j*1e-3/np.size(Kx))
+        ang=np.arctan2(np.imag(q),np.real(q))
+        indi=[]
+        for i in range(np.size(ang)):
+            if ang[i]>=0 and ang[i]<2*np.pi/3 and np.abs(q[i])>0:
+                indi.append(i)
+        indi_arr=np.array(indi)
+        
+        kx1=Kx[indi_arr]
+        ky1=Ky[indi_arr]
+        
+        kx2=kx1*self.C3z[0,0]+ky1*self.C3z[0,1]
+        ky2=kx1*self.C3z[1,0]+ky1*self.C3z[1,1]
+           
+        kx3=kx2*self.C3z[0,0]+ky2*self.C3z[0,1]
+        ky3=kx2*self.C3z[1,0]+ky2*self.C3z[1,1]
+        
+        kxx=list(kx1)+list(kx2)+list(kx3)+[0]
+        kyy=list(ky1)+list(ky2)+list(ky3)+[0]
+        
+        #sorting from most negative to most positive 
+        kw2,kyy2 = zip(*sorted(zip(np.array(kxx)+np.array(kyy),kyy)))
+        kw2,kxx2 = zip(*sorted(zip(np.array(kxx)+np.array(kyy),kxx)))
+        
+        KX=np.array(kxx2)
+        KY=np.array(kyy2)
+        print("size of q after symmetr...",np.size(KX))
+        return [KX,KY]
+     
+def main() -> int:
+    print("\n \n")
+    print("lattice sampling...")
+    #Lattice parameters 
+    #lattices with different normalizations
+    modulation_theta=1.05
+    Nsamp=12
+    theta=modulation_theta*np.pi/180  # magic angle
+    c6sym=False
+    umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    l=MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
+    lq=MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
+    [q1,q2,q3]=l.q
+    q=np.sqrt(q1@q1)
+    print(f"taking {umkl} umklapps")
+    VV=lq.boundary()
+    
+    plt.scatter(l.KX, l.KY, s=50)
+    plt.scatter([l.GMvec[0][0]],[l.GMvec[0][1]], marker='o')
+    plt.scatter([l.GMvec[1][0]],[l.GMvec[1][1]], marker='o')
+    
+    # M1=-l.GMvec[1]/2
+    # plt.scatter([M1[0]],[M1[1]], marker='x')
+    # M2=l.GMvec[0]/2
+    # plt.scatter([M2[0]],[M2[1]], marker='x')
+    # M3=l.GMvec[0]/2+l.GMvec[1]/2
+    # plt.scatter([M3[0]],[M3[1]], marker='x')
+    
+    # K1=(2*l.GMvec[0]+l.GMvec[1])/3
+    # plt.scatter([K1[0]],[K1[1]], marker='x')
+    # K2=(-l.GMvec[1]+l.GMvec[0]) /3
+    # plt.scatter([K2[0]],[K2[1]], marker='x')
+    
+    plt.scatter([l.M1[0]],[l.M1[1]], marker='x')
+    plt.scatter([l.M2[0]],[l.M2[1]], marker='x')
+    plt.scatter([l.M3[0]],[l.M3[1]], marker='x')
+    
+    plt.scatter([l.K1[0]],[l.K1[1]], marker='x')
+    plt.scatter([l.K2[0]],[l.K2[1]], marker='x')
+    
+    
+    inds=l.all_dirac_ind_q(l.KX, l.KY)
+    print(np.size(inds), l.Umklapp_List(2))
+    plt.scatter(l.KX[inds], l.KY[inds], s=20,marker='s' )
+    
+    
+    plt.show()
+    
+    
+    plt.scatter(l.KQX, l.KQY, s=50)
+    plt.scatter([l.GMvec[0][0]],[l.GMvec[0][1]], marker='o')
+    plt.scatter([l.GMvec[1][0]],[l.GMvec[1][1]], marker='o')
+    
+    # M1=-l.GMvec[1]/2
+    # plt.scatter([M1[0]],[M1[1]], marker='x')
+    # M2=l.GMvec[0]/2
+    # plt.scatter([M2[0]],[M2[1]], marker='x')
+    # M3=l.GMvec[0]/2+l.GMvec[1]/2
+    # plt.scatter([M3[0]],[M3[1]], marker='x')
+    
+    # K1=(2*l.GMvec[0]+l.GMvec[1])/3
+    # plt.scatter([K1[0]],[K1[1]], marker='x')
+    # K2=(-l.GMvec[1]+l.GMvec[0]) /3
+    # plt.scatter([K2[0]],[K2[1]], marker='x')
+    
+    plt.scatter([l.M1[0]],[l.M1[1]], marker='x')
+    plt.scatter([l.M2[0]],[l.M2[1]], marker='x')
+    plt.scatter([l.M3[0]],[l.M3[1]], marker='x')
+    
+    plt.scatter([l.K1[0]],[l.K1[1]], marker='x')
+    plt.scatter([l.K2[0]],[l.K2[1]], marker='x')
+    
+    
+    inds=l.all_dirac_ind_q(l.KQX,l.KQY)
+    print(np.size(inds), l.Umklapp_List(2))
+    plt.scatter(l.KQX[inds], l.KQY[inds], s=20,marker='s' )
+    
+    
+    plt.show()
+    
+    
+    
+    
+    # [kx,ky]=l.c3symmetrize(l.KX,l.KY)
+    # plt.scatter(kx,ky )
+    
+    
+    # plt.show()
+    return 0
+    
+if __name__ == '__main__':
+    import sys
+    sys.exit(main())  # next section explains the use of sys.exit
