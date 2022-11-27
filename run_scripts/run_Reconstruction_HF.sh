@@ -7,6 +7,7 @@
 #
 #
 ###########################
+export OPENBLAS_NUM_THREADS=6
 
 #generic parameters 
 Lattice_size=3

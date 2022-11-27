@@ -59,7 +59,7 @@ class MoireTriangLattice:
         if c6sym:
             [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
             [self.KQX1,self.KQY1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
-            self.KQX,self.KQY=self.c3symmetrize(self.KQX1,self.KQY1)
+            [self.KQX,self.KQY]=self.c3symmetrize(self.KQX1,self.KQY1)
         else:
             [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
             [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice

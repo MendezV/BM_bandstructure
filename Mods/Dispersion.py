@@ -370,8 +370,8 @@ class Ham_BM():
                 # print(i, indi1, "d")
         sig0=np.eye(2)
         block_tt=np.kron(matGGp1, sig0)
-        block_tb=np.kron(matGGp3, sig0)
-        block_bt=np.kron(matGGp4, sig0)
+        block_bt=np.kron(matGGp3, sig0)
+        block_tb=np.kron(matGGp4, sig0)
         block_bb=np.kron(matGGp2, sig0)
         return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
@@ -528,7 +528,28 @@ class Ham_BM():
                 
 
         return matmul
+    
+    def trans_psi_norm(self, psi, dirGM1,dirGM2):
+        
+        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
+        Trans=self.xi*dirGM1*GM1+self.xi*dirGM2*GM2
+        mat = self.trans_WF(Trans)
+        ###This is very error prone, I'm assuming two options either a pure wvefunction
+        #or a wavefunction where the first index is k , the second is 4N and the third is band
+        nind=len(np.shape(psi))
+        if nind==2:
+            matmul=mat@psi
+        elif nind==3:
+            psimult=[]
+            for i in range(np.shape(psi)[0]):
+                psimult=psimult+[mat@psi[i,:,:]]
+            matmul=np.array(psimult)
+        else:
+            print("not going to work, check umklapp shift")
+            matmul=mat@psi
+                
 
+        return matmul
     
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp) 
@@ -547,6 +568,14 @@ class Ham_BM():
             shi2=int(GG[1])
             psishift=self.trans_psi(psi_p, shi1, shi2)
             psilist=psilist+[psishift]
+        psi=np.vstack(psilist)
+        return psi
+    
+    def ExtendPsi_naive(self, psi_p, umklapp):
+        psilist=[]
+        Gu=self.latt.Umklapp_List(umklapp)
+        for GG in Gu:
+            psilist=psilist+[psi_p]
         psi=np.vstack(psilist)
         return psi
 
@@ -1662,7 +1691,7 @@ class HF_BandStruc:
 
         [self.V0, self.d_screening_norm]=cons
     
-        extend=False
+        extend=True
         
         if self.mode==1:
             
@@ -1671,17 +1700,31 @@ class HF_BandStruc:
             ################################
 
             disp=Dispersion( latt, self.nbands_init, hpl, hmin)
-            if extend:
-                [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+            # if extend:
+            [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-                self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-                self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
 
-                self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-                self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
                 
-            else:
-                [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_q()
+            # self.psi_plus_e=self.hpl.ExtendPsi_naive(self.psi_plus_1bz, self.latt.umkl+1)
+            # self.psi_min_e=self.hmin.ExtendPsi_naive(self.psi_min_1bz, self.latt.umkl+1)
+            # else:
+            [self.psi_plus_e,self.Ene_valley_plus_e,self.psi_min_e,self.Ene_valley_min_e]=disp.precompute_E_psi_q()
+            
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            
+            ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus_e[:,self.ini_band])
+            ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus[:,0])
+            plt.show()
+            
+            for l in range(self.latt.NpoiQ):
+                a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus[l,:,:], axis=1))
+                # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
+                print('norms', self.latt.KQX[l], self.latt.KQY[l],np.mean(a))
             ################################
             #generating form factors
             ################################
