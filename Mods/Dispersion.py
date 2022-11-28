@@ -352,8 +352,8 @@ class Ham_BM():
                 
         
         block_tt=matGGp1
-        block_tb=matGGp3
-        block_bt=matGGp4
+        block_bt=matGGp3
+        block_tb=matGGp4
         block_bb=matGGp2
         return [block_tt,block_tb,block_bt, block_bb]
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
@@ -418,8 +418,8 @@ class Ham_BM():
         
         sig0=np.eye(2)
         block_tt=np.kron(matGGp1, sig0)
-        block_tb=np.kron(matGGp3, sig0) #these blocks are zero so it does not matter
-        block_bt=np.kron(matGGp4, sig0) #these blocks are zero so it does not matter
+        block_bt=np.kron(matGGp3, sig0) #these blocks are zero so it does not matter
+        block_tb=np.kron(matGGp4, sig0) #these blocks are zero so it does not matter
         block_bb=np.kron(matGGp2, sig0)
         
         # plt.imshow(matGGp1)
