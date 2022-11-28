@@ -213,7 +213,8 @@ class Ham_BM():
 
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q1[0])**2+(Qplusy-Qminy[i] - tau*q1[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q1[0])**2+(Qplusy-Qminy[i] - tau*q1[1])**2  )<tres) #finding the Qplusx index (indi1) that gets scattered to the Qmin+tau*q index (i) multiplication
+                                                                                                                #by this generates the sum_Q' delta_(Qplus+tau q,Q') V_Q'=V_(Qplus+tau q)
             if np.size(indi1)>0:
                 matGq1[i,indi1]=1
 
@@ -311,28 +312,44 @@ class Ham_BM():
         matGGp4=np.zeros([Nb,Nb])
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
+        # ib=[]
+        # it=[]
+        # ib_2=[]
+        # it_2=[]
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
+            indi1=np.where(np.sqrt(  (qx_t-qx_t_p[i])**2+(qy_t-qy_t_p[i])**2  )<tres)
             if np.size(indi1)>0:
-                matGGp1[i,indi1]=1
+                matGGp1[i,indi1]=1 #finding the Q index (indi1) that gets scattered to the C2Q index (i) multiplication
+                                   #by this generates the sum_Q' delta_(C2Q,Q') U_Q'=U_(C2Q)
+                # it.append(i)
+                # it_2.append(indi1)
                 # print(i, indi1, "a")
+                
 
-            indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
+            indi1=np.where(np.sqrt(  (qx_b-qx_b_p[i])**2+(qy_b-qy_b_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp2[i,indi1]=1 #indi1+1=i
+                matGGp2[i,indi1]=1
+                # ib.append(i)
+                # ib_2.append(indi1)
                 # print(i, indi1, "b")
     
-            indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
+            #these two should be the only ones to give a non vanishing contributions since dirac points in different 
+            #layers are connected by C2 but by q1,q2,q3
+            indi1=np.where(np.sqrt(  (qx_t-qx_b_p[i])**2+(qy_t-qy_b_p[i])**2  )<tres)
             if np.size(indi1)>0:
                 matGGp3[i,indi1]=1
+                # it.append(i)
+                # it_2.append(indi1)
                 # print(i, indi1, "c")
 
-            indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
+            indi1=np.where(np.sqrt(  (qx_b-qx_t_p[i])**2+(qy_b-qy_t_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp4[i,indi1]=1 #indi1+1=i
+                matGGp4[i,indi1]=1 
+                # ib.append(i)
+                # ib_2.append(indi1)
                 # print(i, indi1, "d")
-        
+                
         
         block_tt=matGGp1
         block_tb=matGGp3
@@ -360,35 +377,42 @@ class Ham_BM():
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
     
-        ib=[]
-        it=[]
+        # ib=[]
+        # it=[]
+        # ib_2=[]
+        # it_2=[]
         for i in range(Nb):
 
             indi1=np.where(np.sqrt(  (qx_t-qx_t_p[i])**2+(qy_t-qy_t_p[i])**2  )<tres)
             if np.size(indi1)>0:
-                matGGp1[indi1,i]=1
-                it.append(i)
+                matGGp1[i,indi1]=1 #finding the Q index (indi1) that gets scattered to the Q+G index (i) multiplication
+                                   #by this generates the sum_Q' delta_(Q+G,Q') U_Q'=U_(Q+G)
+                # it.append(i)
+                # it_2.append(indi1)
                 # print(i, indi1, "a")
                 
 
             indi1=np.where(np.sqrt(  (qx_b-qx_b_p[i])**2+(qy_b-qy_b_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp2[indi1,i]=1
-                ib.append(i)
+                matGGp2[i,indi1]=1
+                # ib.append(i)
+                # ib_2.append(indi1)
                 # print(i, indi1, "b")
     
             #these two should give vanishing contributions since dirac points in different 
             #layers are not connected by G1 or G2 but by q1,q2,q3
             indi1=np.where(np.sqrt(  (qx_t-qx_b_p[i])**2+(qy_t-qy_b_p[i])**2  )<tres)
             if np.size(indi1)>0:
-                matGGp3[indi1,i]=1
-                it.append(i)
+                matGGp3[i,indi1]=1
+                # it.append(i)
+                # it_2.append(indi1)
                 # print(i, indi1, "c")
 
             indi1=np.where(np.sqrt(  (qx_b-qx_t_p[i])**2+(qy_b-qy_t_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp4[indi1,i]=1 
-                ib.append(i)
+                matGGp4[i,indi1]=1 
+                # ib.append(i)
+                # ib_2.append(indi1)
                 # print(i, indi1, "d")
                 
         
@@ -405,11 +429,16 @@ class Ham_BM():
         # plt.show()
         # plt.scatter(qx_t,qy_t, c='r')
         # plt.scatter(qx_b,qy_b, c='k')
+        # plt.scatter(qx_t[it_2],qy_t[it_2], c='r', marker='x')
+        # plt.scatter(qx_b[ib_2],qy_b[ib_2], c='k', marker='x')
+        # plt.show()
+        # plt.scatter(qx_t,qy_t, c='r')
+        # plt.scatter(qx_b,qy_b, c='k')
         # plt.scatter(qx_t[it],qy_t[it], c='r', marker='x')
         # plt.scatter(qx_b[ib],qy_b[ib], c='k', marker='x')
         # plt.show()
-       
         
+       
         return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
@@ -601,8 +630,8 @@ class Ham_BM():
         psilist=[]
         Gu=self.latt.Umklapp_List(umklapp)
         for GG in Gu:
-            shi1=int(GG[0])
-            shi2=int(GG[1])
+            shi1=-int(GG[0])
+            shi2=-int(GG[1])
             psishift=self.trans_psi(psi_p, shi1, shi2)
             psilist=psilist+[psishift]
         psi=np.vstack(psilist)
@@ -630,6 +659,29 @@ class Dispersion():
         self.latt=latt
         self.Dim=hpl.Dim
         # [self.psi_plus,self.Ene_valley_plus_1bz,self.psi_min,self.Ene_valley_min_1bz]=self.precompute_E_psi()
+    
+    
+     
+    def E_psi(self, kx, ky):
+
+        E1p,wave1=self.hpl.eigens(kx, ky,self.nbands)
+        # psi_plus_a.append(wave1)
+        wave1p=self.gauge_fix( wave1, E1p, kx, ky,self.hpl)
+        self.check_C2T(wave1p)
+        
+        
+        ########## generate explicitly
+        E1m,wave1=self.hmin.eigens(kx, ky,self.nbands)
+        Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
+
+        wave1m=self.impose_Cstar(wave1p)
+        self.check_C2T(wave1m)
+        
+        # # ######## checks for symmetry
+        self.check_Cstar(wave1p,wave1m)
+
+        return [wave1p,E1p,wave1m,E1m]
+    
     
     def precompute_E_psi(self):
 
