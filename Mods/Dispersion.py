@@ -84,33 +84,53 @@ class Ham_BM():
         #getting the momentum lattice to be diagonalized
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         GM=self.latt.GMs
-        qx_difb = + GM1[0]*n1 + GM2[0]*n2 + 2*self.xi*q1[0]
-        qy_difb = + GM1[1]*n1 + GM2[1]*n2 + 2*self.xi*q1[1]
+        qx_dift = + GM1[0]*n1 + GM2[0]*n2 - self.xi*q1[0]
+        qy_dift = + GM1[1]*n1 + GM2[1]*n2 - self.xi*q1[1]
+        qx_difb = + GM1[0]*n1 + GM2[0]*n2 + self.xi*q1[0]
+        qy_difb = + GM1[1]*n1 + GM2[1]*n2 + self.xi*q1[1]
+        valst = np.sqrt(qx_dift**2+qy_dift**2)
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
         # cutoff=5.*GM*0.7
         cutoff=7.*GM*0.7
+        ind_to_sum_t = np.where(valst <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
         ind_to_sum_b = np.where(valsb <cutoff) #Finding the i,j indices where the difference of  q lies inside threshold, this is a 2 x Nindices array
 
         #cutoff lattice
+        n1_val_t = n1[ind_to_sum_t] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
+        n2_val_t = n2[ind_to_sum_t] #
         n1_val_b = n1[ind_to_sum_b] # evaluating the indices above, since n1 is a 2d array the result of n1_val is a 1d array of size Nindices
         n2_val_b = n2[ind_to_sum_b] #
         Nb = np.shape(ind_to_sum_b)[1] ##number of indices for which the condition above is satisfied
         G0xb= GM1[0]*n1_val_b+GM2[0]*n2_val_b #umklapp vectors within the cutoff
         G0yb= GM1[1]*n1_val_b+GM2[1]*n2_val_b #umklapp vectors within the cutoff
+        Nt = np.shape(ind_to_sum_t)[1] ##number of indices for which the condition above is satisfied
+        G0xt= GM1[0]*n1_val_t+GM2[0]*n2_val_t #umklapp vectors within the cutoff
+        G0yt= GM1[1]*n1_val_t+GM2[1]*n2_val_t #umklapp vectors within the cutoff
+        
+        if Nt!= Nb:
+            print("NOOOOOOOO not going to work")
+
 
         #reciprocal lattices for both layers
         #flipping the order so that same points occur in the same index for plus and minus valleys
         if self.xi>0:
-            qx_t = -qx_difb[ind_to_sum_b]
-            qy_t = -qy_difb[ind_to_sum_b]
-            qx_b = qx_difb[ind_to_sum_b]#[::int(self.xi)]
-            qy_b = qy_difb[ind_to_sum_b]#[::int(self.xi)]
+            qx_t = qx_dift[ind_to_sum_t]
+            qy_t = qy_dift[ind_to_sum_t]
+            qx_b = qx_difb[ind_to_sum_b]
+            qy_b = qy_difb[ind_to_sum_b]
         else:
-            qx_t = -qx_difb[ind_to_sum_b][::int(self.xi)]
-            qy_t = -qy_difb[ind_to_sum_b][::int(self.xi)]
-            qx_b = qx_difb[ind_to_sum_b][::int(self.xi)]
-            qy_b = qy_difb[ind_to_sum_b][::int(self.xi)]
+            qx_t = qx_dift[ind_to_sum_t][::-1]
+            qy_t = qy_dift[ind_to_sum_t][::-1]
+            qx_b = qx_difb[ind_to_sum_b][::-1]
+            qy_b = qy_difb[ind_to_sum_b][::-1]
 
+        # print(self.xi)
+        # for i in range(np.size(qx_t)):
+            
+        #     plt.scatter([qx_t[i]],[qy_t[i]], c='r', s=i)
+        #     plt.scatter([qx_b[i]],[qy_b[i]], c='k', s=i)
+        # plt.show()
+       
 
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t,qx_b, qy_b] 
 
@@ -129,13 +149,11 @@ class Ham_BM():
         G0xb_p= G0xb + trans[0]
         G0yb_p= G0yb + trans[1]
         qx_t_p= qx_t + trans[0]
-        qy_t_p= qy_t +trans[1]
-        qx_b_p= qx_b + trans[0]
-        qy_b_p= qy_b +trans[1]
+        qy_t_p= qy_t + trans[1]
+        qx_b_p= qx_b + trans[0] 
+        qy_b_p= qy_b + trans[1] 
         return [ G0xb_p, G0yb_p , ind_to_sum_b, Nb, qx_t_p, qy_t_p, qx_b_p, qy_b_p]
     
-
-
     def diracH(self, kx, ky):
 
         [G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t, qx_b, qy_b]=self.cuttoff_momentum_lat
@@ -202,15 +220,15 @@ class Ham_BM():
 
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q1[0])**2+(Qplusy[i]-Qminy + tau*q1[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q1[0])**2+(Qplusy-Qminy[i] - tau*q1[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq1[i,indi1]=1
 
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q2[0])**2+(Qplusy[i]-Qminy+ tau*q2[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q2[0])**2+(Qplusy-Qminy[i] - tau*q2[1])**2  )<tres)
             if np.size(indi1)>0:
-                matGq2[i,indi1]=1 #indi1+1=i
+                matGq2[i,indi1]=1 
     
-            indi1=np.where(np.sqrt(  (Qplusx[i]-Qminx + tau*q3[0])**2+(Qplusy[i]-Qminy + tau*q3[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q3[0])**2+(Qplusy-Qminy[i] - tau*q3[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq3[i,indi1]=1
 
@@ -345,34 +363,60 @@ class Ham_BM():
         matGGp2=np.zeros([Nb,Nb])
         matGGp3=np.zeros([Nb,Nb])
         matGGp4=np.zeros([Nb,Nb])
+        
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
+    
+        ib=[]
+        it=[]
         for i in range(Nb):
 
-            indi1=np.where(np.sqrt(  (qx_t[i]-qx_t_p)**2+(qy_t[i]-qy_t_p)**2  )<tres)
+            indi1=np.where(np.sqrt(  (qx_t-qx_t_p[i])**2+(qy_t-qy_t_p[i])**2  )<tres)
             if np.size(indi1)>0:
-                matGGp1[i,indi1]=1
+                matGGp1[indi1,i]=1
+                it.append(i)
                 # print(i, indi1, "a")
+                
 
-            indi1=np.where(np.sqrt(  (qx_b[i]-qx_b_p)**2+(qy_b[i]-qy_b_p)**2   )<tres)
+            indi1=np.where(np.sqrt(  (qx_b-qx_b_p[i])**2+(qy_b-qy_b_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp2[i,indi1]=1 #indi1+1=i
+                matGGp2[indi1,i]=1
+                ib.append(i)
                 # print(i, indi1, "b")
     
-            indi1=np.where(np.sqrt(  (qx_t[i]-qx_b_p)**2+(qy_t[i]-qy_b_p)**2  )<tres)
+            #these two should give vanishing contributions since dirac points in different 
+            #layers are not connected by G1 or G2 but by q1,q2,q3
+            indi1=np.where(np.sqrt(  (qx_t-qx_b_p[i])**2+(qy_t-qy_b_p[i])**2  )<tres)
             if np.size(indi1)>0:
-                matGGp3[i,indi1]=1
+                matGGp3[indi1,i]=1
+                it.append(i)
                 # print(i, indi1, "c")
 
-            indi1=np.where(np.sqrt(  (qx_b[i]-qx_t_p)**2+(qy_b[i]-qy_t_p)**2   )<tres)
+            indi1=np.where(np.sqrt(  (qx_b-qx_t_p[i])**2+(qy_b-qy_t_p[i])**2   )<tres)
             if np.size(indi1)>0:
-                matGGp4[i,indi1]=1 #indi1+1=i
+                matGGp4[indi1,i]=1 
+                ib.append(i)
                 # print(i, indi1, "d")
+                
+        
         sig0=np.eye(2)
         block_tt=np.kron(matGGp1, sig0)
-        block_bt=np.kron(matGGp3, sig0)
-        block_tb=np.kron(matGGp4, sig0)
+        block_tb=np.kron(matGGp3, sig0) #these blocks are zero so it does not matter
+        block_bt=np.kron(matGGp4, sig0) #these blocks are zero so it does not matter
         block_bb=np.kron(matGGp2, sig0)
+        
+        # plt.imshow(matGGp1)
+        # plt.show()
+        
+        # plt.imshow(matGGp2)
+        # plt.show()
+        # plt.scatter(qx_t,qy_t, c='r')
+        # plt.scatter(qx_b,qy_b, c='k')
+        # plt.scatter(qx_t[it],qy_t[it], c='r', marker='x')
+        # plt.scatter(qx_b[ib],qy_b[ib], c='k', marker='x')
+        # plt.show()
+       
+        
         return np.bmat([[block_tt,block_tb], [block_bt, block_bb]])
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
@@ -1709,22 +1753,25 @@ class HF_BandStruc:
             self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
             self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
                 
-            # self.psi_plus_e=self.hpl.ExtendPsi_naive(self.psi_plus_1bz, self.latt.umkl+1)
-            # self.psi_min_e=self.hmin.ExtendPsi_naive(self.psi_min_1bz, self.latt.umkl+1)
+            self.psi_plus_e2=self.hpl.ExtendPsi_naive(self.psi_plus_1bz, self.latt.umkl+1)
+            self.psi_min_e2=self.hmin.ExtendPsi_naive(self.psi_min_1bz, self.latt.umkl+1)
             # else:
             [self.psi_plus_e,self.Ene_valley_plus_e,self.psi_min_e,self.Ene_valley_min_e]=disp.precompute_E_psi_q()
             
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
+            # fig = plt.figure()
+            # ax = fig.add_subplot(projection='3d')
             
-            ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus_e[:,self.ini_band])
-            ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus[:,0])
-            plt.show()
+            # ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus_e[:,self.ini_band])
+            # ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus[:,0])
+            # plt.show()
             
             for l in range(self.latt.NpoiQ):
-                a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus[l,:,:], axis=1))
+                a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus[l,:,:], axis=0))
                 # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
                 print('norms', self.latt.KQX[l], self.latt.KQY[l],np.mean(a))
+                a=np.abs(np.sum(np.conj(self.psi_plus_e[l,:,:])*self.psi_plus[l,:,:], axis=1))
+                # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
+                print('overlap', self.latt.KQX[l], self.latt.KQY[l],np.mean(a))
             ################################
             #generating form factors
             ################################
