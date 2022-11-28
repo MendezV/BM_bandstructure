@@ -124,13 +124,6 @@ class Ham_BM():
             qx_b = qx_difb[ind_to_sum_b][::-1]
             qy_b = qy_difb[ind_to_sum_b][::-1]
 
-        # print(self.xi)
-        # for i in range(np.size(qx_t)):
-            
-        #     plt.scatter([qx_t[i]],[qy_t[i]], c='r', s=i)
-        #     plt.scatter([qx_b[i]],[qy_b[i]], c='k', s=i)
-        # plt.show()
-       
 
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t,qx_b, qy_b] 
 
