@@ -572,11 +572,11 @@ class Ham_BM():
         
     #enduntested
     
-    def trans_psi(self, psi, dirGM1,dirGM2):
+    def trans_psi(self, psi, dirGM1,dirGM2, passive):
         
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         Trans=self.xi*dirGM1*GM1+self.xi*dirGM2*GM2
-        mat = self.trans_WF(Trans)
+        mat = self.trans_WF(passive*Trans)
         ###This is very error prone, I'm assuming two options either a pure wvefunction
         #or a wavefunction where the first index is k , the second is 4N and the third is band
         nind=len(np.shape(psi))
@@ -594,27 +594,6 @@ class Ham_BM():
 
         return matmul
     
-    def trans_psi_norm(self, psi, dirGM1,dirGM2):
-        
-        [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
-        Trans=self.xi*dirGM1*GM1+self.xi*dirGM2*GM2
-        mat = self.trans_WF(Trans)
-        ###This is very error prone, I'm assuming two options either a pure wvefunction
-        #or a wavefunction where the first index is k , the second is 4N and the third is band
-        nind=len(np.shape(psi))
-        if nind==2:
-            matmul=mat@psi
-        elif nind==3:
-            psimult=[]
-            for i in range(np.shape(psi)[0]):
-                psimult=psimult+[mat@psi[i,:,:]]
-            matmul=np.array(psimult)
-        else:
-            print("not going to work, check umklapp shift")
-            matmul=mat@psi
-                
-
-        return matmul
     
     def ExtendE(self,E_k , umklapp):
         Gu=self.latt.Umklapp_List(umklapp) 
@@ -628,10 +607,11 @@ class Ham_BM():
     def ExtendPsi(self, psi_p, umklapp):
         psilist=[]
         Gu=self.latt.Umklapp_List(umklapp)
+        passive=-1 #U(k+G)_Q=U(k)_Q-G,  so if we want U(k+G)_Q, we shift the basis of U(k)_Q by -G
         for GG in Gu:
-            shi1=-int(GG[0])
-            shi2=-int(GG[1])
-            psishift=self.trans_psi(psi_p, shi1, shi2)
+            shi1=int(GG[0])
+            shi2=int(GG[1])
+            psishift=self.trans_psi(psi_p, shi1, shi2,passive)
             psilist=psilist+[psishift]
         psi=np.vstack(psilist)
         return psi
@@ -1748,11 +1728,51 @@ class HF_BandStruc:
             self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
             self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
                 
+            # [wave1p,E1p,wave1m,E1m]=disp.E_gauge_psi( self.latt.KX1bz[0],self.latt.KY1bz[0])
+            # [wave1p2,E1p2,wave1m2,E1m2]=disp.E_gauge_psi( self.latt.KX1bz[0]+self.latt.GMvec[0][0],self.latt.KY1bz[0]+self.latt.GMvec[0][1])
+            nbandsy=50
+            Nbai=hpl.Dim*2
+            # overlap=np.diag( np.abs(np.conj(wave1p2[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
+            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
+            # plt.plot(overlap)
+            # plt.ylim(-1.2,1.2)
+            # plt.show()
+            
+            # mat_pl = hpl.trans_WF(self.latt.GMvec[0])
+            # mat_min = hpl.trans_WF(-self.latt.GMvec[0])
+            
+            # wave1p_shmin=mat_min@wave1p
+            # wave1p2_shpl=mat_pl@wave1p2
+            
+            # overlap=np.diag( np.abs(np.conj(wave1p2_shpl[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
+            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
+            # plt.plot(overlap)
+            # plt.ylim(-1.2,1.2)
+            # plt.show()
+            
+            # overlap=np.diag( np.abs(np.conj(wave1p2[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p_shmin[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
+            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
+            # plt.plot(overlap)
+            # plt.ylim(-1.2,1.2)
+            # plt.show()
+            
+            # plt.plot(np.abs(E1p[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)]-E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])/np.abs(E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)]))
+            # plt.yscale('log')
+            # plt.ylabel('|Ek-Ek+G|/|Ek|')
+            # plt.show()
+            
+            # plt.plot(E1p[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
+            # plt.plot(E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
+            # plt.ylabel('E')
+            # plt.show()
+            
+            
+            
             self.psi_plus_e2=self.hpl.ExtendPsi_naive(self.psi_plus_1bz, self.latt.umkl+1)
             self.psi_min_e2=self.hmin.ExtendPsi_naive(self.psi_min_1bz, self.latt.umkl+1)
             # else:
             [self.psi_plus_e,self.Ene_valley_plus_e,self.psi_min_e,self.Ene_valley_min_e]=disp.precompute_E_psi_q()
-            
+          
             # fig = plt.figure()
             # ax = fig.add_subplot(projection='3d')
             
@@ -1761,12 +1781,18 @@ class HF_BandStruc:
             # plt.show()
             
             for l in range(self.latt.NpoiQ):
-                a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus[l,:,:], axis=0))
+                a=np.abs(np.conj(self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T)@self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
                 # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
-                print('norms', self.latt.KQX[l], self.latt.KQY[l],np.mean(a))
-                a=np.abs(np.sum(np.conj(self.psi_plus_e[l,:,:])*self.psi_plus[l,:,:], axis=1))
+                print('norms', self.latt.KQX[l], self.latt.KQY[l],np.shape(a), np.mean(np.diag(a)))
+                a=np.abs(np.conj(self.psi_plus_e[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T)@self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
                 # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
-                print('overlap', self.latt.KQX[l], self.latt.KQY[l],np.mean(a))
+                print('overlap',self.latt.KQX[l], self.latt.KQY[l],np.shape(a), np.mean(np.diag(a)))
+
+                
+            return 0
+            
+            
+            
             ################################
             #generating form factors
             ################################
