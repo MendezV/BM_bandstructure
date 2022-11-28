@@ -1710,7 +1710,7 @@ class HF_BandStruc:
 
         [self.V0, self.d_screening_norm]=cons
     
-        extend=True
+        
         
         if self.mode==1:
             
@@ -1727,70 +1727,7 @@ class HF_BandStruc:
 
             self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
             self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
-                
-            # [wave1p,E1p,wave1m,E1m]=disp.E_gauge_psi( self.latt.KX1bz[0],self.latt.KY1bz[0])
-            # [wave1p2,E1p2,wave1m2,E1m2]=disp.E_gauge_psi( self.latt.KX1bz[0]+self.latt.GMvec[0][0],self.latt.KY1bz[0]+self.latt.GMvec[0][1])
-            nbandsy=50
-            Nbai=hpl.Dim*2
-            # overlap=np.diag( np.abs(np.conj(wave1p2[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
-            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
-            # plt.plot(overlap)
-            # plt.ylim(-1.2,1.2)
-            # plt.show()
-            
-            # mat_pl = hpl.trans_WF(self.latt.GMvec[0])
-            # mat_min = hpl.trans_WF(-self.latt.GMvec[0])
-            
-            # wave1p_shmin=mat_min@wave1p
-            # wave1p2_shpl=mat_pl@wave1p2
-            
-            # overlap=np.diag( np.abs(np.conj(wave1p2_shpl[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
-            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
-            # plt.plot(overlap)
-            # plt.ylim(-1.2,1.2)
-            # plt.show()
-            
-            # overlap=np.diag( np.abs(np.conj(wave1p2[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T) @ (wave1p_shmin[:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])) )
-            # # overlap=np.diag(np.abs(np.conj(wave1p.T) @ (wave1p)))
-            # plt.plot(overlap)
-            # plt.ylim(-1.2,1.2)
-            # plt.show()
-            
-            # plt.plot(np.abs(E1p[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)]-E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])/np.abs(E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)]))
-            # plt.yscale('log')
-            # plt.ylabel('|Ek-Ek+G|/|Ek|')
-            # plt.show()
-            
-            # plt.plot(E1p[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
-            # plt.plot(E1p2[Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
-            # plt.ylabel('E')
-            # plt.show()
-            
-            
-            
-            self.psi_plus_e2=self.hpl.ExtendPsi_naive(self.psi_plus_1bz, self.latt.umkl+1)
-            self.psi_min_e2=self.hmin.ExtendPsi_naive(self.psi_min_1bz, self.latt.umkl+1)
-            # else:
-            [self.psi_plus_e,self.Ene_valley_plus_e,self.psi_min_e,self.Ene_valley_min_e]=disp.precompute_E_psi_q()
-          
-            # fig = plt.figure()
-            # ax = fig.add_subplot(projection='3d')
-            
-            # ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus_e[:,self.ini_band])
-            # ax.scatter(self.latt.KQX, self.latt.KQY, self.Ene_valley_plus[:,0])
-            # plt.show()
-            
-            for l in range(self.latt.NpoiQ):
-                a=np.abs(np.conj(self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T)@self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
-                # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
-                print('norms', self.latt.KQX[l], self.latt.KQY[l],np.shape(a), np.mean(np.diag(a)))
-                a=np.abs(np.conj(self.psi_plus_e[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)].T)@self.psi_plus[l,:,Nbai-int(nbandsy/2):Nbai+int(nbandsy/2)])
-                # a=np.abs(np.sum(np.conj(self.psi_plus[l,:,:])*self.psi_plus_e[l,:,:], axis=1))
-                print('overlap',self.latt.KQX[l], self.latt.KQY[l],np.shape(a), np.mean(np.diag(a)))
-
-                
-            return 0
-            
+              
             
             
             ################################
@@ -1813,15 +1750,12 @@ class HF_BandStruc:
             print('calculating refernce states...')
 
             disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
-            if extend:
-                [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+            [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
-                self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
-                self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
                 
-            else:
-                [self.psi_plus_decoupled,self.Ene_valley_plus_decoupled,self.psi_min_decoupled,self.Ene_valley_min_decoupled]=disp.precompute_E_psi_q()
-        
+
             ################################
             #Constructing projector
             ################################
@@ -1902,17 +1836,16 @@ class HF_BandStruc:
             ################################
 
             disp=Dispersion( latt, self.nbands, hpl, hmin)
-            if extend:
-                [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
+            
+            [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-                self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
-                self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
+            
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
                 
-                self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-                self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
-                
-            else:
-                [self.psi_plus,self.Ene_valley_plus,self.psi_min,self.Ene_valley_min]=disp.precompute_E_psi_q()
+
             ################################
             #generating form factors
             ################################
@@ -1920,8 +1853,6 @@ class HF_BandStruc:
             self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl)
             self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin)
             
-            # self.FFp=FormFactors(self.psi_plus_1bz, 1, latt, latt.umkl,self.hpl)
-            # self.FFm=FormFactors(self.psi_min_1bz, -1, latt, latt.umkl,self.hmin)
             
             self.LamP=self.FFp.denFF_s() #no initial transpose
             self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
@@ -1937,15 +1868,12 @@ class HF_BandStruc:
             print('calculating refernce states...')
 
             disp_decoupled=Dispersion( latt, self.nbands, hpl_decoupled, hmin_decoupled)
-            if extend:
-                [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
-                self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
-                self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
-                
-            else:
-                [self.psi_plus_decoupled,self.Ene_valley_plus_decoupled,self.psi_min_decoupled,self.Ene_valley_min_decoupled]=disp.precompute_E_psi_q()
-        
+            [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            
       
             Ik1bz=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
             Ik=self.latt.insertion_index( self.latt.KX,self.latt.KY, self.latt.KQX,self.latt.KQY)
