@@ -391,7 +391,6 @@ class Ham_BM():
                 # it_2.append(indi1)
                 # print(i, indi1, "a")
                 
-
             indi1=np.where(np.sqrt(  (qx_b-qx_b_p[i])**2+(qy_b-qy_b_p[i])**2   )<tres)
             if np.size(indi1)>0:
                 matGGp2[i,indi1]=1
@@ -662,22 +661,18 @@ class Dispersion():
     
     
      
-    def E_psi(self, kx, ky):
+    def E_gauge_psi(self, kx, ky):
 
         E1p,wave1=self.hpl.eigens(kx, ky,self.nbands)
-        # psi_plus_a.append(wave1)
         wave1p=self.gauge_fix( wave1, E1p, kx, ky,self.hpl)
         self.check_C2T(wave1p)
         
-        
         ########## generate explicitly
         E1m,wave1=self.hmin.eigens(kx, ky,self.nbands)
-        Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
-
         wave1m=self.impose_Cstar(wave1p)
         self.check_C2T(wave1m)
         
-        # # ######## checks for symmetry
+        # # ######## checks for chiral symmetry
         self.check_Cstar(wave1p,wave1m)
 
         return [wave1p,E1p,wave1m,E1m]
@@ -698,38 +693,12 @@ class Dispersion():
    
         for l in range(self.latt.Npoi1bz):
             
-            E1,wave1=self.hpl.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            # psi_plus_a.append(wave1)
-            wave1p=self.gauge_fix( wave1, E1, self.latt.KX1bz[l], self.latt.KY1bz[l],self.hpl)
-            self.check_C2T(wave1p)
+            [wave1p,E1p,wave1m,E1m]=self.E_gauge_psi( self.latt.KX1bz[l],self.latt.KY1bz[l])
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
             psi_plus_a.append(wave1p)
-            
-            ########## generate explicitly
-            E1,wave1=self.hmin.eigens(self.latt.KX1bz[l],self.latt.KY1bz[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            # wave1m=self.gauge_fix( wave1, E1,self.latt.KX1bz[l],self.latt.KY1bz[l], self.hmin)
-            # self.check_C2T(wave1m)
-            # psi_min_a_2.append(wave1m)
-            
-            # # ########### with the convention that this is the eigenvalue and eigenvector at -k
-            # # ########### infer from C2 or T symmetry, energies
-            # # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            
-            # # infer from C2, Cstar or T symmetry, wavefuncs
-            # # wave1m=self.impose_C2(wave1p)
-            # wave1m=self.impose_T(wave1p)
-            wave1m=self.impose_Cstar(wave1p)
-            self.check_C2T(wave1m)
+
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
             psi_min_a.append(wave1m)
-            
-            # # ######## checks for symmetry
-            # self.check_T(wave1p,wave1m)
-            # self.check_T(wave1m,wave1p)
-            # self.check_C2(wave1p,wave1m)
-            # self.check_C2(wave1m,wave1p)
-            self.check_Cstar(wave1p,wave1m)
-            # self.check_Cstar(wave1m,wave1p)
             
     
         e=time.time()
@@ -738,14 +707,7 @@ class Dispersion():
         
         psi_plus=np.array(psi_plus_a)
         psi_min=np.array(psi_min_a)
-        # psi_min=np.array(psi_min_a)[::-1,:,:]
-        
-        
-        # # overlap with the generated wavefunction is indeed just a phase
-        # psi_min_2=np.array(psi_min_a_2)
-        # for k in range(self.latt.Npoi1bz):
-        #     self.check_Overlap(psi_min_2[k,:,:],psi_min[k,:,:])
-        
+
         
         Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.latt.Npoi1bz,self.nbands])
         Ene_valley_min= np.reshape(Ene_valley_min_a,[self.latt.Npoi1bz,self.nbands])
@@ -753,12 +715,11 @@ class Dispersion():
         diff=Ene_valley_min-(-Ene_valley_plus[:,::-1])
         print('\n symmetry in eigens Cstar*Tr', np.mean(np.sqrt(np.diag(diff.T@diff))),"flips the spectrum and momentum space \n")
         
-        
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
 
     def precompute_E_psi_q(self):
-
+        
         Ene_valley_plus_a=np.empty((0))
         Ene_valley_min_a=np.empty((0))
         psi_plus_a=[]
@@ -772,31 +733,20 @@ class Dispersion():
    
         for l in range(self.latt.NpoiQ):
             
-            E1,wave1=self.hpl.eigens(self.latt.KQX[l],self.latt.KQY[l],self.nbands)
-            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1)
-            # psi_plus_a.append(wave1)
-            wave1p=self.gauge_fix( wave1, E1, self.latt.KQX[l], self.latt.KQY[l],self.hpl)
-            self.check_C2T(wave1p)
+            [wave1p,E1p,wave1m,E1m]=self.E_gauge_psi(self.latt.KQX[l],self.latt.KQY[l])
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
             psi_plus_a.append(wave1p)
-            
-            ########## generate explicitly
-            E1,wave1=self.hmin.eigens(self.latt.KQX[l],self.latt.KQY[l],self.nbands)
-            Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            # wave1m=self.gauge_fix( wave1, E1,self.latt.KX1bz[l],self.latt.KY1bz[l], self.hmin)
-            # self.check_C2T(wave1m)
-            # psi_min_a_2.append(wave1m)
-            
-            # # ########### with the convention that this is the eigenvalue and eigenvector at -k
-            # # ########### infer from C2 or T symmetry, energies
-            # # Ene_valley_min_a=np.append(Ene_valley_min_a,E1)
-            
-            # # infer from C2, Cstar or T symmetry, wavefuncs
-            # # wave1m=self.impose_C2(wave1p)
-            # wave1m=self.impose_T(wave1p)
-            wave1m=self.impose_Cstar(wave1p)
-            self.check_C2T(wave1m)
+
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
             psi_min_a.append(wave1m)
-            self.check_Cstar(wave1p,wave1m)
+            
+    
+        e=time.time()
+        print("time to diag over MBZ", e-s)
+        ##relevant wavefunctions and energies for the + valley
+        
+        psi_plus=np.array(psi_plus_a)
+        psi_min=np.array(psi_min_a)
   
     
         e=time.time()
