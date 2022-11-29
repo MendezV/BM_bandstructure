@@ -35,7 +35,7 @@ class Ham_BM():
 
         self.hvkd = hvkd
         self.alpha= alpha
-        self.xi = xi #quick fix turns out I flipped all the formulas below
+        self.xi = xi 
         
         
         self.latt=latt
@@ -212,7 +212,9 @@ class Ham_BM():
         tres=(1e-6)*np.sqrt(q1[0]**2 +q1[1]**2)
 
         for i in range(Nb):
-
+            
+            #Q + tau q    delta functions
+            
             indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q1[0])**2+(Qplusy-Qminy[i] - tau*q1[1])**2  )<tres) #finding the Qplusx index (indi1) that gets scattered to the Qmin+tau*q index (i) multiplication
                                                                                                                 #by this generates the sum_Q' delta_(Qplus+tau q,Q') V_Q'=V_(Qplus+tau q)
             if np.size(indi1)>0:
@@ -225,8 +227,26 @@ class Ham_BM():
             indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q3[0])**2+(Qplusy-Qminy[i] - tau*q3[1])**2  )<tres)
             if np.size(indi1)>0:
                 matGq3[i,indi1]=1
+                
+            #Q - tau q    delta functions
+                
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q1[0])**2+(Qplusy-Qminy[i] + tau*q1[1])**2  )<tres) #finding the Qplusx index (indi1) that gets scattered to the Qmin-tau*q index (i) multiplication
+                                                                                                                #by this generates the sum_Q' delta_(Qplus-tau q,Q') V_Q'=V_(Qplus-tau q)
+            if np.size(indi1)>0:
+                matGq1[i,indi1]=1
 
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q2[0])**2+(Qplusy-Qminy[i] + tau*q2[1])**2  )<tres)
+            if np.size(indi1)>0:
+                matGq2[i,indi1]=1 
+    
+            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q3[0])**2+(Qplusy-Qminy[i] + tau*q3[1])**2  )<tres)
+            if np.size(indi1)>0:
+                matGq3[i,indi1]=1
 
+        # the  organization above means that the matrices have the structure M_bt so for the + valley
+        # these go on the upper right corner (where we put Udag in the eigen routinve above)
+        
+        
         #Matrices that  appeared as coefficients of the real space ops
         #full product is the kronecker product of both matrices
 
@@ -258,14 +278,9 @@ class Ham_BM():
         
     def eigens(self, kx,ky, nbands):
         
-        if self.xi>0:
-            U=self.U
-            Udag=U.H
-            [H1,H2]=self.diracH( kx, ky)
-        else:
-            Udag=self.U
-            U=Udag.H
-            [H2,H1]=self.diracH( kx, ky)
+        Udag=self.U
+        U=Udag.H
+        [H2,H1]=self.diracH( kx, ky)
             
         N =int(2*self.Dim)
         
@@ -1688,7 +1703,7 @@ class HF_BandStruc:
         self.latt=latt
         
         
-        self.nbands_init=4*hpl.Dim
+        self.nbands_init=60# 4*hpl.Dim
         self.nbands=nbands
         self.nremote_bands=nremote_bands
         self.tot_nbands=nbands+nremote_bands
@@ -1719,16 +1734,17 @@ class HF_BandStruc:
             ################################
 
             disp=Dispersion( latt, self.nbands_init, hpl, hmin)
-            # if extend:
+            
             [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
+            print('started extending wavefunctions')
             self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
             self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
 
             self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
             self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
               
-            
+            print('finished extending wavefunctions')
             
             ################################
             #generating form factors
@@ -1752,8 +1768,10 @@ class HF_BandStruc:
             disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
             [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
+            print('started extending reference wavefunctions')
             self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
             self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            print('finished extending reference wavefunctions')
                 
 
             ################################
@@ -2027,7 +2045,7 @@ class HF_BandStruc:
                         X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*(MT[:,mp,npp]*self.LamP[:,npp,:,m]) , axis=0)
         
         
-        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2
+        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
             
         # #making the dirac points gapless by hand
         # Dirpoints=self.latt.all_dirac_ind()
