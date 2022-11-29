@@ -2042,19 +2042,19 @@ class HF_BandStruc:
     def Fock(self, M):
         MT=np.transpose(M, (0,2,1))
         X=np.zeros(np.shape(M),dtype=type(1j))
-        for k in range(self.latt.NpoiQ):
-            for kq in range(self.latt.NpoiQ):
-                # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
-                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
-                # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
-            X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
+        # for k in range(self.latt.NpoiQ):
+        #     for kq in range(self.latt.NpoiQ):
+        #         # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
+        #         X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
+        #         # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
+        #     X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
             
             
-        # for n in range(self.tot_nbands):
-        #     for m in range(self.tot_nbands):
-        #         for npp in range(self.tot_nbands):
-        #             for mp in range(self.tot_nbands):
-        #                 X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*((MT[:,mp,npp]*self.LamP[:,npp,:,m].T).T) , axis=1)
+        for n in range(self.tot_nbands):
+            for m in range(self.tot_nbands):
+                for npp in range(self.tot_nbands):
+                    for mp in range(self.tot_nbands):
+                        X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*((MT[:,mp,npp]*self.LamP[:,npp,:,m].T).T) , axis=1)
         
         
         X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
