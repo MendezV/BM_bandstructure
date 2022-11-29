@@ -123,8 +123,8 @@ class Ham_BM():
             qy_t = qy_dift[ind_to_sum_t][::-1]
             qx_b = qx_difb[ind_to_sum_b][::-1]
             qy_b = qy_difb[ind_to_sum_b][::-1]
-
-
+      
+            
         return [ G0xb, G0yb , ind_to_sum_b, Nb, qx_t, qy_t,qx_b, qy_b] 
 
     def umklapp_lattice_rot(self, rot):
@@ -1459,6 +1459,7 @@ class FormFactors():
 
     def matmult(self, layer, sublattice):
         if layer==0 and sublattice==0:
+            print("No insertion in form factors")
             return self.psi
             
         else:
@@ -1691,7 +1692,7 @@ class HF_BandStruc:
         self.latt=latt
         
         
-        self.nbands_init=60# 4*hpl.Dim
+        self.nbands_init=30# 4*hpl.Dim
         self.nbands=nbands
         self.nremote_bands=nremote_bands
         self.tot_nbands=nbands+nremote_bands
@@ -1818,16 +1819,20 @@ class HF_BandStruc:
                 
                 
             Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+            Ik1bz_plot=self.latt.insertion_index( self.latt.KX1bz_plot,self.latt.KY1bz_plot, self.latt.KQX,self.latt.KQY)
+            
             self.EHFp=np.array(EHFp)[:, self.ini_band_HF:self.fini_band_HF]
             self.E_HFp=self.EHFp[Ik, :]
             self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
             self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+            self.E_HFp_plot=self.E_HFp_ex[Ik1bz_plot, :]
             self.Up=np.array(U_transf)
             
             self.EHFm=np.array(EHFm)[:, self.ini_band_HF:self.fini_band_HF]
             self.E_HFm=self.EHFm[Ik, :]
             self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
             self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+            self.E_HFm_plot=self.E_HFm_ex[Ik1bz_plot, :]
             self.Um=np.array(U_transfm)
             e=time.time()
             print(f'time for Diag {e-s}')
@@ -1865,6 +1870,20 @@ class HF_BandStruc:
             self.LamM=self.FFm.denFF_s() #no initial transpose
             self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
             
+            # print("testing transpose!!!!!!!!")
+            # for k in range(self.latt.NpoiQ):
+            #     for kq in range(self.latt.NpoiQ):
+            #         print(f"indices {k} and {kq} testing transpose \n")
+            #         print(self.LamP[k,:,kq,:])
+            #         print(self.LamP_dag[k,:,kq,:])
+                    
+            # print("testing chiral!!!!!!!!")
+            # for k in range(self.latt.NpoiQ):
+            #     for kq in range(self.latt.NpoiQ):
+            #         print(f"indices {k} and {kq} testing chiral\n")
+            #         print(self.LamP[k,:,kq,:])
+            #         print(self.LamM[kq,:,k,:])
+            
             
             ################################
             #reference attributes
@@ -1882,14 +1901,17 @@ class HF_BandStruc:
             
       
             Ik1bz=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
+            Ik1bz_plot=self.latt.insertion_index( self.latt.KX1bz_plot,self.latt.KY1bz_plot, self.latt.KQX,self.latt.KQY)
             Ik=self.latt.insertion_index( self.latt.KX,self.latt.KY, self.latt.KQX,self.latt.KQY)
             
             self.E_HFp=self.Ene_valley_plus[Ik1bz, :]
+            self.E_HFp_plot=self.Ene_valley_plus[Ik1bz_plot, :]
             self.E_HFp_K=self.Ene_valley_plus[Ik, :]
             self.E_HFp_ex=self.Ene_valley_plus[:, :]
             # self.Up=np.array(U_transf)
                 
             self.E_HFm=self.Ene_valley_min[Ik1bz, :]
+            self.E_HFm_plot=self.Ene_valley_min[Ik1bz_plot, :]
             self.E_HFm_K=self.Ene_valley_min[Ik, :]
             self.E_HFm_ex=self.Ene_valley_min[:, :]
             
@@ -1903,23 +1925,23 @@ class HF_BandStruc:
     
     def plots_bands(self):
         
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,0], s=40)
+        plt.scatter(self.latt.KX1bz_plot,self.latt.KY1bz_plot, c=self.E_HFp_plot[:,0], s=40)
         plt.colorbar()
         plt.savefig("EHF1p_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,1], s=40)
+        plt.scatter(self.latt.KX1bz_plot,self.latt.KY1bz_plot, c=self.E_HFp_plot[:,1], s=40)
         plt.colorbar()
         plt.savefig("EHF2p_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,0], s=40)
+        plt.scatter(self.latt.KX1bz_plot,self.latt.KY1bz_plot, c=self.E_HFm_plot[:,0], s=40)
         plt.colorbar()
         plt.savefig("EHF1m_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
-        plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,1], s=40)
+        plt.scatter(self.latt.KX1bz_plot,self.latt.KY1bz_plot, c=self.E_HFm_plot[:,1], s=40)
         plt.colorbar()
         plt.savefig("EHF2m_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
@@ -1938,14 +1960,14 @@ class HF_BandStruc:
         plt.plot(self.E_HFp_ex[path,1], c='b')
         plt.scatter(pth,self.E_HFp_ex[path,0], c='b', s=9)
         plt.scatter(pth,self.E_HFp_ex[path,1], c='b', s=9)
-        plt.savefig("dispHFp_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("dispHF_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         plt.plot(self.latt.KQX[path], self.latt.KQY[path])
         VV=self.latt.boundary()
         plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
         plt.plot(VV[:,0], VV[:,1], c='b')
-        plt.savefig("HSPp_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("HSP_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
         print("Bandwith,", np.max(self.E_HFp[:,1])-np.min(self.E_HFp[:,0]))
@@ -1997,7 +2019,8 @@ class HF_BandStruc:
         return proj
     
     def Vq(self):
-        V0=self.V0/(self.latt.Npoi1bz*self.latt.Npoi1bz)
+        V0=self.V0/(self.latt.Npoi1bz) #Npoi1bz is already the volume
+        print(V0, 'V0 coefficient of the interaction')
         qd=self.d_screening_norm*self.FFp.q
         Vq=V0*np.tanh(qd)/qd
         Vq[np.where(qd==0.0)[0]]=V0
@@ -2019,18 +2042,19 @@ class HF_BandStruc:
     def Fock(self, M):
         MT=np.transpose(M, (0,2,1))
         X=np.zeros(np.shape(M),dtype=type(1j))
-        # for k in range(self.latt.NpoiQ):
-        #     for kq in range(self.latt.NpoiQ):
-        #         # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
-        #         X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
-        #     X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
+        for k in range(self.latt.NpoiQ):
+            for kq in range(self.latt.NpoiQ):
+                # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
+                X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
+                # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
+            X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
             
             
-        for n in range(self.tot_nbands):
-            for m in range(self.tot_nbands):
-                for npp in range(self.tot_nbands):
-                    for mp in range(self.tot_nbands):
-                        X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*(MT[:,mp,npp]*self.LamP[:,npp,:,m]) , axis=0)
+        # for n in range(self.tot_nbands):
+        #     for m in range(self.tot_nbands):
+        #         for npp in range(self.tot_nbands):
+        #             for mp in range(self.tot_nbands):
+        #                 X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*((MT[:,mp,npp]*self.LamP[:,npp,:,m].T).T) , axis=1)
         
         
         X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
