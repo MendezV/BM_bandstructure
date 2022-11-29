@@ -1486,7 +1486,8 @@ class FormFactors():
         s=time.time()
         print(f"calculating tensor that stores the overlaps, layer {layer}, sublattice {sublattice}........")
         mult_psi=self.matmult(layer,sublattice)
-        Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
+        # Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
+        Lambda_Tens=np.einsum('kin,qim->kqnm',self.cpsi,mult_psi)
         e=time.time()
         print("finsihed the overlaps..........", e-s)
         return(Lambda_Tens)
@@ -1498,18 +1499,18 @@ class FormFactors():
     def fq(self, FF ):
 
         farr= np.ones(np.shape(FF))
-        for i in range(np.shape(FF)[1]):
-            for j in range(np.shape(FF)[1]):
-                farr[:, i, :, j]=(self.qx**2-self.qy**2)/self.q
+        for i in range(self.Bands):
+            for j in range(self.Bands):
+                farr[:, :, i, j]=(self.qx**2-self.qy**2)/self.q
                         
         return farr
 
     def gq(self,FF):
         garr= np.ones(np.shape(FF))
         
-        for i in range(np.shape(FF)[1]):
-            for j in range(np.shape(FF)[1]):
-                garr[:, i, :, j]=2*(self.qx*self.qy)/self.q
+        for i in range(self.Bands):
+            for j in range(self.Bands):
+                garr[:, :, i, j]=2*(self.qx*self.qy)/self.q
                         
         return garr 
 
@@ -1517,9 +1518,9 @@ class FormFactors():
     def hq(self,FF):
         harr= np.ones(np.shape(FF))
         
-        for i in range(np.shape(FF)[1]):
-            for j in range(np.shape(FF)[1]):
-                harr[:, i, :, j]=self.q
+        for i in range(self.Bands):
+            for j in range(self.Bands):
+                harr[:, :, i, j]=self.q
                         
         return harr 
 
@@ -1530,9 +1531,9 @@ class FormFactors():
         qanom=qcut[np.where(qcut<0.01*qmin)]
         qcut[np.where(qcut<0.01*qmin)]=np.ones(np.shape(qanom))*qmin
         
-        for i in range(np.shape(FF)[1]):
-            for j in range(np.shape(FF)[1]):
-                harr[:, i, :, j]=qcut
+        for i in range(self.Bands):
+            for j in range(self.Bands):
+                harr[:, :, i, j]=qcut
                         
         return harr
 
@@ -1742,9 +1743,9 @@ class HF_BandStruc:
             self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
             
             self.LamP=self.FFp.denFF_s() #no initial transpose
-            self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #band index transpose and complex conj
+            self.LamP_dag=np.conj(np.einsum('kqnm->kqmn',self.LamP)) #no initial transpose
             self.LamM=self.FFm.denFF_s() #no initial transpose
-            self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #band index transpose and complex conj
+            self.LamM_dag=np.conj(np.einsum('kqnm->kqmn',self.LamM)) #no initial transpose
             
             
             ################################
@@ -1866,23 +1867,10 @@ class HF_BandStruc:
             
             
             self.LamP=self.FFp.denFF_s() #no initial transpose
-            self.LamP_dag=np.conj(np.transpose(self.LamP,(0,3,2,1) )) #no initial transpose
+            self.LamP_dag=np.conj(np.einsum('kqnm->kqmn',self.LamP)) #no initial transpose
             self.LamM=self.FFm.denFF_s() #no initial transpose
-            self.LamM_dag=np.conj(np.transpose(self.LamM,(0,3,2,1) )) #no initial transpose
+            self.LamM_dag=np.conj(np.einsum('kqnm->kqmn',self.LamM)) #no initial transpose
             
-            # print("testing transpose!!!!!!!!")
-            # for k in range(self.latt.NpoiQ):
-            #     for kq in range(self.latt.NpoiQ):
-            #         print(f"indices {k} and {kq} testing transpose \n")
-            #         print(self.LamP[k,:,kq,:])
-            #         print(self.LamP_dag[k,:,kq,:])
-                    
-            # print("testing chiral!!!!!!!!")
-            # for k in range(self.latt.NpoiQ):
-            #     for kq in range(self.latt.NpoiQ):
-            #         print(f"indices {k} and {kq} testing chiral\n")
-            #         print(self.LamP[k,:,kq,:])
-            #         print(self.LamM[kq,:,k,:])
             
             
             ################################
@@ -2054,7 +2042,7 @@ class HF_BandStruc:
             for m in range(self.tot_nbands):
                 for npp in range(self.tot_nbands):
                     for mp in range(self.tot_nbands):
-                        X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,n,:,mp]*((MT[:,mp,npp]*self.LamP[:,npp,:,m].T).T) , axis=1)
+                        X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,:,n,mp]*((MT[:,mp,npp]*self.LamP[:,:,npp,m].T).T) , axis=1)
         
         
         X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
