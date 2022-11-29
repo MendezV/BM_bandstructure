@@ -250,7 +250,6 @@ def main() -> int:
         
     else:
         
-       
         substract=0 #0 for decoupled layers
         mu=0
         filling=0

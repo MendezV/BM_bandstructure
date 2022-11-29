@@ -1783,10 +1783,9 @@ class HF_BandStruc:
             e=time.time()
             print(f'time for Fock {e-s}')
 
-            # HBMp=np.zeros(np.shape(Fock))
-            HBMp=np.zeros(np.shape(proj))
-            HBMp[:,0,0]=self.Ene_valley_plus[:,0]
-            HBMp[:,1,1]=self.Ene_valley_plus[:,1]
+            HBMp=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
+            HBMp[:,0,0]=self.Ene_valley_plus_1bz[:,0]
+            HBMp[:,1,1]=self.Ene_valley_plus_1bz[:,1]
             H0=HBMp-Fock*mode
             
 
@@ -1805,7 +1804,7 @@ class HF_BandStruc:
                 diagI[ib,int(self.nbands/2-1-ib)]=1;
             sx=np.kron(paulix,diagI)
             
-            for l in range(self.latt.NpoiQ):
+            for l in range(self.latt.Npoi1bz):
                 Hpl=H0[l,:,:]
                 Hmin=-sx@Hpl@sx
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
@@ -1819,21 +1818,19 @@ class HF_BandStruc:
                 U_transfm.append(Eigvect)
                 
                 
-            Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-            Ik1bz_plot=self.latt.insertion_index( self.latt.KX1bz_plot,self.latt.KY1bz_plot, self.latt.KQX,self.latt.KQY)
-            
+
             self.EHFp=np.array(EHFp)[:, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFp=self.EHFp[Ik, :]
+            self.E_HFp=self.EHFp[: :]
             self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
             self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
-            self.E_HFp_plot=self.E_HFp_ex[Ik1bz_plot, :]
+            self.E_HFp_plot=self.E_HFp_ex[self.latt.Ik1bz_plot, :]
             self.Up=np.array(U_transf)
             
             self.EHFm=np.array(EHFm)[:, self.ini_band_HF:self.fini_band_HF]
-            self.E_HFm=self.EHFm[Ik, :]
+            self.E_HFm=self.EHFm[:, :]
             self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
             self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
-            self.E_HFm_plot=self.E_HFm_ex[Ik1bz_plot, :]
+            self.E_HFm_plot=self.E_HFm_ex[self.latt.Ik1bz_plot, :]
             self.Um=np.array(U_transfm)
             e=time.time()
             print(f'time for Diag {e-s}')
@@ -1888,19 +1885,16 @@ class HF_BandStruc:
             self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
             
       
-            Ik1bz=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-            Ik1bz_plot=self.latt.insertion_index( self.latt.KX1bz_plot,self.latt.KY1bz_plot, self.latt.KQX,self.latt.KQY)
-            Ik=self.latt.insertion_index( self.latt.KX,self.latt.KY, self.latt.KQX,self.latt.KQY)
-            
-            self.E_HFp=self.Ene_valley_plus[Ik1bz, :]
-            self.E_HFp_plot=self.Ene_valley_plus[Ik1bz_plot, :]
-            self.E_HFp_K=self.Ene_valley_plus[Ik, :]
+
+            self.E_HFp=self.Ene_valley_plus[self.latt.Ik1bz, :]
+            self.E_HFp_plot=self.Ene_valley_plus[self.latt.Ik1bz_plot, :]
+            self.E_HFp_K=self.Ene_valley_plus[self.latt.Ik, :]
             self.E_HFp_ex=self.Ene_valley_plus[:, :]
             # self.Up=np.array(U_transf)
                 
-            self.E_HFm=self.Ene_valley_min[Ik1bz, :]
-            self.E_HFm_plot=self.Ene_valley_min[Ik1bz_plot, :]
-            self.E_HFm_K=self.Ene_valley_min[Ik, :]
+            self.E_HFm=self.Ene_valley_min[self.latt.Ik1bz, :]
+            self.E_HFm_plot=self.Ene_valley_min[self.latt.Ik1bz_plot, :]
+            self.E_HFm_K=self.Ene_valley_min[self.Ik, :]
             self.E_HFm_ex=self.Ene_valley_min[:, :]
             
             print(np.size(Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
@@ -2029,29 +2023,21 @@ class HF_BandStruc:
     
     def Fock(self, M):
         MT=np.transpose(M, (0,2,1))
-        X=np.zeros(np.shape(M),dtype=type(1j))
-        # for k in range(self.latt.NpoiQ):
-        #     for kq in range(self.latt.NpoiQ):
-        #         # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[k, kq ,:,:]@(MT[kq,:,:]@self.LamP[k, kq,:,:]) #initial transpose
-        #         X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
-        #         # X[k, :,:]=X[k, :, :]+self.V[kq,k]*self.LamP_dag[kq,:,k,:]@(MT[kq,:,:]@self.LamP[kq,:,k,:]) #no initial transpose
-        #     X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
-            
-            
-        for n in range(self.tot_nbands):
-            for m in range(self.tot_nbands):
-                for npp in range(self.tot_nbands):
-                    for mp in range(self.tot_nbands):
-                        X[:, n,m]=X[:, n,m]+np.sum(self.V[:,:]*self.LamP_dag[:,:,n,mp]*((MT[:,mp,npp]*self.LamP[:,:,npp,m].T).T) , axis=1)
+        X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
+
         
+        for k in range(self.latt.Npoi1bz):
+            for q in range(self.latt.Npoi):
+                kqin=self.latt.Ikpq[k,q]
+                kin=self.latt.Ik1bz[k]
+                Vq=self.V[kqin,kin]
+                X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kqin,kin,:,:]@(MT[kqin,:,:]@self.LamP[kqin,kin,:,:])
+                # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
+
         
         X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
             
-        # #making the dirac points gapless by hand
-        # Dirpoints=self.latt.all_dirac_ind()
-        # for k in Dirpoints:
-        #     X[k, :,:]=X[k, :,:]*0
-            
+
         return -X
     
     def Form_factor_unitary(self, FormFactor_p, FormFactor_m):
@@ -2081,18 +2067,18 @@ class HF_BandStruc:
 
     def savedata(self, add_tag):
         
-        identifier="_"+add_tag+"_"+str(self.latt.Npoi)
-        Nss=np.size(self.latt.KX)
+        identifier="_"+add_tag+"_"+str(self.latt.Npoi1bz)
+        Nss=np.size(self.latt.KX1bz)
 
 
             
-        KXall=np.hstack([self.latt.KX])
-        KYall=np.hstack([self.latt.KY])
+        KXall=np.hstack([self.latt.KX1bz])
+        KYall=np.hstack([self.latt.KY1bz])
 
-        disp_m1=np.array([self.E_HFm_K[:,0].flatten()]).flatten()
-        disp_m2=np.array([self.E_HFm_K[:,1].flatten()]).flatten()
-        disp_p1=np.array([self.E_HFp_K[:,0].flatten()]).flatten()
-        disp_p2=np.array([self.E_HFp_K[:,1].flatten()]).flatten()
+        disp_m1=np.array([self.E_HFm[:,0].flatten()]).flatten()
+        disp_m2=np.array([self.E_HFm[:,1].flatten()]).flatten()
+        disp_p1=np.array([self.E_HFp[:,0].flatten()]).flatten()
+        disp_p2=np.array([self.E_HFp[:,1].flatten()]).flatten()
 
         
         #constants

@@ -56,33 +56,32 @@ class MoireTriangLattice:
             
         self.umkl=umkl
         self.c6sym=c6sym
-        # [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
-        # [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
-        # [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+
+        [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
+        [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
         
-        # if c6sym:
-        #     [self.KQX1,self.KQY1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
-        #     [self.KQX,self.KQY]=self.c3symmetrize(self.KQX1,self.KQY1)
-        # else:
-            
-        #     [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
-
-
         if c6sym:
-            [self.KX1bz_1,self.KY1bz_1]=self.Generate_lattice_2()
-            [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz_1,self.KY1bz_1)
-            [self.KX1bz,self.KY1bz]=self.c3symmetrize(self.KX1bz_1,self.KY1bz_1)
+            [self.KX_1,self.KY_1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+            [self.KX,self.KY]=self.c3symmetrize(self.KX_1,self.KY_1)
         else:
-            [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
-            [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
+            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
             
-        
-        [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
-        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+2) #for the momentum transfer lattice
         
         self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
         self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
         self.NpoiQ=np.size(self.KQX); print(self.NpoiQ, "Q numer of sampling lattice points")
+        
+        self.Ik1bz=self.insertion_index( self.KX1bz,self.KY1bz, self.KQX,self.KQY)
+        self.Ik1bz_plot=self.insertion_index( self.KX1bz_plot,self.KY1bz_plot, self.KQX,self.KQY)
+        self.Ik=self.insertion_index( self.KX,self.KY, self.KQX,self.KQY)
+        
+        Ikpq=[]
+        for q in range(self.Npoi):
+            Ikpq.append(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX,self.KQY))
+        self.Ikpq=np.array(Ikpq).T
+        print( 'the shape of the index array',np.shape(self.Ikpq))
+            
 
         #Mpoints
         self.M1=-self.GMvec[1]/2
@@ -854,7 +853,7 @@ class MoireTriangLattice:
             
         return np.array(indices,dtype=int)
     
-    def all_dirac_ind_q(self,kkx,kky):
+    def all_dirac_ind_q_tf(self,kkx,kky):
         
         if self.c6sym:
             [GM1,GM2]=self.GMvec
@@ -927,7 +926,38 @@ class MoireTriangLattice:
             
         return np.array(indices,dtype=int)
 
-
+    def all_dirac_ind_q(self,kkx,kky):
+        
+        [GM1,GM2]=self.GMvec
+        indices=[]
+        Ulist=self.Umklapp_List(self.umkl+2)
+        LP=self.Npoints
+        for U in Ulist:
+            G=GM1*U[0]+GM2*U[1]
+            kx=kkx-(G[0]-self.K1[0])
+            ky=kky-(G[1]-self.K1[1])
+            
+            indi=np.argmin(kx**2 +ky**2)
+            kxc=kx[indi]
+            kyc=ky[indi]
+            check=np.sqrt(kxc**2 + kyc**2)
+            
+            if check<1e-3/LP:
+                indices.append(indi)
+                
+            kx=kkx-(G[0]-self.K2[0])
+            ky=kky-(G[1]-self.K2[1])
+            
+            indi=np.argmin(kx**2 +ky**2)
+            kxc=kx[indi]
+            kyc=ky[indi]
+            check=np.sqrt(kxc**2 + kyc**2)
+            
+            if check<1e-3/LP:
+                indices.append(indi)
+    
+            
+        return np.array(indices,dtype=int)
     def c3symmetrize(self, Kx, Ky):
         print("size of q before symmetr...",np.size(Kx))
         q=(Kx+1j*Ky)*np.exp(1j*1e-3/np.size(Kx))
