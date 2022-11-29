@@ -84,10 +84,10 @@ class Ham_BM():
         #getting the momentum lattice to be diagonalized
         [GM1,GM2]=self.latt.GMvec #remove the nor part to make the lattice not normalized
         GM=self.latt.GMs
-        qx_dift = + GM1[0]*n1 + GM2[0]*n2 - self.xi*q1[0]
-        qy_dift = + GM1[1]*n1 + GM2[1]*n2 - self.xi*q1[1]
-        qx_difb = + GM1[0]*n1 + GM2[0]*n2 + self.xi*q1[0]
-        qy_difb = + GM1[1]*n1 + GM2[1]*n2 + self.xi*q1[1]
+        qx_dift = + GM1[0]*n1 + GM2[0]*n2 + self.xi*q1[0]
+        qy_dift = + GM1[1]*n1 + GM2[1]*n2 + self.xi*q1[1]
+        qx_difb = + GM1[0]*n1 + GM2[0]*n2 - self.xi*q1[0]
+        qy_difb = + GM1[1]*n1 + GM2[1]*n2 - self.xi*q1[1]
         valst = np.sqrt(qx_dift**2+qy_dift**2)
         valsb = np.sqrt(qx_difb**2+qy_difb**2)
         # cutoff=5.*GM*0.7
