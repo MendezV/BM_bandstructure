@@ -153,31 +153,31 @@ class Ham_BM():
         tau=self.xi
         hvkd=self.hvkd
 
-        Qplusx = qx_t
-        Qplusy = qy_t
-        Qminx = qx_b
-        Qminy = qy_b
+        Qplustaux = qx_t
+        Qplustauy = qy_t
+        Qmintaux = qx_b
+        Qmintauy = qy_b
 
         ###checking if particle hole symmetric model is chosen
         if(self.PH):
             # #top layer
-            qx_1 = kx - Qplusx
-            qy_1 = ky - Qplusy
+            qx_1 = kx - Qplustaux
+            qy_1 = ky - Qplustauy
 
             # #bottom layer
-            qx_2 = kx -Qminx
-            qy_2 = ky -Qminy
+            qx_2 = kx -Qmintaux
+            qy_2 = ky -Qmintauy
         else:
             # #top layer
             ROTtop=self.latt.rot_min
-            kkx_1 = kx - Qplusx
-            kky_1 = ky - Qplusy
+            kkx_1 = kx - Qplustaux
+            kky_1 = ky - Qplustauy
             qx_1 = ROTtop[0,0]*kkx_1+ROTtop[0,1]*kky_1
             qy_1 = ROTtop[1,0]*kkx_1+ROTtop[1,1]*kky_1
             # #bottom layer
             ROTbot=self.latt.rot_plus
-            kkx_2 = kx -Qminx
-            kky_2 = ky -Qminy
+            kkx_2 = kx -Qmintaux
+            kky_2 = ky -Qmintauy
             qx_2 = ROTbot[0,0]*kkx_2+ROTbot[0,1]*kky_2
             qy_2 = ROTbot[1,0]*kkx_2+ROTbot[1,1]*kky_2
 
@@ -187,9 +187,6 @@ class Ham_BM():
         
         H1=hvkd*(np.kron(np.diag(qx_1),tau*paulix)+np.kron(np.diag(qy_1),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
         H2=hvkd*(np.kron(np.diag(qx_2),tau*paulix)+np.kron(np.diag(qy_2),pauliy)) +np.kron(self.gap*np.eye(Nb),pauliz) # ARITCFICIAL GAP ADDED
-        
-        # H1=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
-        # H2=((kx*tau*paulix)+(ky*pauliy)) +self.gap*tau*pauliz
         
         return [H1,H2]
     
@@ -201,10 +198,10 @@ class Ham_BM():
         [q1,q2,q3]=self.latt.q
         
 
-        Qplusx = qx_t
-        Qplusy = qy_t
-        Qminx = qx_b
-        Qminy = qy_b
+        Qplustaux = qx_t
+        Qplustauy = qy_t
+        Qmintaux = qx_b
+        Qmintauy = qy_b
 
         matGq1=np.zeros([Nb,Nb])
         matGq2=np.zeros([Nb,Nb])
@@ -213,38 +210,38 @@ class Ham_BM():
 
         for i in range(Nb):
             
-            #Q + tau q    delta functions
+            #Q- -> Q+ - tau q    delta functions (bottom layer columns)
             
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q1[0])**2+(Qplusy-Qminy[i] - tau*q1[1])**2  )<tres) #finding the Qplusx index (indi1) that gets scattered to the Qmin+tau*q index (i) multiplication
-                                                                                                                #by this generates the sum_Q' delta_(Qplus+tau q,Q') V_Q'=V_(Qplus+tau q)
-            if np.size(indi1)>0:
-                matGq1[i,indi1]=1
-
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q2[0])**2+(Qplusy-Qminy[i] - tau*q2[1])**2  )<tres)
-            if np.size(indi1)>0:
-                matGq2[i,indi1]=1 
-    
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] - tau*q3[0])**2+(Qplusy-Qminy[i] - tau*q3[1])**2  )<tres)
-            if np.size(indi1)>0:
-                matGq3[i,indi1]=1
-                
-            #Q - tau q    delta functions
-                
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q1[0])**2+(Qplusy-Qminy[i] + tau*q1[1])**2  )<tres) #finding the Qplusx index (indi1) that gets scattered to the Qmin-tau*q index (i) multiplication
+            indi1=np.where(np.sqrt(  (Qplustaux - tau*q1[0] -Qmintaux[i] )**2+(Qplustauy - tau*q1[1] -Qmintauy[i] )**2  )<tres) #finding the Qplusx-tau*q  index (indi1) that gets scattered from the Qmin index (i) multiplication
                                                                                                                 #by this generates the sum_Q' delta_(Qplus-tau q,Q') V_Q'=V_(Qplus-tau q)
             if np.size(indi1)>0:
-                matGq1[i,indi1]=1
+                matGq1[indi1,i]=1
 
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q2[0])**2+(Qplusy-Qminy[i] + tau*q2[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplustaux - tau*q2[0] -Qmintaux[i] )**2+(Qplustauy - tau*q2[1] -Qmintauy[i] )**2  )<tres)
             if np.size(indi1)>0:
-                matGq2[i,indi1]=1 
+                matGq2[indi1,i]=1 
     
-            indi1=np.where(np.sqrt(  (Qplusx-Qminx[i] + tau*q3[0])**2+(Qplusy-Qminy[i] + tau*q3[1])**2  )<tres)
+            indi1=np.where(np.sqrt(  (Qplustaux - tau*q3[0] -Qmintaux[i] )**2+(Qplustauy - tau*q3[1] -Qmintauy[i] )**2  )<tres)
             if np.size(indi1)>0:
-                matGq3[i,indi1]=1
+                matGq3[indi1,i]=1
+                
+            #Q- -> Q+ + tau q    delta functions (bottom layer columns)
+                
+            indi1=np.where(np.sqrt(  (Qplustaux + tau*q1[0] -Qmintaux[i] )**2+(Qplustauy + tau*q1[1] -Qmintauy[i] )**2  )<tres) #finding the Qplusx+tau*q  index (indi1) that gets scattered from the Qmin index (i) multiplication
+                                                                                                                #by this generates the sum_Q' delta_(Qplus+tau q,Q') V_Q'=V_(Qplus+tau q)
+            if np.size(indi1)>0:
+                matGq1[indi1,i]=1
 
-        # the  organization above means that the matrices have the structure M_bt so for the + valley
-        # these go on the upper right corner (where we put Udag in the eigen routinve above)
+            indi1=np.where(np.sqrt(  (Qplustaux + tau*q2[0] -Qmintaux[i] )**2+(Qplustauy + tau*q2[1] -Qmintauy[i] )**2  )<tres)
+            if np.size(indi1)>0:
+                matGq2[indi1,i]=1 
+    
+            indi1=np.where(np.sqrt(  (Qplustaux + tau*q3[0] -Qmintaux[i] )**2+(Qplustauy + tau*q3[1] -Qmintauy[i] )**2  )<tres)
+            if np.size(indi1)>0:
+                matGq3[indi1,i]=1
+
+        # the  organization above means that the matrices have the structure M_tb so for the + valley
+        # these go on the upper right corner (columns are b but rows are t)
         
         
         #Matrices that  appeared as coefficients of the real space ops
@@ -254,8 +251,6 @@ class Ham_BM():
         Mdelt2=matGq2
         Mdelt3=matGq3
        
-
-
         phi = 2*np.pi/3    
         
         pauli0=np.array([[1,0],[0,1]])
@@ -263,37 +258,30 @@ class Ham_BM():
         pauliy=np.array([[0,-1j],[1j,0]])
         pauliz=np.array([[1,0],[0,-1]])
         
-        # T1 = np.array([[w0,w1],[w1,w0]])
-        # T2 = zs*np.array([[w0,w1*zs],[w1*z,w0]])
-        # T3 = z*np.array([[w0,w1*z],[w1*zs,w0]])
         
         T1=pauli0*self.kappa+paulix
-        T2=pauli0*self.kappa+paulix*np.cos(phi)+self.xi*pauliy*np.sin(phi)
-        T3=pauli0*self.kappa+paulix*np.cos(phi)-self.xi*pauliy*np.sin(phi)
+        T2=pauli0*self.kappa+paulix*np.cos(phi)+tau*pauliy*np.sin(phi)
+        T3=pauli0*self.kappa+paulix*np.cos(phi)-tau*pauliy*np.sin(phi)
 
 
         U=self.hvkd*self.alpha*( np.kron(Mdelt1,T1) + np.kron(Mdelt2,T2)+ np.kron(Mdelt3,T3)) #interlayer coupling
-        # U=0*T1
+
         return U
         
     def eigens(self, kx,ky, nbands):
         
-        Udag=self.U
-        U=Udag.H
-        [H2,H1]=self.diracH( kx, ky)
+        T_tb=self.U
+        Tdag_bt=(self.U).H
+        [H_tt,H_bb]=self.diracH( kx, ky)
             
         N =int(2*self.Dim)
         
-        Hxi=np.bmat([[H1, Udag ], [U, H2]]) #Full matrix
+        Hxi=np.bmat([[H_tt, T_tb ], [Tdag_bt, H_bb]]) #Full matrix in my notation
         (Eigvals,Eigvect)= np.linalg.eigh(Hxi)  #returns sorted eigenvalues
         # (Eigvals,Eigvect)= la.eigh(Hxi)  #returns sorted eigenvalues
         
         # Eigvals,Eigvect = np.linalg.eig(Hxi)
 
-        # idx = Eigvals.argsort()   
-        # Eigvals = Eigvals[idx]
-        # Eigvect = Eigvect[:,idx]
-        
         
         #######Gauge Fixing by setting the largest element to be real
         # umklp,umklp, layer, sublattice
