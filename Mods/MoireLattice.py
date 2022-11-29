@@ -56,16 +56,29 @@ class MoireTriangLattice:
             
         self.umkl=umkl
         self.c6sym=c6sym
+        # [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
+        # [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
+        # [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+        
+        # if c6sym:
+        #     [self.KQX1,self.KQY1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+        #     [self.KQX,self.KQY]=self.c3symmetrize(self.KQX1,self.KQY1)
+        # else:
+            
+        #     [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+
+
         if c6sym:
-            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
-            [self.KQX1,self.KQY1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
-            [self.KQX,self.KQY]=self.c3symmetrize(self.KQX1,self.KQY1)
+            [self.KX1bz_1,self.KY1bz_1]=self.Generate_lattice_2()
+            [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz_1,self.KY1bz_1)
+            [self.KX1bz,self.KY1bz]=self.c3symmetrize(self.KX1bz_1,self.KY1bz_1)
         else:
             [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
-            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
-            [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
-
+            [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
+            
         
+        [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
         
         self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
         self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
@@ -843,34 +856,73 @@ class MoireTriangLattice:
     
     def all_dirac_ind_q(self,kkx,kky):
         
-
-        [GM1,GM2]=self.GMvec
-        indices=[]
-        Ulist=self.Umklapp_List(self.umkl+2)
-        LP=self.Npoints
-        for U in Ulist:
-            G=GM1*U[0]+GM2*U[1]
-            kx=kkx-(G[0]-self.K1[0])
-            ky=kky-(G[1]-self.K1[1])
+        if self.c6sym:
+            [GM1,GM2]=self.GMvec
+            indices_pre=[]
+            indices=[]
+            Ulist=self.Umklapp_List(1)
+            LP=self.Npoi1bz
             
-            indi=np.argmin(kx**2 +ky**2)
-            kxc=kx[indi]
-            kyc=ky[indi]
-            check=np.sqrt(kxc**2 + kyc**2)
-            
-            if check<1e-3/LP:
-                indices.append(indi)
+            kkxx=self.KX1bz
+            kkyy=self.KY1bz
+            for U in Ulist:
+                G=GM1*U[0]+GM2*U[1]
+                kx=kkxx-(G[0]-self.K1[0])
+                ky=kkyy-(G[1]-self.K1[1])
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
                 
-            kx=kkx-(G[0]-self.K2[0])
-            ky=kky-(G[1]-self.K2[1])
+                if check<1e-3/LP :
+                    indices_pre.append(indi)
+                    
+                kx=kkxx-(G[0]-self.K2[0])
+                ky=kkyy-(G[1]-self.K2[1])
+                
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
+                
+                if check<1e-3/LP :
+                    indices_pre.append(indi)
+                    
+            Ulist=self.Umklapp_List(self.umkl+1)
             
-            indi=np.argmin(kx**2 +ky**2)
-            kxc=kx[indi]
-            kyc=ky[indi]
-            check=np.sqrt(kxc**2 + kyc**2)
+            Numk=int(np.size(kkx)/np.size(kkxx))
+            print("number of Umk", Numk)
+            for i in range(Numk):
+                indices=indices+list(np.array(indices_pre)+i*LP)
             
-            if check<1e-3/LP:
-                indices.append(indi)
+        else:
+            [GM1,GM2]=self.GMvec
+            indices=[]
+            Ulist=self.Umklapp_List(self.umkl+2)
+            LP=self.Npoints
+            for U in Ulist:
+                G=GM1*U[0]+GM2*U[1]
+                kx=kkx-(G[0]-self.K1[0])
+                ky=kky-(G[1]-self.K1[1])
+                
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
+                
+                if check<1e-3/LP:
+                    indices.append(indi)
+                    
+                kx=kkx-(G[0]-self.K2[0])
+                ky=kky-(G[1]-self.K2[1])
+                
+                indi=np.argmin(kx**2 +ky**2)
+                kxc=kx[indi]
+                kyc=ky[indi]
+                check=np.sqrt(kxc**2 + kyc**2)
+                
+                if check<1e-3/LP:
+                    indices.append(indi)
     
             
         return np.array(indices,dtype=int)
@@ -915,7 +967,7 @@ def main() -> int:
     modulation_theta=1.05
     Nsamp=12
     theta=modulation_theta*np.pi/180  # magic angle
-    c6sym=False
+    c6sym=True
     umkl=2 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
