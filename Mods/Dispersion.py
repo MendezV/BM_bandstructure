@@ -20,15 +20,18 @@ import pandas as pd
 # form factors X
 # filter q points X
 # Select projector decoup or simple subs depending on scheme X
-# manipulate projectors for dirac points
+# manipulate projectors for dirac points X
 # Slater components Delta X
 # Permute indices FF X
 # Make coulomb interaction X
-# Fock Term
-# Hartree term
-# normal ordered
-# Background ?
-# Build matrix in band space
+# Fock Term X
+# Hartree term 
+# normal ordered X
+# Background X
+# Build matrix in band space X
+
+# Check traces of the projectors!! match with topo semimetal paper. 
+
 
 class Ham_BM():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH, Interlay=None):
@@ -1784,8 +1787,10 @@ class HF_BandStruc:
             print(f'time for Fock {e-s}')
 
             HBMp=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
-            HBMp[:,0,0]=self.Ene_valley_plus_1bz[:,0]
-            HBMp[:,1,1]=self.Ene_valley_plus_1bz[:,1]
+            
+            for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
+                HBMp[:,HF_I,HF_I]=self.Ene_valley_plus_1bz[:,band_I]
+                
             H0=HBMp-Fock*mode
             
 
@@ -2031,7 +2036,7 @@ class HF_BandStruc:
                 kqin=self.latt.Ikpq[k,q]
                 kin=self.latt.Ik1bz[k]
                 Vq=self.V[kqin,kin]
-                X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kqin,kin,:,:]@(MT[kqin,:,:]@self.LamP[kqin,kin,:,:])
+                X[k, :,:]=X[k, :, :]+Vq*self.LamP[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP_dag[kin,kqin,:,:])
                 # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
 
         

@@ -66,12 +66,16 @@ class MoireTriangLattice:
         else:
             [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
             
-        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+2) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
         
+        
+        #sizes of the lattices 
         self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
         self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
         self.NpoiQ=np.size(self.KQX); print(self.NpoiQ, "Q numer of sampling lattice points")
         
+        
+        # inserton index attributes to look for smaller lattices in the bigger ones
         self.Ik1bz=self.insertion_index( self.KX1bz,self.KY1bz, self.KQX,self.KQY)
         self.Ik1bz_plot=self.insertion_index( self.KX1bz_plot,self.KY1bz_plot, self.KQX,self.KQY)
         self.Ik=self.insertion_index( self.KX,self.KY, self.KQX,self.KQY)
@@ -91,6 +95,8 @@ class MoireTriangLattice:
         #Kpoints
         self.K1=(2*self.GMvec[0]+self.GMvec[1])/3
         self.K2=(-self.GMvec[1]+self.GMvec[0]) /3
+        
+        
 
         
     def __repr__(self):
