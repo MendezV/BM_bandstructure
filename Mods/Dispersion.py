@@ -357,11 +357,12 @@ class Ham_BM():
                 # print(i, indi1, "d")
                 
         
-        block_tt=matGGp1
-        block_bt=matGGp3
+        block_tt=matGGp1 #these blocks are zero so it does not matter
         block_tb=matGGp4
-        block_bb=matGGp2
-        return [block_tt,block_tb,block_bt, block_bb]
+        block_bt=matGGp3
+        block_bb=matGGp2 #these blocks are zero so it does not matter
+        
+        return [block_tt,block_tb, block_bt, block_bb]
         # return np.bmat([[matGGp1,matGGp3], [matGGp4, matGGp2]])
     
     def trans_WF(self, trans):
@@ -423,8 +424,8 @@ class Ham_BM():
         
         sig0=np.eye(2)
         block_tt=np.kron(matGGp1, sig0)
-        block_bt=np.kron(matGGp3, sig0) #these blocks are zero so it does not matter
         block_tb=np.kron(matGGp4, sig0) #these blocks are zero so it does not matter
+        block_bt=np.kron(matGGp3, sig0) #these blocks are zero so it does not matter
         block_bb=np.kron(matGGp2, sig0)
         
         # plt.imshow(matGGp1)
@@ -622,13 +623,6 @@ class Ham_BM():
         psi=np.vstack(psilist)
         return psi
     
-    def ExtendPsi_naive(self, psi_p, umklapp):
-        psilist=[]
-        Gu=self.latt.Umklapp_List(umklapp)
-        for GG in Gu:
-            psilist=psilist+[psi_p]
-        psi=np.vstack(psilist)
-        return psi
 
 
 class Dispersion():
@@ -878,7 +872,7 @@ class Dispersion():
         
         op=np.kron(pauliy,np.kron(II, paulix))
         
-        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@(np.conj(self.hpl.T_psi(wave1p))[:,inde1:inde2]))
+        Sewing=np.conj((wave1m[:,inde1:inde2]).T)@(op@( np.conj( self.hpl.T_psi(wave1p) )[:,inde1:inde2]))
         if np.abs(np.mean(Sewing-paulix))>1e-6:
             print("C star failed")
             print(Sewing)
