@@ -1731,11 +1731,11 @@ class HF_BandStruc:
             [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
             print('started extending wavefunctions')
-            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
 
-            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl_Q)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl_Q)
               
             print('finished extending wavefunctions')
             
@@ -1762,25 +1762,32 @@ class HF_BandStruc:
             [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
             print('started extending reference wavefunctions')
-            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
-            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl_Q)
             print('finished extending reference wavefunctions')
                 
 
             ################################
-            #Constructing projector
+            #Constructing projector, Interaction
             ################################
-            Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
-            Pp0,Pm0=self.Proy_slat_comp(self.psi_plus_decoupled, self.psi_min_decoupled)
+            
             
             if self.subs==1:
+                Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp)
             else:
+                Pp0,Pm0=self.Proy_slat_comp(self.psi_plus_decoupled, self.psi_min_decoupled)
                 proj=self.Slater_comp(Pp0)
                 
             self.V=self.Vq()
             print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
             
+            
+            ################################
+            #Calculating Fock
+            ################################
+            
+            print('started for Fock ')
             s=time.time()
             Fock=self.Fock(proj)
             e=time.time()
@@ -1795,6 +1802,10 @@ class HF_BandStruc:
             
 
             print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
+            
+            ################################
+            #Diagonalization of new Ham
+            ################################
             
             s=time.time()
             EHFp=[]
@@ -1823,18 +1834,21 @@ class HF_BandStruc:
                 U_transfm.append(Eigvect)
                 
                 
-
+            ################################
+            # Reshaping and storing results
+            ################################
+            
             self.EHFp=np.array(EHFp)[:, self.ini_band_HF:self.fini_band_HF]
             self.E_HFp=self.EHFp[: :]
             self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
-            self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+            self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl_Q)
             self.E_HFp_plot=self.E_HFp_ex[self.latt.Ik1bz_plot, :]
             self.Up=np.array(U_transf)
             
             self.EHFm=np.array(EHFm)[:, self.ini_band_HF:self.fini_band_HF]
             self.E_HFm=self.EHFm[:, :]
             self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
-            self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+            self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl_Q)
             self.E_HFm_plot=self.E_HFm_ex[self.latt.Ik1bz_plot, :]
             self.Um=np.array(U_transfm)
             e=time.time()
@@ -1853,11 +1867,11 @@ class HF_BandStruc:
             
             [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl+1)
-            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl+1)
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl_Q)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz , self.latt.umkl_Q)
             
-            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+            self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl_Q)
+            self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl_Q)
                 
 
             ################################
@@ -1886,8 +1900,8 @@ class HF_BandStruc:
 
             [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
-            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl+1)
-            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl+1)
+            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
+            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl_Q)
             
       
 
@@ -1971,12 +1985,13 @@ class HF_BandStruc:
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
+
             
             vec=psi_minus[k,:,:]
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
             Pm[k,:,:]=first@second
-            
+
         return Pp,Pm
     
     def Slater_comp(self, preP):
@@ -1998,11 +2013,6 @@ class HF_BandStruc:
             
         proj=P-Delta-Id/2
         
-        # cou=0
-        # for k in Dirpoints:
-        #     cou=cou+1
-        #     print(cou,proj[k,:,:],self.latt.KQX[k], self.latt.KQY[k])
-            # print(proj[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF])
         return proj
     
     def Vq(self):
@@ -2147,11 +2157,11 @@ class Phon_bare_BandStruc:
         disp=Dispersion( latt, self.nbands_init, hpl, hmin)
         [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl+1)
+        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
 
-        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl+1)
-        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl+1)
+        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl_Q)
+        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl_Q)
         
         
         ################################
@@ -2398,12 +2408,12 @@ class Phon_bare_BandStruc:
         # Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX[Ik_pre],self.latt.KQY[Ik_pre])
         # self.E_HFp=np.array(EHFp)[Ik, :]
         # self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
-        # self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl+1)
+        # self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl_Q)
         # self.Up=np.array(U_transf)
         
         # self.E_HFm=np.array(EHFm)[Ik, :]
         # self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
-        # self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl+1)
+        # self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl_Q)
         # self.Um=np.array(U_transfm)
         
         # #plots of the Bandstructre if needed

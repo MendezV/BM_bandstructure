@@ -55,18 +55,21 @@ class MoireTriangLattice:
             
             
         self.umkl=umkl
+        
         self.c6sym=c6sym
 
         [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
         [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
-        
+        self.umkl_Q=umkl+1 # need one more unklapp to inlcude the edges when k + q_edge 
         if c6sym:
+            
             [self.KX_1,self.KY_1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
             [self.KX,self.KY]=self.c3symmetrize(self.KX_1,self.KY_1)
         else:
+
             [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
             
-        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl+1) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl_Q) #for the momentum transfer lattice
         
         
         #sizes of the lattices 
@@ -702,17 +705,14 @@ class MoireTriangLattice:
         Ik=[]
         for j in range(Npoi):
             indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
-            Ik.append(indmin)
+            check=np.sqrt((KQX[indmin]-KX[j])**2+(KQY[indmin]-KY[j])**2)
+            #check that the point indeed corresponds to the one we wheere looking for
+            if check<1e-3/Npoi:
+                Ik.append(indmin)
+            else: 
+                print('no such point',KX[j],KY[j])
         return Ik
     
-    def insertion_index_mean_stripe(self, KX,KY, KQX,KQY):
-        #list of size Npoi that has the index of K in KQ
-        Npoi=np.size(KX)
-        Ik=[]
-        for j in range(Npoi):
-            indmin=np.argmin(np.sqrt((KQX-KX[j])**2+(KQY-KY[j])**2))
-            Ik.append(indmin)
-        return Ik
     
     def hexagon3(self,pos, Radius_inscribed_hex, KX,KY):
         Y,X = map(abs, pos) #taking the absolute value of the rotated hexagon, only first quadrant matters
@@ -830,7 +830,7 @@ class MoireTriangLattice:
         else:
             [GM1,GM2]=self.GMvec
             indices=[]
-            Ulist=self.Umklapp_List(self.umkl+1)
+            Ulist=self.Umklapp_List(self.umkl_Q)
             LP=self.Npoints
             for U in Ulist:
                 G=GM1*U[0]+GM2*U[1]
@@ -893,7 +893,7 @@ class MoireTriangLattice:
                 if check<1e-3/LP :
                     indices_pre.append(indi)
                     
-            Ulist=self.Umklapp_List(self.umkl+1)
+            Ulist=self.Umklapp_List(self.umkl_Q)
             
             Numk=int(np.size(kkx)/np.size(kkxx))
             print("number of Umk", Numk)
@@ -903,7 +903,7 @@ class MoireTriangLattice:
         else:
             [GM1,GM2]=self.GMvec
             indices=[]
-            Ulist=self.Umklapp_List(self.umkl+2)
+            Ulist=self.Umklapp_List(self.umkl_Q+1)
             LP=self.Npoints
             for U in Ulist:
                 G=GM1*U[0]+GM2*U[1]
@@ -936,7 +936,7 @@ class MoireTriangLattice:
         
         [GM1,GM2]=self.GMvec
         indices=[]
-        Ulist=self.Umklapp_List(self.umkl+2)
+        Ulist=self.Umklapp_List(self.umkl_Q+1)
         LP=self.Npoints
         for U in Ulist:
             G=GM1*U[0]+GM2*U[1]
@@ -962,8 +962,8 @@ class MoireTriangLattice:
             if check<1e-3/LP:
                 indices.append(indi)
     
-            
         return np.array(indices,dtype=int)
+    
     def c3symmetrize(self, Kx, Ky):
         print("size of q before symmetr...",np.size(Kx))
         q=(Kx+1j*Ky)*np.exp(1j*1e-3/np.size(Kx))
