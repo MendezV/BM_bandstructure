@@ -38,7 +38,7 @@ class Ham_BM():
 
         self.hvkd = hvkd
         self.alpha= alpha
-        self.xi = -xi # I had conventions flipped in valley
+        self.xi = xi # I had conventions flipped in valley
         
         
         self.latt=latt
@@ -829,21 +829,19 @@ class Dispersion():
         
         #multiplying the sign to the upper half of the spectrum
         Sign=np.real(np.exp(1j*np.angle(Sewing2[1,0]))) #avoids zero in the decoupled limit
-        wave1_prime[:,ihalf:]=wave1_prime[:,ihalf:]*Sign
-        
+        wave1_prime[:,ihalf:]=wave1_prime[:,ihalf:]*Sign*ham.xi
         
         
         #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
         if ham.kappa==0.0:
             Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2]).T @(  ham.Csub_psi(wave1_prime[:,inde1:inde2])) )
-            taupaulix=np.array([[0,1],[1,0]])
+            taupaulix=np.array([[0,1],[1,0]])*ham.xi
             if np.abs(np.mean(Sewing2-taupaulix))>1e-6:
                 print("chiral sublattice failed")
                 print(Kx,Ky,Sewing2,taupaulix)
                 
-                    
-        
+
         
         return wave1_prime
     
@@ -1683,7 +1681,29 @@ class FormFactors():
         plt.show()
         return eiglist
 
-       
+
+    def test_C2T_dens(self, LamP):
+        pauliz=np.array([[1,0],[0,-1]])
+        if self.tot_nbands==2:
+            for k in range(self.latt.Npoi1bz):
+                for q in range(self.latt.Npoi):
+                    kqin=self.latt.Ikpq[k,q]
+                    kin=self.latt.Ik1bz[k]
+                    if np.abs(np.mean(LamP[kin,kqin,:,:]-pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)))>1e-9:
+                        print(self.xi,'form factor failed c2T at..',kqin,kin)
+                        
+                    
+    def test_Csub_dens(self, LamP):
+        paulix=np.array([[0,1],[1,0]])
+        if self.tot_nbands==2:
+            for k in range(self.latt.Npoi1bz):
+                for q in range(self.latt.Npoi):
+                    kqin=self.latt.Ikpq[k,q]
+                    kin=self.latt.Ik1bz[k]
+                    if np.abs( np.mean(LamP[kin,kqin,:,:]-paulix@(LamP[kin,kqin,:,:]@paulix) ) )>1e-9:
+                        print(self.xi,'form factor failed csub at..',kqin,kin)
+
+        
 class HF_BandStruc:
     
     
@@ -1748,6 +1768,12 @@ class HF_BandStruc:
             self.LamM_dag=np.conj(np.einsum('kqnm->kqmn',self.LamM)) #no initial transpose
             
             
+            self.FFp.test_C2T_dens( self.LamP)
+            self.FFm.test_C2T_dens( self.LamM)
+            
+            self.FFp.test_Csub_dens( self.LamP)
+            self.FFm.test_Csub_dens( self.LamM)
+            
             ################################
             #reference attributes
             ################################
@@ -1795,7 +1821,7 @@ class HF_BandStruc:
             for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
                 HBMp[:,HF_I,HF_I]=self.Ene_valley_plus_1bz[:,band_I]
                 
-            H0=HBMp-0*Fock*mode
+            H0=HBMp-Fock*mode
             
 
             print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -1819,7 +1845,7 @@ class HF_BandStruc:
             
             for l in range(self.latt.Npoi1bz):
                 Hpl=H0[l,:,:]
-                print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
+                # print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
                 Hmin=-sx@Hpl@sx
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
                 (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
