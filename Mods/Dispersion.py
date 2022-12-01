@@ -38,7 +38,7 @@ class Ham_BM():
 
         self.hvkd = hvkd
         self.alpha= alpha
-        self.xi = xi 
+        self.xi = -xi # I had conventions flipped in valley
         
         
         self.latt=latt
@@ -644,7 +644,7 @@ class Dispersion():
     def E_gauge_psi(self, kx, ky):
 
         E1p,wave1=self.hpl.eigens(kx, ky,self.nbands)
-        wave1p=self.gauge_fix( wave1, E1p, kx, ky,self.hpl)
+        wave1p=self.gauge_fix( wave1, E1p, kx, ky, self.hpl)
         self.check_C2T(wave1p)
         
         ########## generate explicitly
@@ -758,6 +758,9 @@ class Dispersion():
         ihalf=int(self.nbands/2)
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
         inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
+        
+        
+        
         #lower half of the spectrum
         wave1_prime=np.array(wave1)
         testw=np.array(wave1_prime[:,:ihalf])
@@ -819,28 +822,28 @@ class Dispersion():
                 print(Sewing)
                 print(E1[inde1+1],E1[inde1],Kx,Ky)
                 print("\n")
-            
-        #using C sublattice to fix an additional relative minus sign
-        testw=np.array(wave1_prime)
-        testw2=ham.Csub_psi(testw)
         
-        Sewing2=np.real((np.conj(testw.T)@testw2))
+        #using C sublattice to fix an additional relative minus sign
+        Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2]).T @(  ham.Csub_psi(wave1_prime[:,inde1:inde2])) )
         # print(Sewing2)
         
         #multiplying the sign to the upper half of the spectrum
-        Sign=np.real(np.exp(1j*np.angle(Sewing2[0,1]))) #avoids zero in the decoupled limit
+        Sign=np.real(np.exp(1j*np.angle(Sewing2[1,0]))) #avoids zero in the decoupled limit
         wave1_prime[:,ihalf:]=wave1_prime[:,ihalf:]*Sign
-
+        
+        
         
         #if we are in the chiral limit the second sewing matrix is a rep of chiral sublattice symmetry
         #should give a paulix in the basis that we chose
         if ham.kappa==0.0:
-            Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2].T)@(ham.Csub_psi(wave1_prime[:,inde1:inde2])) )
-            paulix=np.array([[0,1],[1,0]])
-            if np.abs(np.mean(Sewing2-paulix))>1e-6:
+            Sewing2=np.real( np.conj(wave1_prime[:,inde1:inde2]).T @(  ham.Csub_psi(wave1_prime[:,inde1:inde2])) )
+            taupaulix=np.array([[0,1],[1,0]])
+            if np.abs(np.mean(Sewing2-taupaulix))>1e-6:
                 print("chiral sublattice failed")
-                print(Sewing2)
-    
+                print(Kx,Ky,Sewing2,taupaulix)
+                
+                    
+        
         
         return wave1_prime
     
@@ -1792,7 +1795,7 @@ class HF_BandStruc:
             for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
                 HBMp[:,HF_I,HF_I]=self.Ene_valley_plus_1bz[:,band_I]
                 
-            H0=HBMp-Fock*mode
+            H0=HBMp-0*Fock*mode
             
 
             print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -1816,6 +1819,7 @@ class HF_BandStruc:
             
             for l in range(self.latt.Npoi1bz):
                 Hpl=H0[l,:,:]
+                print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
                 Hmin=-sx@Hpl@sx
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
                 (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
