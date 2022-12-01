@@ -1426,12 +1426,12 @@ class FormFactors():
         self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
         
         if Bands is None:
-            self.Bands = np.shape(self.psi_p)[2]
+            self.tot_nbands = np.shape(self.psi_p)[2]
             inindex=0
-            finindex=self.Bands
+            finindex=self.tot_nbands
             print("calculating form factors with all bands is input wavefunction")
         else:
-            self.Bands= Bands
+            self.tot_nbands= Bands
             initBands=np.shape(self.psi_p)[2]
             inindex=int(initBands/2)-int(Bands/2)
             finindex=int(initBands/2)+int(Bands/2)
@@ -1497,8 +1497,8 @@ class FormFactors():
     def fq(self, FF ):
 
         farr= np.ones(np.shape(FF))
-        for i in range(self.Bands):
-            for j in range(self.Bands):
+        for i in range(self.tot_nbands):
+            for j in range(self.tot_nbands):
                 farr[:, :, i, j]=(self.qx**2-self.qy**2)/self.q
                         
         return farr
@@ -1506,8 +1506,8 @@ class FormFactors():
     def gq(self,FF):
         garr= np.ones(np.shape(FF))
         
-        for i in range(self.Bands):
-            for j in range(self.Bands):
+        for i in range(self.tot_nbands):
+            for j in range(self.tot_nbands):
                 garr[:, :, i, j]=2*(self.qx*self.qy)/self.q
                         
         return garr 
@@ -1516,8 +1516,8 @@ class FormFactors():
     def hq(self,FF):
         harr= np.ones(np.shape(FF))
         
-        for i in range(self.Bands):
-            for j in range(self.Bands):
+        for i in range(self.tot_nbands):
+            for j in range(self.tot_nbands):
                 harr[:, :, i, j]=self.q
                         
         return harr 
@@ -1529,8 +1529,8 @@ class FormFactors():
         qanom=qcut[np.where(qcut<0.01*qmin)]
         qcut[np.where(qcut<0.01*qmin)]=np.ones(np.shape(qanom))*qmin
         
-        for i in range(self.Bands):
-            for j in range(self.Bands):
+        for i in range(self.tot_nbands):
+            for j in range(self.tot_nbands):
                 harr[:, :, i, j]=qcut
                         
         return harr
@@ -1689,7 +1689,7 @@ class FormFactors():
                 for q in range(self.latt.Npoi):
                     kqin=self.latt.Ikpq[k,q]
                     kin=self.latt.Ik1bz[k]
-                    if np.abs(np.mean(LamP[kin,kqin,:,:]-pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)))>1e-9:
+                    if np.mean(np.abs(LamP[kin,kqin,:,:]-pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)))>1e-9:
                         print(self.xi,'form factor failed c2T at..',kqin,kin)
                         
                     
@@ -1700,7 +1700,7 @@ class FormFactors():
                 for q in range(self.latt.Npoi):
                     kqin=self.latt.Ikpq[k,q]
                     kin=self.latt.Ik1bz[k]
-                    if np.abs( np.mean(LamP[kin,kqin,:,:]-paulix@(LamP[kin,kqin,:,:]@paulix) ) )>1e-9:
+                    if  np.mean(np.abs(LamP[kin,kqin,:,:]-paulix@(LamP[kin,kqin,:,:]@paulix) ) )>1e-9:
                         print(self.xi,'form factor failed csub at..',kqin,kin)
 
         
@@ -1767,12 +1767,17 @@ class HF_BandStruc:
             self.LamM=self.FFm.denFF_s() #no initial transpose
             self.LamM_dag=np.conj(np.einsum('kqnm->kqmn',self.LamM)) #no initial transpose
             
+            ################################
+            #testing form factors
+            ################################
             
             self.FFp.test_C2T_dens( self.LamP)
             self.FFm.test_C2T_dens( self.LamM)
             
-            self.FFp.test_Csub_dens( self.LamP)
-            self.FFm.test_Csub_dens( self.LamM)
+            if self.hpl.kappa==0:
+                
+                self.FFp.test_Csub_dens( self.LamP)
+                self.FFm.test_Csub_dens( self.LamM)
             
             ################################
             #reference attributes
