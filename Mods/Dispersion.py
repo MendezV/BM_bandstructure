@@ -1685,6 +1685,10 @@ class FormFactors():
         return eiglist
 
 
+    ################################
+    # form factor tests
+    ################################
+    
     def test_C2T_dens(self, LamP):
         pauliz=np.array([[1,0],[0,-1]])
         if self.tot_nbands==2:
@@ -1692,8 +1696,12 @@ class FormFactors():
                 for q in range(self.latt.Npoi):
                     kqin=self.latt.Ikpq[k,q]
                     kin=self.latt.Ik1bz[k]
-                    if np.mean(np.abs(LamP[kin,kqin,:,:]-pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)))>1e-9:
-                        print(self.xi,'form factor failed c2T at..',kqin,kin)
+                    transf_mat=pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)
+                    mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                    if mean_dif>1e-9:
+                        print(self.xi,'form factor failed C2T at..',kqin,kin,'by', mean_dif )
+                        print("1\n",LamP[kin,kqin,:,:] )
+                        print("2\n",transf_mat )
     
     def test_Cstar_dens(self, LamP,LamM):
         #this test is very lax a more correct approach would be to hard code the symmtery for serious calculations
@@ -1705,12 +1713,13 @@ class FormFactors():
                 for q in range(self.latt.Npoi):
                     kqin=self.latt.Ikpq[k,q]
                     kin=self.latt.Ik1bz[k]
-                    if np.mean(np.abs(LamP[kin,kqin,:,:]-paulix@(LamM[kin,kqin,:,:]@paulix) ))>1e-3:
-                        print(self.xi,'form factor failed cstar at..',kqin,kin,'by', np.mean(np.abs(LamP[kin,kqin,:,:]-paulix@(LamM[kin,kqin,:,:]@paulix) )) )
+                    transf_mat=paulix@(LamM[kin,kqin,:,:]@paulix) 
+                    mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                    if mean_dif>1e-3:
+                        print(self.xi,'form factor failed cstar at..',kqin,kin,'by', mean_dif )
                         print("1\n",LamP[kin,kqin,:,:] )
-                        print("2\n",paulix@(LamM[kin,kqin,:,:]@paulix) )
-                    
-                    
+                        print("2\n",transf_mat )
+                
     def test_Csub_dens(self, LamP):
         paulix=np.array([[0,1],[1,0]])
         if self.tot_nbands==2:
@@ -1718,9 +1727,60 @@ class FormFactors():
                 for q in range(self.latt.Npoi):
                     kqin=self.latt.Ikpq[k,q]
                     kin=self.latt.Ik1bz[k]
-                    if  np.mean(np.abs(LamP[kin,kqin,:,:]-paulix@(LamP[kin,kqin,:,:]@paulix) ) )>1e-9:
-                        print(self.xi,'form factor failed csub at..',kqin,kin)
+                    transf_mat=paulix@(LamP[kin,kqin,:,:]@paulix) 
+                    mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                    if mean_dif>1e-9:
+                        print(self.xi,'form factor failed csub at..',kqin,kin,'by', mean_dif )
+                        print("1\n",LamP[kin,kqin,:,:] )
+                        print("2\n",transf_mat )
 
+    def test_C2T_nemc3_FFs(self, LamP):
+            pauliz=np.array([[1,0],[0,-1]])
+            if self.tot_nbands==2:
+                for k in range(self.latt.Npoi1bz):
+                    for q in range(self.latt.Npoi):
+                        kqin=self.latt.Ikpq[k,q]
+                        kin=self.latt.Ik1bz[k]
+                        transf_mat=pauliz@(np.conj(LamP[kin,kqin,:,:])@pauliz)
+                        mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                        if mean_dif>1e-9:
+                            print(self.xi,'form factor failed C2T at..',kqin,kin,'by', mean_dif )
+                            print("1\n",LamP[kin,kqin,:,:] )
+                            print("2\n",transf_mat )
+
+
+    def test_Cstar_nemc3_FFs(self, LamP,LamM):
+        #this test is very lax a more correct approach would be to hard code the symmtery for serious calculations
+        # the main issue is the loss of precission in the extension if the wave functions and the ammound of matrix operations 
+        # to get to the form factors
+        paulix=np.array([[0,1],[1,0]])
+        if self.tot_nbands==2:
+            for k in range(self.latt.Npoi1bz):
+                for q in range(self.latt.Npoi):
+                    kqin=self.latt.Ikpq[k,q]
+                    kin=self.latt.Ik1bz[k]
+                    transf_mat=-paulix@(LamM[kin,kqin,:,:]@paulix) 
+                    mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                    if mean_dif>1e-3:
+                        print(self.xi,'form factor failed cstar at..',kqin,kin,'by', mean_dif )
+                        print("1\n",LamP[kin,kqin,:,:] )
+                        print("2\n",transf_mat )
+                    
+                    
+    def test_Csub_nemc3_FFs(self, LamP):
+        paulix=np.array([[0,1],[1,0]])
+        if self.tot_nbands==2:
+            for k in range(self.latt.Npoi1bz):
+                for q in range(self.latt.Npoi):
+                    kqin=self.latt.Ikpq[k,q]
+                    kin=self.latt.Ik1bz[k]
+                    transf_mat=-paulix@(LamP[kin,kqin,:,:]@paulix) 
+                    mean_dif=np.mean( np.abs( LamP[kin,kqin,:,:] - transf_mat  ) )
+                    if mean_dif>1e-9:
+                        print(self.xi,'form factor failed csub at..',kqin,kin,'by', mean_dif )
+                        print("1\n",LamP[kin,kqin,:,:] )
+                        print("2\n",transf_mat )
+    
         
 class HF_BandStruc:
     

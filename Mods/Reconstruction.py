@@ -13,8 +13,7 @@ import Dispersion
      
 class Phon_bare_BandStruc:
     
-    
-    def __init__(self, latt,  hpl, hmin, nbands,  cons, field, qins_X, qins_Y, sym, mode, layersym ):
+    def __init__(self, latt, hpl, hmin, nbands, cons, field, qins_X, qins_Y, sym, mode, layersym ):
 
         
         self.latt=latt
@@ -57,7 +56,7 @@ class Phon_bare_BandStruc:
         #dispersion attributes
         ################################
 
-        disp=Dispersion( latt, self.nbands_init, hpl, hmin)
+        disp=Dispersion.Dispersion( latt, self.nbands_init, hpl, hmin)
         [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
         self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
@@ -70,10 +69,10 @@ class Phon_bare_BandStruc:
         ################################
         #generating form factors
         ################################
-        self.FFp=FormFactors(self.psi_plus[:,:,self.ini_band:self.fini_band], 1, latt, -1,self.hpl)
-        self.FFm=FormFactors(self.psi_min[:,:,self.ini_band:self.fini_band], -1, latt, -1,self.hmin)
+        self.FFp=Dispersion.FormFactors(self.psi_plus[:,:,self.ini_band:self.fini_band], 1, latt, -1,self.hpl)
+        self.FFm=Dispersion.FormFactors(self.psi_min[:,:,self.ini_band:self.fini_band], -1, latt, -1,self.hmin)
         
-        
+        self.test_FF=True
         
         # s=time.time()
         # EHFp=[]
@@ -165,9 +164,9 @@ class Phon_bare_BandStruc:
                 self.Lnemm=self.FFm.NemqFFL_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
                 
-                ##Plotting form factors
-                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                # ##Plotting form factors
+                # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
                 
                    
             elif mode=="T":
@@ -175,24 +174,39 @@ class Phon_bare_BandStruc:
                 self.Lnemm=self.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
                 
-                ##Plotting form factors
-                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                # ##Plotting form factors
+                # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
                 
 
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
                 
-                ##Plotting form factors
-                self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
+                # ##Plotting form factors
+                # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
+                # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
                 
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_a(), self.FFm.denqFF_a())
 
         
         
-        e=self.FFp.plotMatEig(self.Omega_FFp)
+        if self.test_FF==True:
+            
+            self.FFp.test_C2T_nemc3_FFs( self.Omega_FFp)
+            self.FFm.test_C2T_nemc3_FFs( self.Omega_FFm)
+            
+            # self.FFp.test_Cstar_nemc3_FFs( self.Omega_FFp, self.Omega_FFm ) # this test is a bit weird
+                                                                              # The form factors fail the test but not by much, seems like
+                                                                              # since a finite expectation value of the phonon field at M does not break chiral
+                                                                              # it is safe to work within one valley and reconstruct the other valley with Cstar
+            if self.hpl.kappa==0.0:
+                
+                self.FFp.test_Csub_nemc3_FFs( self.Omega_FFp)
+                self.FFm.test_Csub_nemc3_FFs( self.Omega_FFm)
+            
+        
+        # e=self.FFp.plotMatEig(self.Omega_FFp)
         # e=self.FFp.plotMatEig(self.Omega_FFm)
         
         # [mat_s,matp, matm]=self.make_mat_phon()
@@ -631,34 +645,16 @@ def main() -> int:
     hmin=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
     
     
-    hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
-    hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
     
-    
-    if mode_HF==1:
-        
-        substract=0 #0 for decoupled layers
-        mu=0
-        filling=0
-        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-        
-        
-    else:
-        
-        substract=0 #0 for decoupled layers
-        mu=0
-        filling=0
-        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-        
     substract=0 #0 for decoupled layers
     mu=0
     filling=0
     field=1
     layersym="a"
-    qins_X=lq.GMvec[0][0]
-    qins_Y=lq.GMvec[0][1]
+    qins_X=lq.M1[0]
+    qins_Y=lq.M1[1]
     sym=True
-    HB=Dispersion.Phon_bare_BandStruc( lq,  hpl, hmin, nbands,  cons, field, qins_X, qins_Y, sym, mode, layersym )
+    HB=Phon_bare_BandStruc( lq,  hpl, hmin, nbands,  cons, field, qins_X, qins_Y, sym, mode, layersym )
 
     return 0
 
