@@ -55,12 +55,12 @@ class MoireTriangLattice:
             
             
         self.umkl=umkl
-        
+        self.umkl_Q=umkl+1 # need one more unklapp to inlcude the edges when k + q_edge 
         self.c6sym=c6sym
 
         [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
         [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
-        self.umkl_Q=umkl+1 # need one more unklapp to inlcude the edges when k + q_edge 
+        
         if c6sym:
             
             [self.KX_1,self.KY_1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
@@ -83,12 +83,27 @@ class MoireTriangLattice:
         self.Ik1bz_plot=self.insertion_index( self.KX1bz_plot,self.KY1bz_plot, self.KQX,self.KQY)
         self.Ik=self.insertion_index( self.KX,self.KY, self.KQX,self.KQY)
         
+        #scattering from k in 1bz to q in the momentum transfer lattice
         Ikpq=[]
         for q in range(self.Npoi):
             Ikpq.append(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX,self.KQY))
         self.Ikpq=np.array(Ikpq).T
-        print( 'the shape of the index array',np.shape(self.Ikpq))
-            
+        print( 'the shape of the index q array',np.shape(self.Ikpq))
+
+        
+        #scattering from k in 1bz to G in the reciprocal lattice
+        Gu=self.Umklapp_List(self.umkl)
+        [GM1, GM2]=self.GMvec
+        IkpG=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkpG.append(self.insertion_index( self.KX1bz+Gxp,self.KY1bz+Gyp, self.KQX,self.KQY))
+        self.IkpG=np.array(IkpG).T
+        self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkpG))
+        
+        
 
         #Mpoints
         self.M1=-self.GMvec[1]/2

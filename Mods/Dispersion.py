@@ -649,7 +649,8 @@ class Dispersion():
         
         ########## generate explicitly
         E1m,wave1=self.hmin.eigens(kx, ky,self.nbands)
-        wave1m=self.impose_Cstar(wave1p)
+        wave1m=self.impose_Cstar(wave1p) #this way of fixing the phase of the wavefunctions also changes the order of the basis
+                                         #compared to the convention of the inverted Q hexagonal lattice
         self.check_C2T(wave1m)
         
         # # ######## checks for chiral symmetry
@@ -1795,10 +1796,11 @@ class HF_BandStruc:
                 
                 self.FFp.test_Cstar_dens( self.LamP, self.LamM )
                 
-                if self.hpl.kappa==0:
+                if self.hpl.kappa==0.0:
                     
                     self.FFp.test_Csub_dens( self.LamP)
                     self.FFm.test_Csub_dens( self.LamM)
+            
             
             ################################
             #reference attributes
@@ -1963,10 +1965,10 @@ class HF_BandStruc:
                 
             self.E_HFm=self.Ene_valley_min[self.latt.Ik1bz, :]
             self.E_HFm_plot=self.Ene_valley_min[self.latt.Ik1bz_plot, :]
-            self.E_HFm_K=self.Ene_valley_min[self.Ik, :]
+            self.E_HFm_K=self.Ene_valley_min[self.latt.Ik, :]
             self.E_HFm_ex=self.Ene_valley_min[:, :]
             
-            print(np.size(Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
+            print(np.size(self.Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
             # self.Um=np.array(U_transfm)
 
         #plots of the Bandstructre if needed
@@ -2073,17 +2075,36 @@ class HF_BandStruc:
         Vq[np.where(qd==0.0)[0]]=V0
         return Vq
     
-    def Hartree(self, M):
-        MT=M#np.transpose(M, (0,2,1))
-        Numkl=int(self.latt.NpoiQ/self.latt.Npoi1bz) 
-        X=np.zeros(np.shape(M),dtype=type(1j))
-        origin_ID= np.argmin(self.latt.KQX**2 +self.latt.KQY**2 )
-        for G in range(Numkl):
-            VG=[origin_ID+G*self.latt.Npoi1bz ,origin_ID ]
-            for k in range(self.latt.NpoiQ):
-                X[k, :,:]=0
-            X[k, :,:]=(X[k, :,:]+np.conj(X[k, :,:].T))/2
-        #trace term only 
+    def preHartree_cons(self, M):
+        MT=np.transpose(M, (0,2,1))
+        Xcons_G=[]
+        for G in range(self.latt.NpoiG):
+            cons=0
+            for q in range(self.latt.Npoi1bz):
+                qin=self.latt.Ik1bz[q]
+                qGin=self.latt.IkpG[q,G]
+                cons=cons+np.sum(np.diag(MT[qin,:,:]@self.LamP_dag[qin,qGin,:,:])) #taking the trace
+            Xcons_G=Xcons_G.append(cons)
+            
+        return np.array(Xcons_G, dtype=type(1j))
+        
+    
+    def Hartree(self, preHartree_X):
+        
+        X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
+        
+        for k in range(self.latt.Npoi1bz):
+            for G in range(self.latt.NpoiG):
+                kGin=self.latt.Ikpq[k,G]
+                kin=self.latt.Ik1bz[k]
+                VG=self.V[kGin,kin]
+
+                X[k, :,:]=X[k, :, :]+VG*self.LamP[kin,kGin,:,:]*preHartree_X[G]
+
+        
+        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
+        
+
         return X
     
     def Fock(self, M):
