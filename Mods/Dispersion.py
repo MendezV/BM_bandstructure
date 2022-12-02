@@ -1751,6 +1751,7 @@ class HF_BandStruc:
         self.subs=substract
         self.mode=mode        
         self.test_FF=False
+        self.calc_Hartree=False
 
         [self.V0, self.d_screening_norm]=cons
     
@@ -1826,9 +1827,11 @@ class HF_BandStruc:
             if self.subs==1:
                 Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp)
+                proj_m=self.Slater_comp(Pm)
             else:
                 Pp0,Pm0=self.Proy_slat_comp(self.psi_plus_decoupled, self.psi_min_decoupled)
                 proj=self.Slater_comp(Pp0)
+                proj_m=self.Slater_comp(Pm0)
                 
             self.V=self.Vq()
             print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
@@ -1851,12 +1854,27 @@ class HF_BandStruc:
                 
             H0=HBMp-Fock*mode
             
-
-            print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
+            
+            ################################
+            #Calculating Hartree
+            ################################
+            if self.calc_Hartree==True:
+                preHartree_cons_G=self.preHartree_cons(proj)
+                Hartree=self.Hartree(preHartree_cons_G)
+                
+                preHartree_cons_G_m=self.preHartree_cons(proj_m)
+                Hartree_m=self.Hartree(preHartree_cons_G_m)
+                
+                for l in range(self.latt.Npoi1bz):
+                    Ha_pl=Hartree[l,:,:]
+                    Ha_ml=Hartree_m[l,:,:]
+                    print(l,Ha_pl,Ha_ml)
+            
             
             ################################
             #Diagonalization of new Ham
             ################################
+            print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
             
             s=time.time()
             EHFp=[]
@@ -2084,7 +2102,7 @@ class HF_BandStruc:
                 qin=self.latt.Ik1bz[q]
                 qGin=self.latt.IkpG[q,G]
                 cons=cons+np.sum(np.diag(MT[qin,:,:]@self.LamP_dag[qin,qGin,:,:])) #taking the trace
-            Xcons_G=Xcons_G.append(cons)
+            Xcons_G.append(cons)
             
         return np.array(Xcons_G, dtype=type(1j))
         
