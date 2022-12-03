@@ -46,11 +46,12 @@ for param_val in ${param_arr[@]}; do
 	mkdir -vp "${dire}"
 
 
-    cp ${dire_to_mods}Reconstruction.py "${dire}"
-    cp ${dire_to_mods}Dispersion.py  "${dire}"
-    cp ${dire_to_mods}MoireLattice.py  "${dire}"
-    cp ${parameter_file}  "${dire}"
-	cp -r dispersions "${dire}"
+    cp -v ${dire_to_mods}Reconstruction.py "${dire}"
+    cp -v ${dire_to_mods}Dispersion.py  "${dire}"
+    cp -v ${dire_to_mods}MoireLattice.py  "${dire}"
+	cp -v ${dire_to_mods}Mean_Field_Latt.py "${dire}"
+    cp -v ${parameter_file}  "${dire}"
+	cp -v -r dispersions "${dire}"
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 	echo "parameters: L " ${Lattice_size} " nu " ${filling_seed} " th " ${param_val} " kap " ${kappa} " HF " ${Mode_HF} " phLT " ${phonon_polarization} >> output.out
