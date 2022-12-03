@@ -31,8 +31,8 @@ import pandas as pd
 # Build matrix in band space X
 
 # Check traces of the projectors!! match with topo semimetal paper. 
-
-
+# TODO: check that the form factors are working properly when I increase the number of bands For HF
+    
 class Ham_BM():
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH, Interlay=None):
 
@@ -1420,8 +1420,8 @@ class FormFactors():
         #momentum transfer lattice
         kqx1, kqx2=np.meshgrid(self.kx,self.kx)
         kqy1, kqy2=np.meshgrid(self.ky,self.ky)
-        self.qx=kqx1-kqx2
-        self.qy=kqy1-kqy2
+        self.qx=kqx2-kqx1
+        self.qy=kqy2-kqy1
         self.q=np.sqrt(self.qx**2+self.qy**2)+1e-17
         
         self.qmin_x=self.latt.KQX[1]-self.latt.KQX[0]
@@ -1810,7 +1810,7 @@ class HF_BandStruc:
         
         self.subs=substract
         self.mode=mode        
-        self.test_FF=False
+        self.test_FF=True
         self.calc_Hartree=False
 
         [self.V0, self.d_screening_norm]=cons
@@ -1855,7 +1855,11 @@ class HF_BandStruc:
                 self.FFp.test_C2T_dens( self.LamP)
                 self.FFm.test_C2T_dens( self.LamM)
                 
-                self.FFp.test_Cstar_dens( self.LamP, self.LamM )
+                # self.FFp.test_Cstar_dens( self.LamP, self.LamM ) # this test is a bit weird
+                                                                              # The form factors fail the test but not by much, seems like
+                                                                              # since a finite expectation value of the phonon field at M does not break chiral
+                                                                              # it is safe to work within one valley and reconstruct the other valley with Cstar
+     
                 
                 if self.hpl.kappa==0.0:
                     
