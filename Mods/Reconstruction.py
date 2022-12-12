@@ -15,41 +15,36 @@ import Mean_Field_Latt
 
 
 class FormFactors_kq():
-    def __init__(self, psi_kq, psi_k, ks,  xi, latt, Bands=None):
+    def __init__(self, psi_kq, psi_k, ks,  xi, Bands=None):
         
         #lattice and kpoint attributes
-        self.latt=latt
         self.xi=xi
         self.Nu=int(np.shape(psi_k)[0]/4) #4, 2 for sublattice and 2 for layer
         
         [kq,k]=ks
-        self.kx=self.latt.KQX[k]
-        self.ky=self.latt.KQY[k]
-        self.kqx=self.latt.KQX[kq]
-        self.kqy=self.latt.KQY[kq]
+        self.kx=k[0]
+        self.ky=k[0]
+        self.kqx=kq[0]
+        self.kqy=kq[0]
         
         self.qx=self.kqx-self.kx
         self.qy=self.kqy-self.ky
         self.q=np.sqrt(self.qx**2+self.qy**2)
         
-        #for denominators
-        self.qmin_x=self.latt.KQX[1]-self.latt.KQX[0]
-        self.qmin_y=self.latt.KQY[1]-self.latt.KQY[0]
-        self.qmin=np.sqrt(self.qmin_x**2+self.qmin_y**2)
         
         #delimiting bands to be used 
         if Bands is None:
             self.tot_nbands = np.shape(psi_k)[1]
             inindex=0
             finindex=self.tot_nbands
-            print("calculating form factors with all bands is input wavefunction")
+            # print("calculating form factors with all bands is input wavefunction")
         else:
             self.tot_nbands= Bands
             initBands=np.shape(psi_k)[1]
             inindex=int(initBands/2)-int(Bands/2)
             finindex=int(initBands/2)+int(Bands/2)
-            print(f"truncating wavefunction and calculating form factors with only {Bands} bands")
-            print(f"originally we had {initBands} bands, we sliced from {inindex} to {finindex} for Form Facts (upper bound is excluded)")
+            # print(f"truncating wavefunction and calculating form factors with only {Bands} bands")
+            # print(f"originally we had {initBands} bands, we sliced from {inindex} to {finindex} for Form Facts (upper bound is excluded)")
             
         self.psi_k = psi_k[:,inindex:finindex] #has dimension # 4*N, nbands
         self.psi_kq = psi_kq[:,inindex:finindex] #has dimension # 4*N, nbands
@@ -228,7 +223,7 @@ class Phon_bare_BandStruc:
         self.latt=latt
         
         
-        self.nbands_init=2#4*hpl.Dim
+        self.nbands_init=2 
         self.nbands=nbands
 
         
@@ -262,200 +257,128 @@ class Phon_bare_BandStruc:
             
 
         [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
+        self.disp=Dispersion.Dispersion( latt, self.nbands, hpl, hmin)
+        
+        #for converting phonon displacements into the right units
+        [q1,q2,q3]=latt.qvect()
+        self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
+        
+        
+        ev_meter=1e+3 *1e-10
+        phiM=1e-13
+        print(self.beta_ep,ev_meter*self.beta_ep*(self.qscale/self.agraph),1e+3*phiM*self.beta_ep*(self.qscale/self.agraph))
+        phiM=1e-12
+        print(self.beta_ep,ev_meter*self.beta_ep*(self.qscale/self.agraph),1e+3*phiM*self.beta_ep*(self.qscale/self.agraph))
+        phiM=5e-12
+        print(self.beta_ep,ev_meter*self.beta_ep*(self.qscale/self.agraph),1e+3*phiM*self.beta_ep*(self.qscale/self.agraph))
+        phiM=1e-11
+        print(self.beta_ep,ev_meter*self.beta_ep*(self.qscale/self.agraph),1e+3*phiM*self.beta_ep*(self.qscale/self.agraph))
+        
+        
+        self.High_symmetry(0.0)
+        self.High_symmetry(0.001*self.agraph)
+        self.High_symmetry(0.005*self.agraph)
+        self.High_symmetry(0.01*self.agraph)
+        self.High_symmetry(0.05*self.agraph)
+        self.High_symmetry(0.1*self.agraph)
+        
+    def eig(self, kx,ky, phi_M ):
+        
+        [wave1p_k,E1p_k,wave1m_k,E1m_k]=self.disp.E_gauge_psi( kx , ky )
+        [wave1p_kq,E1p_kq,wave1m_kq,E1m_kq]=self.disp.E_gauge_psi( kx + self.latt.M1[0] , ky+self.latt.M1[1] )
 
-        
-        
-        ################################
-        #dispersion attributes
-        ################################
-
-        disp=Dispersion.Dispersion( latt, self.nbands_init, hpl, hmin)
-        [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
-
-        self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
-        self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
-
-        self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl_Q)
-        self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl_Q)
-        
-        
-        ################################
-        #generating form factors
-        ################################
-        self.FFp=Dispersion.FormFactors(self.psi_plus[:,:,self.ini_band:self.fini_band], 1, latt, -1,self.hpl)
-        self.FFm=Dispersion.FormFactors(self.psi_min[:,:,self.ini_band:self.fini_band], -1, latt, -1,self.hmin)
-        
-        self.FFp2=FormFactors_kq( self.psi_plus[1,:,self.ini_band:self.fini_band],self.psi_plus[0,:,self.ini_band:self.fini_band], [1,0],  1, latt)
-        
-        self.test_FF=False
-        
-        self.L00p=self.FFp.denFF_s()
-        self.L00p2=self.FFp2.denFF_s()
-        
-  
-        print(self.L00p[1,0,:,:])
-        print(self.L00p2[:,:])
-        
-        
-        self.L00p=self.FFp.denqFFL_a()
-        self.L00p2=self.FFp2.denqFFL_a()
-        
-  
-        print(self.L00p[1,0,:,:],self.FFp.q[1,0],self.FFp.qx[1,0],self.FFp.qy[1,0])
-        print(self.L00p2[:,:],self.FFp2.q,self.FFp2.qx,self.FFp2.qy)
-        # ################################
-        # #generating form factors
-        # ################################
+        k=[ kx , ky]
+        kq=[kx+self.latt.M1[0] , ky+self.latt.M1[1]]
+        FFp=FormFactors_kq( wave1p_kq[:,self.ini_band:self.fini_band],wave1p_k[:,self.ini_band:self.fini_band], [kq,k],  1)
+        Lnemp=FFp.NemqFFT_a()
+        Trans=self.beta_ep*Lnemp
        
-        # if layersym=="s":
-        #     if mode=="L":
-        #         self.L00p=self.FFp.denqFFL_s()
-        #         self.L00m=self.FFm.denqFFL_s()
-        #         self.Lnemp=self.FFp.NemqFFL_s()
-        #         self.Lnemm=self.FFm.NemqFFL_s()
-        #         [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-        #     elif mode=="T": 
-        #         self.Lnemp=self.FFp.NemqFFT_s()
-        #         self.Lnemm=self.FFm.NemqFFT_s()
-        #         [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-        #     elif mode=="dens":
-        #         [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
-                
-        #     else:
-        #         [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
-            
-        # else: # a- mode
-        #     if mode=="L":
-        #         self.L00p=self.FFp.denqFFL_a()
-        #         self.L00m=self.FFm.denqFFL_a()
-        #         self.Lnemp=self.FFp.NemqFFL_a()
-        #         self.Lnemm=self.FFm.NemqFFL_a()
-        #         [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-                
-        #         # ##Plotting form factors
-        #         # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-        #         # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                
-                   
-        #     elif mode=="T":
-        #         self.Lnemp=self.FFp.NemqFFT_a()
-        #         self.Lnemm=self.FFm.NemqFFT_a()
-        #         [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-                
-        #         # ##Plotting form factors
-        #         # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-        #         # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                
+        off_D_k_kq=Trans*phi_M*(self.qscale/self.agraph)
+        Ham_P=np.bmat([[np.diag(E1p_k),off_D_k_kq],[np.conj(off_D_k_kq.T),np.diag(E1p_kq)]])
+        
+        (Eigvals,Eigvect)= np.linalg.eigh(Ham_P)  #returns sorted eigenvalues
+        return [Eigvals,Eigvect]
+    
+    def eig_M(self, kx,ky, phi_M ):
+        
+        [wave1p_k,E1p_k,wave1m_k,E1m_k]=self.disp.E_gauge_psi( kx , ky )
+        [wave1p_kq,E1p_kq,wave1m_kq,E1m_kq]=self.disp.E_gauge_psi( kx + self.latt.M1[0] , ky+self.latt.M1[1] )
 
-        #     elif mode=="dens":
-        #         [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denFF_s(), self.FFm.denFF_s())
-                
-        #         # ##Plotting form factors
-        #         # self.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-        #         # self.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                
-        #     else:
-        #         [self.Omega_FFp,self.Omega_FFm]=self.Form_factor_unitary(self.FFp.denqFF_a(), self.FFm.denqFF_a())
-
+        k=[ kx , ky]
+        kq=[kx+self.latt.M1[0] , ky+self.latt.M1[1]]
+        FFp=FormFactors_kq( wave1m_kq[:,self.ini_band:self.fini_band],wave1m_k[:,self.ini_band:self.fini_band], [kq,k],  -1)
+        Lnemp=FFp.NemqFFT_a()
+        Trans=self.beta_ep*Lnemp
+       
+        off_D_k_kq=Trans*phi_M*(self.qscale/self.agraph)
+        Ham_M=np.bmat([[np.diag(E1m_k),off_D_k_kq],[np.conj(off_D_k_kq.T),np.diag(E1m_kq)]])
         
-        # ################################
-        # #testing form factors
-        # ################################
-        
-        # if self.test_FF==True:
-            
-        #     self.FFp.test_C2T_nemc3_FFs( self.Omega_FFp)
-        #     self.FFm.test_C2T_nemc3_FFs( self.Omega_FFm)
-            
-        #     # self.FFp.test_Cstar_nemc3_FFs( self.Omega_FFp, self.Omega_FFm ) # this test is a bit weird
-        #                                                                       # The form factors fail the test but not by much, seems like
-        #                                                                       # since a finite expectation value of the phonon field at M does not break chiral
-        #                                                                       # it is safe to work within one valley and reconstruct the other valley with Cstar
-        #     if self.hpl.kappa==0.0:
-                
-        #         self.FFp.test_Csub_nemc3_FFs( self.Omega_FFp)
-        #         self.FFm.test_Csub_nemc3_FFs( self.Omega_FFm)
-                
-        
-            
-        
-        
+        (Eigvals,Eigvect)= np.linalg.eigh(Ham_M)  #returns sorted eigenvalues
+        return [Eigvals,Eigvect]
         
     
-    def plots_bands(self):
+    def High_symmetry(self, phiM):
+        print("\n")
+        print("band structure across high symmetry directions")
+       
+        Ene_valley_plus_a=np.empty((0))
+        Ene_valley_min_a=np.empty((0))
+        psi_plus_a=[]
+        psi_min_a=[]
+
+        nbands=4 #Number of bands 
+        kpath=self.latt.High_symmetry_path()
         
-        for nsb in range(self.nbands):
-            plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFp[:,nsb], s=40)
-            plt.colorbar()
-            plt.savefig("EHF"+str(nsb)+"p_kappa"+str(self.hpl.kappa)+".png")
-            plt.close()
-            
-            
-            
-            plt.scatter(self.latt.KX1bz,self.latt.KY1bz, c=self.E_HFm[:,nsb], s=40)
-            plt.colorbar()
-            plt.savefig("EHF"+str(nsb)+"m_kappa"+str(self.hpl.kappa)+".png")
-            plt.close()
-            
-        
-        
-        #############################
-        # high symmetry path
-        #############################
-        [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
-        pth=np.arange(np.size(path))
-        
-        for nsb in range(self.nbands):
-            plt.plot(self.E_HFp_ex[path,nsb], c='b')
-            plt.scatter(pth,self.E_HFp_ex[path,nsb], c='b', s=9)
-            
-        for nsb in range(self.nbands):
-            plt.plot(self.E_HFm_ex[path,nsb], ls='--', c='r')
-            plt.scatter(pth,self.E_HFm_ex[path,nsb], c='r', s=9)
-            
-        plt.savefig("disp_kappa"+str(self.hpl.kappa)+".png")
-        plt.close()
-        
-        plt.plot(self.latt.KQX[path], self.latt.KQY[path])
+        kx=kpath[:,0]
+        ky=kpath[:,1]
         VV=self.latt.boundary()
-        plt.scatter(self.latt.KQX[path], self.latt.KQY[path], c='r')
+        plt.scatter(kx,ky, c='r')
         plt.plot(VV[:,0], VV[:,1], c='b')
-        plt.savefig("HSPp_kappa"+str(self.hpl.kappa)+".png")
+        plt.savefig("highsym_path.png")
         plt.close()
+
+        Npoi=np.shape(kpath)[0]
         
-        print("Bandwith,", np.max(self.E_HFp_ex[:,1])-np.min(self.E_HFp_ex[:,0]))
-        
-        return None
+        for l in range(Npoi):
+            # h.umklapp_lattice()
+            # break
+            E1p,wave1p=self.eig(kpath[l,0],kpath[l,1],phiM)
+            Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
+            psi_plus_a.append(wave1p)
+
+
+            E1m,wave1m=self.eig_M(kpath[l,0],kpath[l,1],phiM)
+            Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
+            psi_min_a.append(wave1m)
+
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+
     
 
-    def OmegaL(self):
-        
-        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
-        
-        [Omega_FFp,Omega_FFm]=self.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
-                
-        return [Omega_FFp,Omega_FFm]
-
-    def OmegaT(self):
-
-        Omega_FFp_pre=(self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.beta_ep*self.Lnemm)
-
-        
-        [Omega_FFp,Omega_FFm]=self.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
-        
-        return [Omega_FFp,Omega_FFm]
-    
-    def Form_factor_unitary(self, FormFactor_p, FormFactor_m):
-
-        FormFactor_new_p=FormFactor_p 
-        FormFactor_new_m=FormFactor_m
-        
-        return [FormFactor_new_p,FormFactor_new_m]
-    
-    
-    
+        print("shape of the energies..",np.shape(Ene_valley_plus_a))
+        qa=np.linspace(0,1,Npoi)
+        for i in range(nbands):
+            plt.plot(qa,Ene_valley_plus[:,i] , c='b')
+            plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+            if i==int(nbands/2-1):
+                min_min  = np.min(Ene_valley_min[:,i])
+                min_plus = np.min(Ene_valley_plus[:,i])
+            
+            elif i==int(nbands/2):
+                max_min  = np.max(Ene_valley_min[:,i])
+                max_plus = np.max(Ene_valley_plus[:,i])
+        maxV=np.max([max_min,max_plus])
+        minC=np.max([min_min,min_plus])
+        BW=maxV-minC
+        print("the bandwidth is ..." ,BW)
+        plt.xlim([0,1])
+        # plt.ylim([-0.008,0.008])
+        plt.savefig("highsym_phi_"+str(phiM)+".png")
+        plt.close()
+        print("finished band structure along high symmetry directions")
+        print("\n \n")
+        return [Ene_valley_plus, Ene_valley_min]
 
         
 
@@ -623,8 +546,7 @@ def main() -> int:
     A1bz=(2*np.pi)**2 / AWZ_graphene
     alpha_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
     beta_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
-    beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
+    
     
     #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
@@ -640,7 +562,7 @@ def main() -> int:
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective,beta_ep_effective, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
 
     
     #Hartree fock correction to the bandstructure

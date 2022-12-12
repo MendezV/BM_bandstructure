@@ -37,6 +37,30 @@ class MF_Lattice_M1_phonon:
         # plt.scatter(self.latt.KQX[self.IkMbz_0],self.latt.KQY[self.IkMbz_0],c='r', marker='x')
         # plt.scatter(self.latt.KQX[self.IkMbz_1],self.latt.KQY[self.IkMbz_1],c='g', marker='x')
         # plt.show()
+        
+        #normal linear interpolation to generate samples accross High symmetry points
+    
+        
+    def High_symmetry_path(self):
+        [GM1,GM2]=self.GM_vec()
+        VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        VV=VV+[VV[0]] #verices
+
+        L=[]
+        L=L+[K[0]]+[Gamma]+[M[0]]+[Kp[-1]] ##path in reciprocal space
+        # L=L+[K[0]]+[Gamma]+[M[0]]+[K[0]] ##path in reciprocal space Andrei paper
+
+        Nt_points=80
+        kp_path=self.latt.linpam(L,Nt_points)
+
+        if self.normed==0:
+            Gnorm=1
+        elif self.normed==1:
+            Gnorm=self.GM() #normalized to the reciprocal lattice vector
+        else:
+            Gnorm=self.qnor() #normalized to the q1 vector
+
+        return kp_path/Gnorm
 
     
 
