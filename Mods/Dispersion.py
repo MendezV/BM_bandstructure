@@ -1506,8 +1506,8 @@ class FormFactors():
         s=time.time()
         print(f"calculating tensor that stores the overlaps, layer {layer}, sublattice {sublattice}........")
         mult_psi=self.matmult(layer,sublattice)
-        # Lambda_Tens=np.tensordot(self.cpsi,mult_psi, axes=([1],[1]))
-        Lambda_Tens=np.einsum('kin,qim->kqnm',self.cpsi,mult_psi)
+        Lambda_Tens=np.swapaxes(np.tensordot(self.cpsi,mult_psi, axes=([1],[1])), 1,2)
+        # Lambda_Tens=np.einsum('kin,qim->kqnm',self.cpsi,mult_psi)
         e=time.time()
         print("finsihed the overlaps..........", e-s)
         return(Lambda_Tens)
@@ -2072,7 +2072,7 @@ class HF_BandStruc:
             self.E_HFm_K=self.Ene_valley_min[self.latt.Ik, :]
             self.E_HFm_ex=self.Ene_valley_min[:, :]
             
-            print(np.size(self.Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
+            print(np.size(self.latt.Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
             # self.Um=np.array(U_transfm)
 
         #plots of the Bandstructre if needed
