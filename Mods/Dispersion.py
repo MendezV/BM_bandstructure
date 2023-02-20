@@ -12,7 +12,8 @@ import os
 import h5py
 import tables
 import pandas as pd
-
+plt.rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+plt.rc('text', usetex=True)
 # For HF
 
 # Calculate projectors X
@@ -1350,14 +1351,17 @@ class Dispersion():
         psi_plus_a=[]
         psi_min_a=[]
 
-        nbands=2 #Number of bands 
+        nbands=8 #Number of bands 
         kpath=self.latt.High_symmetry_path()
         
         kx=kpath[:,0]
         ky=kpath[:,1]
         VV=self.latt.boundary()
-        plt.scatter(kx,ky, c='r')
-        plt.plot(VV[:,0], VV[:,1], c='b')
+        fig, ax = plt.subplots(1, 1, figsize=[3, 3])
+        ax.scatter(kx,ky, c='r', s=2)
+        ax.plot(VV[:,0], VV[:,1], c='b')
+        ax.set_xticks([],[])
+        ax.set_yticks([],[])
         plt.savefig("highsym_path.png")
         plt.close()
 
@@ -1374,16 +1378,24 @@ class Dispersion():
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
             psi_min_a.append(wave1m)
 
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])*1000
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])*1000
 
     
 
         print("shape of the energies..",np.shape(Ene_valley_plus_a))
         qa=np.linspace(0,1,Npoi)
+        
+        fig, ax = plt.subplots(1, 1, figsize=[3, 6])
         for i in range(nbands):
-            plt.plot(qa,Ene_valley_plus[:,i] , c='b')
-            plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+            if i==int(nbands/2-1) or i==int(nbands/2):
+                print("we are at ",i)
+                ax.plot(qa,Ene_valley_plus[:,i] , c='b')
+                ax.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+            else:
+                print("we are outside flat ")
+                ax.plot(qa,Ene_valley_plus[:,i] , c='k')
+                ax.plot(qa,Ene_valley_min[:,i] , c='k', ls="--")
             if i==int(nbands/2-1):
                 min_min  = np.min(Ene_valley_min[:,i])
                 min_plus = np.min(Ene_valley_plus[:,i])
@@ -1395,9 +1407,16 @@ class Dispersion():
         minC=np.max([min_min,min_plus])
         BW=maxV-minC
         print("the bandwidth is ..." ,BW)
-        plt.xlim([0,1])
-        # plt.ylim([-0.008,0.008])
-        plt.savefig("highsym.png")
+        ax.set_ylabel(r'$E$[meV]', size=22)
+        ax.set_xlim([0,1])
+        ax.set_ylim([-100,100])
+        Npath=np.size(kx)
+        Npl_x=[0,qa[int(Npath/3)],qa[int(2*Npath/3)],1]
+        ax.set_xticks(Npl_x,[r'$K$',r'$\Gamma$',r'$M$',r'$K^{\prime}$'], size=25)
+        ax.set_yticks([-75, 0,75],[-75,0,75], size=25)
+        ax.tick_params(axis='x', labelsize=20,direction="in" )
+        ax.tick_params(axis='y', labelsize=20,direction="in" )
+        plt.savefig("highsym.png", dpi=400, bbox_inches='tight')
         plt.close()
         print("finished band structure along high symmetry directions")
         print("\n \n")
@@ -1996,7 +2015,11 @@ class HF_BandStruc:
             #dispersion attributes
             ################################
 
+            dispy=Dispersion( latt, 8, hpl, hmin)
+            dispy.High_symmetry()
+            
             disp=Dispersion( latt, self.nbands, hpl, hmin)
+
             
             [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 

@@ -276,11 +276,11 @@ class Phon_bare_BandStruc:
         
         
         self.High_symmetry(0.0)
-        self.High_symmetry(0.001*self.agraph)
-        self.High_symmetry(0.005*self.agraph)
+        # self.High_symmetry(0.001*self.agraph)
+        # self.High_symmetry(0.005*self.agraph)
         self.High_symmetry(0.01*self.agraph)
         self.High_symmetry(0.05*self.agraph)
-        self.High_symmetry(0.1*self.agraph)
+        # self.High_symmetry(0.1*self.agraph)
         
     def eig(self, kx,ky, phi_M ):
         
@@ -351,16 +351,17 @@ class Phon_bare_BandStruc:
             Ene_valley_min_a=np.append(Ene_valley_min_a,E1m)
             psi_min_a.append(wave1m)
 
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[Npoi,nbands])*1000
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[Npoi,nbands])*1000
 
     
 
         print("shape of the energies..",np.shape(Ene_valley_plus_a))
         qa=np.linspace(0,1,Npoi)
+        fig, ax = plt.subplots(1, 1, figsize=[3, 6])
         for i in range(nbands):
             plt.plot(qa,Ene_valley_plus[:,i] , c='b')
-            plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
+            # plt.plot(qa,Ene_valley_min[:,i] , c='r', ls="--")
             if i==int(nbands/2-1):
                 min_min  = np.min(Ene_valley_min[:,i])
                 min_plus = np.min(Ene_valley_plus[:,i])
@@ -372,9 +373,17 @@ class Phon_bare_BandStruc:
         minC=np.max([min_min,min_plus])
         BW=maxV-minC
         print("the bandwidth is ..." ,BW)
-        plt.xlim([0,1])
-        # plt.ylim([-0.008,0.008])
-        plt.savefig("highsym_phi_"+str(phiM)+".png")
+        ax.set_ylabel(r'$E$[meV]', size=22)
+        ax.set_xlim([0,1])
+        ybound=2
+        ax.set_ylim([-ybound,ybound])
+        Npath=np.size(kx)
+        Npl_x=[0,qa[int(Npath/3)],qa[int(2*Npath/3)],1]
+        ax.set_xticks(Npl_x,[r'$K$',r'$\Gamma$',r'$M$',r'$K^{\prime}$'], size=25)
+        ax.set_yticks([-1, 0,1],[-1,0,1], size=25)
+        ax.tick_params(axis='x', labelsize=20,direction="in" )
+        ax.tick_params(axis='y', labelsize=20,direction="in" )
+        plt.savefig("highsym_phi_"+str(phiM)+".png", dpi=400, bbox_inches='tight')
         plt.close()
         print("finished band structure along high symmetry directions")
         print("\n \n")
@@ -531,8 +540,10 @@ def main() -> int:
     c_light=299792458 #m/s
     M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
     mass=M/(c_light**2) # in ev *s^2/m^2
-    alpha_ep=0 # in ev
-    beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
+    multiplier_g=4 #multiplier that we have in the code
+    multiplier_g_2=0
+    alpha_ep=multiplier_g_2*4 # in ev
+    beta_ep=multiplier_g*4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
     if mode=="L":
         c_phonon=21400 #m/s
     if mode=="T":
