@@ -10,12 +10,12 @@
 export OPENBLAS_NUM_THREADS=20
 
 #generic parameters 
-Lattice_size=12
+Lattice_size=24
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
 Mode_HF=0
-phonon_polarization='trans'
+phonon_polarization='T'
 
 #needed prerequisites for the run
 parameter_file='params'

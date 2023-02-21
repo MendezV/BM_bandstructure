@@ -262,8 +262,8 @@ class ep_Bubble:
 
     def OmegaL(self):
         
-        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
                 
@@ -271,8 +271,8 @@ class ep_Bubble:
 
     def OmegaT(self):
 
-        Omega_FFp_pre=self.Wupsilon*self.beta_ep*self.Lnemp
-        Omega_FFm_pre=self.Wupsilon*self.beta_ep*self.Lnemm
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemp
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemm
 
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
@@ -333,8 +333,7 @@ class ep_Bubble:
                         Lp=self.Omega_FFp[ikq, ik,nband,mband]
                         ekq_p_n=self.Ene_valley_plus[ikq,nband]
                         ek_p_m=self.Ene_valley_plus[ik,mband]
-                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
-                        # GRs_p=self.GRw0s(ekq_p_n,ek_p_m,mu,T)
+                        GRs_p=self.GRw0s(ekq_p_n,ek_p_m,mu,T)
                         integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
                         bub=bub+integrand_var
                         
@@ -342,8 +341,7 @@ class ep_Bubble:
                         Lm=self.Omega_FFm[ikq, ik,nband,mband]
                         ekq_m_n=self.Ene_valley_min[ikq,nband]
                         ek_m_m=self.Ene_valley_min[ik,mband]
-                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T)
-                        # GRs_m=self.GRw0s(ekq_m_n,ek_m_m,mu,T)
+                        GRs_m=self.GRw0s(ekq_m_n,ek_m_m,mu,T)
                         integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
                         bub=bub+integrand_var
 
@@ -355,11 +353,62 @@ class ep_Bubble:
         print("time for bubble...",eb-sb)
         
         res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
         return res
     
-    def savedata(self, integ, filling , mu_value,T, Nsamp, add_tag):
+    
+    def corr_eq(self,args):
+        ( mu, T)=args
+
         
-        identifier=add_tag+str(Nsamp)+self.name+'_nu_'+str(filling)
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+            bub=0
+            
+            for Nk in range(self.latt.Npoi1bz):
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ik=self.latt.Ik1bz[Nk]
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp=self.Omega_FFp[ikq, ik,nband,mband]
+                        ekq_p_n=self.Ene_valley_plus[ikq,nband]
+                        ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
+                        ekq_m_n=self.Ene_valley_min[ikq,nband]
+                        ek_m_m=self.Ene_valley_min[ik,mband]
+                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
+
+            integ[Nq]=bub
+
+        eb=time.time()
+        
+
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
+        return res
+    
+    def savedata(self, integ, mu_value, T, add_tag):
+        Nsamp=self.latt.Npoints
+        index_f=np.argmin((mu_value-self.mu_values)**2)
+        filling=self.fillings[index_f]
+        identifier=add_tag+str(Nsamp)+self.name
         Nss=np.size(self.latt.KX)
 
         #products of the run
@@ -389,10 +438,50 @@ class ep_Bubble:
 
             
         df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
-        df.to_hdf('data'+identifier+'_T_'+str(T)+'.h5', key='df', mode='w')
+        df.to_hdf('data'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
         return None
+    
+    def Fill_sweep(self, Nfils, T):
+        
+        if Nfils>1:
+            [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
+        else:
+            fillings=np.array([0])
+            mu_values=np.array([0])
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        
+        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+            future_to_file = {
+                
+                executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+            }
+
+            for future in concurrent.futures.as_completed(future_to_file):
+                result = future.result()  # read the future object for result
+                integ.append(result[0])
+                qpval = future_to_file[future]  
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
 
      
         
@@ -583,35 +672,16 @@ def main() -> int:
     hpl=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH, 1) #last argument is whether or not we have interlayer hopping
     hmin=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
     
-
-    mu=0
-    filling=0
-    print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
     
     substract=0 #0 for decoupled layers
-    mu=0
-    filling=0
     HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
     #BUBBLE CALCULATION        
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    a=B1.corr( args=(0.0,0.0))
-    
-    
-    bs=lq.boundary()
-    [GM1,GM2]=lq.GMvec
-    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues', s=10)
-    plt.colorbar()
-    mults=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1]]
-    for mult in mults:
-        plt.plot(bs[:,0]+mult[0]*GM1[0]+mult[1]*GM2[0], bs[:,1]+mult[0]*GM1[1]+mult[1]*GM2[1],c='r')
-
-    
-    print(np.shape(bs))
-    plt.savefig("bubmensh.png")
-    plt.close()
+    # a=B1.corr( args=(0.0,0.0))
+    B1.Fill_sweep(10,0.0)
 
     return 0
 
