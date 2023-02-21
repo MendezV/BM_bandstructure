@@ -263,7 +263,7 @@ class ep_Bubble:
 
     def OmegaL(self):
         
-        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.VV,self.beta_ep*self.Lnemp)
+        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
         Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
