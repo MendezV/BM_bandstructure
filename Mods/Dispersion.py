@@ -1564,7 +1564,11 @@ class FormFactors():
     def denqFF_a(self):
         L30=self.calcFormFactor( layer=3, sublattice=0)
         return L30
-
+    
+    def sublFF_a(self):
+        L33=self.calcFormFactor( layer=3, sublattice=3)
+        return L33
+    
     def denqFFL_a(self):
         L30=self.calcFormFactor( layer=3, sublattice=0)
         return self.hq(L30)*L30
@@ -1586,6 +1590,10 @@ class FormFactors():
     def denFF_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)
         return L00
+    
+    def sublFF_s(self):
+        L03=self.calcFormFactor( layer=0, sublattice=3)
+        return L03
 
     def denqFFL_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)

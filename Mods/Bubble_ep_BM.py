@@ -168,7 +168,8 @@ class ep_Bubble:
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
-                
+            elif mode=="subl":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             
@@ -185,6 +186,8 @@ class ep_Bubble:
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
+            elif mode=="subl":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_a(), self.HB.FFm.sublFF_a())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
@@ -578,10 +581,15 @@ def main() -> int:
     
     
     #BUBBLE CALCULATION
+    bs=lq.boundary()
+    print(np.shape(bs))
+            
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     a=B1.corr( args=(0.0,0.0))
-    plt.scatter(lq.KX,lq.KY,c=a)
+    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues_r')
+    plt.colorbar()
+    plt.plot(bs[:,0], bs[:,1],c='r')
     plt.savefig("bubmensh.png")
     plt.close()
 
