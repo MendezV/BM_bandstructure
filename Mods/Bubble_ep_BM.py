@@ -271,8 +271,8 @@ class ep_Bubble:
 
     def OmegaT(self):
 
-        Omega_FFp_pre=(self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=self.Wupsilon*self.beta_ep*self.Lnemp
+        Omega_FFm_pre=self.Wupsilon*self.beta_ep*self.Lnemm
 
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
@@ -354,8 +354,45 @@ class ep_Bubble:
 
         print("time for bubble...",eb-sb)
         
-        res= integ*self.dS_in #self.Wupsilon
+        res= integ*self.dS_in 
         return res
+    
+    def savedata(self, integ, filling , mu_value,T, Nsamp, add_tag):
+        
+        identifier=add_tag+str(Nsamp)+self.name+'_nu_'+str(filling)
+        Nss=np.size(self.latt.KX)
+
+        #products of the run
+        Pibub=np.hstack(integ)
+
+        filling_list=[]
+        mu_list=[]
+        filling_list=[filling]*Nss
+        mu_list=[mu_value]*Nss
+            
+        KXall=self.latt.KX
+        KYall=self.latt.KY
+        fillingarr=np.array(filling_list)
+        muarr=np.array(mu_list)
+        disp_m1=self.Ene_valley_min_K[:,0].flatten()
+        disp_m2=self.Ene_valley_min_K[:,1].flatten()
+        disp_p1=self.Ene_valley_plus_K[:,0].flatten()
+        disp_p2=self.Ene_valley_plus_K[:,1].flatten()
+
+        
+        #constants
+        thetas_arr=np.array([self.latt.theta]*(Nss))
+        kappa_arr=np.array([self.HB.hpl.kappa]*(Nss))
+        
+        print('checking sizes of the arrays for hdf5 storage')
+        print(Nss, Nss,np.size(Pibub),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
+
+            
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
+        df.to_hdf('data'+identifier+'_T_'+str(T)+'.h5', key='df', mode='w')
+
+
+        return None
 
      
         
@@ -557,21 +594,22 @@ def main() -> int:
     HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
-    #BUBBLE CALCULATION
-    bs=lq.boundary()
-    [GM1,GM2]=lq.GMvec
-    print(np.shape(bs))
-            
+    #BUBBLE CALCULATION        
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     a=B1.corr( args=(0.0,0.0))
-    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues_r', s=10)
+    
+    
+    bs=lq.boundary()
+    [GM1,GM2]=lq.GMvec
+    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues', s=10)
     plt.colorbar()
     mults=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1]]
     for mult in mults:
         plt.plot(bs[:,0]+mult[0]*GM1[0]+mult[1]*GM2[0], bs[:,1]+mult[0]*GM1[1]+mult[1]*GM2[1],c='r')
 
     
+    print(np.shape(bs))
     plt.savefig("bubmensh.png")
     plt.close()
 

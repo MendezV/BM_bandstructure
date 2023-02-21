@@ -4,7 +4,7 @@ from scipy.spatial import Voronoi, voronoi_plot_2d
 from scipy import linalg as la
 import time
 import matplotlib.pyplot as plt
- 
+
 
 class MoireTriangLattice:
 
@@ -84,10 +84,11 @@ class MoireTriangLattice:
         self.Ik=self.insertion_index( self.KX,self.KY, self.KQX,self.KQY)
         
         #scattering from k in 1bz to q in the momentum transfer lattice
-        Ikpq=[]
+        # Ikpq=[]
+        Ikpq=np.zeros([self.Npoi,self.Npoi1bz])
         for q in range(self.Npoi):
-            Ikpq.append(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
-        self.Ikpq=np.array(Ikpq).T
+            Ikpq[q,:]=np.array(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
+        self.Ikpq=(Ikpq.astype(int)).T
         print( 'the shape of the index q array',np.shape(self.Ikpq))
 
         
