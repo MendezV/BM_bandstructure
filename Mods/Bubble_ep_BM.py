@@ -344,7 +344,7 @@ class ep_Bubble:
             
             for Nk in range(self.latt.Npoi1bz):
                 ikq=self.latt.Ikpq[Nk,Nq]
-                ik=self.latt.Ik[Nk]
+                ik=self.latt.Ik1bz[Nk]
                 
                 for nband in range(self.nbands):
                     for mband in range(self.nbands):
