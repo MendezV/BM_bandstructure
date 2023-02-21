@@ -10,12 +10,12 @@
 export OPENBLAS_NUM_THREADS=20
 
 #generic parameters 
-Lattice_size=10
+Lattice_size=24
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
 Mode_HF=0
-phonon_polarization='T'
+phonon_polarization='trans'
 
 #needed prerequisites for the run
 parameter_file='params'
@@ -25,7 +25,7 @@ dire_to_mods='../Mods/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="trans"  #JOBNAME importan to declare -has to be descriptive
+jobname="trans_0"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"

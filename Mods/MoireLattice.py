@@ -86,7 +86,7 @@ class MoireTriangLattice:
         #scattering from k in 1bz to q in the momentum transfer lattice
         Ikpq=[]
         for q in range(self.Npoi):
-            Ikpq.append(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX,self.KQY))
+            Ikpq.append(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
         self.Ikpq=np.array(Ikpq).T
         print( 'the shape of the index q array',np.shape(self.Ikpq))
 

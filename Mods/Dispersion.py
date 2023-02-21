@@ -654,8 +654,10 @@ class Dispersion():
                                          #compared to the convention of the inverted Q hexagonal lattice
         self.check_C2T(wave1m)
         
-        # # ######## checks for chiral symmetry
+        # # ######## checks for chiral and time reversal symmetry
         self.check_Cstar(wave1p,wave1m)
+        self.check_T(wave1p,wave1m[::-1,:])
+
 
         return [wave1p,E1p,wave1m,E1m]
     
@@ -1569,6 +1571,14 @@ class FormFactors():
         L33=self.calcFormFactor( layer=3, sublattice=3)
         return L33
     
+    def nemxFF_a(self):
+        L31=self.calcFormFactor( layer=3, sublattice=1)
+        return L31
+    
+    def nemyFF_a(self):
+        L32=self.calcFormFactor( layer=3, sublattice=2)
+        return L32
+    
     def denqFFL_a(self):
         L30=self.calcFormFactor( layer=3, sublattice=0)
         return self.hq(L30)*L30
@@ -1577,13 +1587,13 @@ class FormFactors():
     def NemqFFL_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
-        Nem_FFL=self.fq(L31) *L31-self.xi*self.gq(L32)*L32
+        Nem_FFL=self.fq(L31) *L31 - self.xi*self.gq(L32)*L32
         return Nem_FFL
 
     def NemqFFT_a(self):
         L31=self.calcFormFactor( layer=3, sublattice=1)
         L32=self.calcFormFactor( layer=3, sublattice=2)
-        Nem_FFT=-self.gq(L31) *L31- self.xi*self.fq(L32)*L32
+        Nem_FFT=-self.gq(L31) *L31 - self.xi*self.fq(L32)*L32
         return Nem_FFT
 
     ########### Symmetric displacement of the layers
@@ -1594,6 +1604,14 @@ class FormFactors():
     def sublFF_s(self):
         L03=self.calcFormFactor( layer=0, sublattice=3)
         return L03
+    
+    def nemxFF_s(self):
+        L01=self.calcFormFactor( layer=0, sublattice=1)
+        return L01
+    
+    def nemyFF_s(self):
+        L02=self.calcFormFactor( layer=0, sublattice=2)
+        return L02
 
     def denqFFL_s(self):
         L00=self.calcFormFactor( layer=0, sublattice=0)
@@ -1602,7 +1620,7 @@ class FormFactors():
     def NemqFFL_s(self):
         L01=self.calcFormFactor( layer=0, sublattice=1)
         L02=self.calcFormFactor( layer=0, sublattice=2)
-        Nem_FFL=self.fq(L01) *L01-self.xi*self.gq(L02)*L02
+        Nem_FFL=self.fq(L01) *L01 - self.xi*self.gq(L02)*L02
         return Nem_FFL
 
     def NemqFFT_s(self):

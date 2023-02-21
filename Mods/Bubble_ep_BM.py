@@ -166,10 +166,18 @@ class ep_Bubble:
                 self.Lnemp=self.HB.FFp.NemqFFT_s()
                 self.Lnemm=self.HB.FFm.NemqFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="long":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_s(), self.HB.FFm.NemqFFL_s())
+            elif mode=="trans":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_s(), self.HB.FFm.NemqFFT_s())
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             elif mode=="subl":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
+            elif mode=="nemx":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemxFF_s(), self.HB.FFm.nemxFF_s())
+            elif mode=="nemy":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_s(), self.HB.FFm.nemyFF_s())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             
@@ -184,10 +192,18 @@ class ep_Bubble:
                 self.Lnemp=self.HB.FFp.NemqFFT_a()
                 self.Lnemm=self.HB.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="long":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_a(), self.HB.FFm.NemqFFL_a())
+            elif mode=="trans":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             elif mode=="subl":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_a(), self.HB.FFm.sublFF_a())
+            elif mode=="nemx":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemxFF_a(), self.HB.FFm.nemxFF_a())
+            elif mode=="nemy":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_a(), self.HB.FFm.nemyFF_a())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
@@ -199,27 +215,7 @@ class ep_Bubble:
     """
     ################################
     
-    # def nf(self, e, T):
-        
-    #     """[summary]
-    #     fermi occupation function with a truncation if the argument exceeds 
-    #     double precission
-
-    #     Args:
-    #         e ([double]): [description] energy
-    #         T ([double]): [description] temperature
-
-    #     Returns:
-    #         [double]: [description] value of the fermi function 
-    #     """
-    #     Tp=T+1e-17 #To capture zero temperature
-    #     rat=np.abs(np.max(e/Tp))
-        
-    #     if rat<700:
-    #         return 1/(1+np.exp( e/T ))
-    #     else:
-    #         return np.heaviside(-e,0.5)
-        
+    
         
     def nf(self, e, T):
         
@@ -287,48 +283,30 @@ class ep_Bubble:
     def deltad(self, x, epsil):
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
-
-    # def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
-    #     edkq=ekn[nkq]-mu
-    #     edk=ekm[nk]-mu
-
-    #     #finite temp
-    #     nfk= self.nf(edk,T)
-    #     nfkq= self.nf(edkq,T)
-
-    #     ####delta
-    #     # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-    #     # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-    #     # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-    #     # return (fac_p+fac_p2)
-        
-    #     ###iepsilon
-    #     eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
-
-    #     fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-    #     return (fac_p)
     
-    def GReqs(self,ekn,ekm,mu,T):
+    def GRw0s(self,ekn,ekm,mu,T):
         edkq=ekn-mu
         edk=ekm-mu
 
         #finite temp
         nfk= self.nf(edk,T)
         nfkq= self.nf(edkq,T)
-
-        ####delta
-        # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-        # return (fac_p+fac_p2)
         
         ###iepsilon
         eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(-(edkq-edk)+1j*eps)
         return np.real(fac_p)
+    
+    def GReqs(self,ekn,ekm,mu,T):
+        edkq=ekn-mu
+        edk=ekm-mu
+
+        #finite temp
+        nfkq= self.nf(edkq,T)
+        nfk= self.nf(edk,T)
+        
+        return (1-nfkq)*nfk
 
 
     def corr(self,args):
@@ -356,6 +334,7 @@ class ep_Bubble:
                         ekq_p_n=self.Ene_valley_plus[ikq,nband]
                         ek_p_m=self.Ene_valley_plus[ik,mband]
                         GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        # GRs_p=self.GRw0s(ekq_p_n,ek_p_m,mu,T)
                         integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
                         bub=bub+integrand_var
                         
@@ -364,6 +343,7 @@ class ep_Bubble:
                         ekq_m_n=self.Ene_valley_min[ikq,nband]
                         ek_m_m=self.Ene_valley_min[ik,mband]
                         GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T)
+                        # GRs_m=self.GRw0s(ekq_m_n,ek_m_m,mu,T)
                         integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
                         bub=bub+integrand_var
 
@@ -374,7 +354,7 @@ class ep_Bubble:
 
         print("time for bubble...",eb-sb)
         
-        res= self.Wupsilon*integ*self.dS_in
+        res= integ*self.dS_in #self.Wupsilon
         return res
 
      
@@ -457,7 +437,7 @@ def main() -> int:
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
-    umkl=3 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umkl=1 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q
@@ -567,9 +547,6 @@ def main() -> int:
     hmin=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
     
 
-    
-    
-        
     mu=0
     filling=0
     print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
@@ -582,14 +559,19 @@ def main() -> int:
     
     #BUBBLE CALCULATION
     bs=lq.boundary()
+    [GM1,GM2]=lq.GMvec
     print(np.shape(bs))
             
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     a=B1.corr( args=(0.0,0.0))
-    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues_r')
+    plt.scatter(lq.KX,lq.KY,c=a, cmap='Blues_r', s=10)
     plt.colorbar()
-    plt.plot(bs[:,0], bs[:,1],c='r')
+    mults=[[0,0],[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1]]
+    for mult in mults:
+        plt.plot(bs[:,0]+mult[0]*GM1[0]+mult[1]*GM2[0], bs[:,1]+mult[0]*GM1[1]+mult[1]*GM2[1],c='r')
+
+    
     plt.savefig("bubmensh.png")
     plt.close()
 
