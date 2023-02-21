@@ -325,11 +325,11 @@ class ep_Bubble:
         eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
 
         fac_p=(nfkq-nfk)/(-(edkq-edk)+1j*eps)
-        return (fac_p)
+        return np.real(fac_p)
 
 
     def corr(self,args):
-        (theta,  mu, T)=args
+        ( mu, T)=args
 
         
         sb=time.time()
@@ -338,7 +338,7 @@ class ep_Bubble:
 
         integ=np.zeros(self.latt.Npoi)
 
-        for Nq in self.latt.Npoi:  #for calculating only along path in FBZ
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
             bub=0
             
@@ -348,20 +348,21 @@ class ep_Bubble:
                 
                 for nband in range(self.nbands):
                     for mband in range(self.nbands):
+                        
                         Lp=self.Omega_FFp[ikq, ik,nband,mband]
-                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
                         ekq_p_n=self.Ene_valley_plus[ikq,nband]
                         ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
                         ekq_m_n=self.Ene_valley_min[ikq,nband]
                         ek_m_m=self.Ene_valley_min[ik,mband]
-                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
                         GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T)
-                        
-                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
-                        bub=bub+integrand_var*self.dS_in
-                        
                         integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
-                        bub=bub+integrand_var*self.dS_in
+                        bub=bub+integrand_var
 
             integ[Nq]=bub
 
@@ -370,7 +371,7 @@ class ep_Bubble:
 
         print("time for bubble...",eb-sb)
         
-        res= self.Wupsilon*integ
+        res= self.Wupsilon*integ*self.dS_in
         return res
 
      
@@ -573,13 +574,16 @@ def main() -> int:
     substract=0 #0 for decoupled layers
     mu=0
     filling=0
-    HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF=0)
+    HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
     #BUBBLE CALCULATION
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    B1.Fill_sweep( mu_values, fillings, Nsamp, c_phonon, theta,T)
+    a=B1.corr( args=(0.0,0.0))
+    plt.scatter(lq.KX,lq.KY,c=a)
+    plt.savefig("bubmensh.png")
+    plt.close()
 
     return 0
 

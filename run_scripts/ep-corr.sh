@@ -15,7 +15,7 @@ filling_seed=0
 twist_angle=1.05
 kappa=0.75
 Mode_HF=0
-phonon_polarization='L'
+phonon_polarization='T'
 
 #needed prerequisites for the run
 parameter_file='params'
