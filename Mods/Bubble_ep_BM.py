@@ -443,7 +443,7 @@ class ep_Bubble:
 
         return None
     
-    def Fill_sweep(self, Nfils, T):
+    def Fill_sweep(self, Nfils, T, parallel=False):
         
         if Nfils>1:
             [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
@@ -462,17 +462,21 @@ class ep_Bubble:
         for i in qp:
             arglist.append( ( mu_values[i],T) )
 
-        
-        with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-            future_to_file = {
-                
-                executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
-            }
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
 
-            for future in concurrent.futures.as_completed(future_to_file):
-                result = future.result()  # read the future object for result
-                integ.append(result[0])
-                qpval = future_to_file[future]  
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
 
         
         
@@ -681,7 +685,7 @@ def main() -> int:
     test_symmetry=True
     B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     # a=B1.corr( args=(0.0,0.0))
-    B1.Fill_sweep(10,0.0)
+    B1.Fill_sweep(3,0.01)
 
     return 0
 
