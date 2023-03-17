@@ -9,7 +9,7 @@
 ###########################
 
 #generic parameters 
-Lattice_size=24
+Lattice_size=12
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
@@ -73,5 +73,4 @@ echo 'Jobs finished running'>>output.out
 dire_to_data="../data/${jobname}_${date_fin}"
 mkdir "${dire_to_data}"
 mv "${dire_to_temps}"/* "${dire_to_data}"
-mv inforun "${dire_to_data}"
 rm -r "${dire_to_temps}"
