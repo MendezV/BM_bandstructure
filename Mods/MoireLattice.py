@@ -942,8 +942,8 @@ class MoireTriangLattice:
                 if check<1e-3/LP:
                     indices.append(indi)
                     
-                kx=self.KX-(G[0]-self.K2[0])
-                ky=self.KY-(G[1]-self.K2[1])
+                kx=self.KX-(G[0]-self.Kp1[0])
+                ky=self.KY-(G[1]-self.Kp1[1])
                 
                 indi=np.argmin(kx**2 +ky**2)
                 kxc=kx[indi]
@@ -979,8 +979,8 @@ class MoireTriangLattice:
                 if check<1e-3/LP :
                     indices_pre.append(indi)
                     
-                kx=kkxx-(G[0]-self.K2[0])
-                ky=kkyy-(G[1]-self.K2[1])
+                kx=kkxx-(G[0]-self.Kp1[0])
+                ky=kkyy-(G[1]-self.Kp1[1])
                 
                 indi=np.argmin(kx**2 +ky**2)
                 kxc=kx[indi]
@@ -1015,8 +1015,8 @@ class MoireTriangLattice:
                 if check<1e-3/LP:
                     indices.append(indi)
                     
-                kx=kkx-(G[0]-self.K2[0])
-                ky=kky-(G[1]-self.K2[1])
+                kx=kkx-(G[0]-self.Kp1[0])
+                ky=kky-(G[1]-self.Kp1[1])
                 
                 indi=np.argmin(kx**2 +ky**2)
                 kxc=kx[indi]
@@ -1048,8 +1048,8 @@ class MoireTriangLattice:
             if check<1e-3/LP:
                 indices.append(indi)
                 
-            kx=kkx-(G[0]-self.K2[0])
-            ky=kky-(G[1]-self.K2[1])
+            kx=kkx-(G[0]-self.Kp1[0])
+            ky=kky-(G[1]-self.Kp1[1])
             
             indi=np.argmin(kx**2 +ky**2)
             kxc=kx[indi]
