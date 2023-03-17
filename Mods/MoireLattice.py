@@ -109,14 +109,28 @@ class MoireTriangLattice:
         
 
         #Mpoints
-        self.M1=-self.GMvec[1]/2
-        self.M2=self.GMvec[0]/2
-        self.M3=self.GMvec[0]/2+self.GMvec[1]/2
+        self.M1=-self.GMvec[1]/2 #right 
+        self.M2=self.GMvec[0]/2 # c6 Right
+        self.M3=self.GMvec[0]/2+self.GMvec[1]/2 #c3 Right
+        
+        self.M1_m=self.GMvec[1]/2 #left
+        self.M2_m=-self.GMvec[0]/2
+        self.M3_m=-(self.GMvec[0]/2+self.GMvec[1]/2)
         
         #Kpoints
-        self.K1=(2*self.GMvec[0]+self.GMvec[1])/3
-        self.K2=(-self.GMvec[1]+self.GMvec[0]) /3
-
+        self.K1=(2*self.GMvec[0]+self.GMvec[1])/3 #left up
+        self.K2=(-self.GMvec[1]+self.GMvec[0]) /3 #right up
+        self.K3=-(self.K1+self.K2) #bottom
+        
+        self.Kp1=-self.K2 #left down
+        self.Kp2=-self.K1 #right down
+        self.Kp2=-self.K3 #top
+        
+        
+        #Gamma
+        self.Gamma=self.GMvec[1]*0
+        
+        
 
 
 
@@ -152,30 +166,33 @@ class MoireTriangLattice:
         self.Imk=Imk.astype(int)
         print( 'the shape of the index k - array',np.shape(self.Imk))
         
-        #mirrorx (flips y->-y)
         
-        ImxkpM=np.zeros([self.Npoi])
-        ImxkpM=np.array(self.insertion_index( (self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
-        self.ImxkpM=ImxkpM.astype(int)
-        print( 'the shape of the index M mirrorx array',np.shape(self.ImxkpM))
-        
-        Imxk=np.zeros([self.Npoi])
-        Imxk=np.array(self.insertion_index( (self.KX),-(self.KY), self.KQX, self.KQY))
-        self.Imxk=Imxk.astype(int)
-        print( 'the shape of the index k mirrorx array',np.shape(self.Imxk))
-        
-        #mirrory (flips x->-x)
-        
-        ImykpM=np.zeros([self.Npoi])
-        ImykpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),(self.KY+self.M1[1]), self.KQX, self.KQY))
-        self.ImykpM=ImykpM.astype(int)
-        print( 'the shape of the index M mirrory array',np.shape(self.ImykpM))
-        
-        Imyk=np.zeros([self.Npoi])
-        Imyk=np.array(self.insertion_index( -(self.KX),(self.KY), self.KQX, self.KQY))
-        self.Imyk=Imyk.astype(int)
-        print( 'the shape of the index k mirrory array',np.shape(self.Imyk))
-        
+        sym_arr=False 
+        if sym_arr:
+            #mirrorx (flips y->-y)
+            
+            ImxkpM=np.zeros([self.Npoi])
+            ImxkpM=np.array(self.insertion_index( (self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
+            self.ImxkpM=ImxkpM.astype(int)
+            print( 'the shape of the index M mirrorx array',np.shape(self.ImxkpM))
+            
+            Imxk=np.zeros([self.Npoi])
+            Imxk=np.array(self.insertion_index( (self.KX),-(self.KY), self.KQX, self.KQY))
+            self.Imxk=Imxk.astype(int)
+            print( 'the shape of the index k mirrorx array',np.shape(self.Imxk))
+            
+            #mirrory (flips x->-x)
+            
+            ImykpM=np.zeros([self.Npoi])
+            ImykpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),(self.KY+self.M1[1]), self.KQX, self.KQY))
+            self.ImykpM=ImykpM.astype(int)
+            print( 'the shape of the index M mirrory array',np.shape(self.ImykpM))
+            
+            Imyk=np.zeros([self.Npoi])
+            Imyk=np.array(self.insertion_index( -(self.KX),(self.KY), self.KQX, self.KQY))
+            self.Imyk=Imyk.astype(int)
+            print( 'the shape of the index k mirrory array',np.shape(self.Imyk))
+            
         
 
         
@@ -614,7 +631,7 @@ class MoireTriangLattice:
             Indc3z[i]=np.argmin( (KX-KXc3z[i])**2 +(KY-KYc3z[i])**2)
 
         return [KXc3z,KYc3z, Indc3z]
-
+    
     #to check whether this is working uncomment the plot statments
     def findpath(self,Kps,KX,KY):
 
@@ -627,11 +644,11 @@ class MoireTriangLattice:
         NHSpoints=np.shape(Kps)[0]
         
 
-        [k1,k2]=self.Generating_vec_samp_lattice( np.max(KY))
+        [k1,k2]=[self.GMvec[0]/np.sqrt(self.Npoi1bz),self.GMvec[1]/np.sqrt(self.Npoi1bz)]
 
 
         amin=np.linalg.norm(k1)
-        # print(amin, np.sqrt( (KX[1]-KX[0])**2+(KY[1]-KY[0])**2 ))      
+        print(amin, np.sqrt( (KX[1]-KX[0])**2+(KY[1]-KY[0])**2 ))      
         l=np.argmin(  (Kps[0][0]-KX)**2 + (Kps[0][1]-KY)**2 )
 
         path=np.append(path,int(l)) 
@@ -645,7 +662,7 @@ class MoireTriangLattice:
             
             
             dist=np.sqrt( (Kps[indhs+1][0]-KX[l])**2 + (Kps[indhs+1][1]-KY[l])**2)
-            while ( c2<1  and  dist>=0.8*amin):
+            while ( c2<1  and  dist>=amin):
                 dists=[]
                 KXnn=[]
                 KYnn=[]
@@ -694,13 +711,18 @@ class MoireTriangLattice:
             
         return path,np.array(pthK),HSP_index
 
-    def embedded_High_symmetry_path(self, KX,KY):
-        [GM1,GM2]=self.GMvec
-        VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
-        VV=VV+[VV[0]] #verices
 
-        Kps=[]
-        Kps=Kps+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
+    def embedded_High_symmetry_path(self, KX,KY):
+        # [GM1,GM2]=self.GMvec
+        # VV, Gamma, K, Kp, M, Mp=self.FBZ_points(GM1,GM2)
+        # VV=VV+[VV[0]] #verices
+
+        # Kps=[]
+        # Kps=Kps+[K[1]]+[Gamma]+[M[0]]+[Kp[2]]
+        Kps=[self.K2,self.Gamma,self.M1_m,self.Kp1]
+        # for KP in Kps:
+        #     plt.scatter(KP[0],KP[1])
+        
         [path,kpath,HSP_index]=self.findpath(Kps,KX,KY)
 
 

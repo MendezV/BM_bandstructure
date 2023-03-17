@@ -297,15 +297,8 @@ class ep_Bubble:
             ikq=self.latt.IkpM[Nk]
             ikmq=self.latt.IkmM[Nk]
             ik=self.latt.Ik[Nk]
-            # imkmq=self.latt.ImkmM[Nk]
-            # imkq=self.latt.ImkpM[Nk]
-            # imk=self.latt.Imk[Nk]
-            # imxkq=self.latt.ImxkpM[Nk]
-            # imxk=self.latt.Imxk[Nk]
-            # imykq=self.latt.ImykpM[Nk]
-            # imyk=self.latt.Imyk[Nk]
 
-            
+
             Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
             Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
             
@@ -313,34 +306,8 @@ class ep_Bubble:
             sz=np.array([[1,0],[0,-1]])
         
             Lp1=self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            # Lm1=self.Omega_FFm[ik, ikq,:,:]
             Lm1=-(sx@self.Omega_FFp[ik, ikq,:,:]@sx) -(sx@self.Omega_FFp[ik, ikmq,:,:]@sx)#using chiral
-            # Lm1=sz@np.conj(self.Omega_FFp[imk, imkq,:,:])@sz #using time reversal
-            # Lm1=self.Omega_FFp[imk, imkq,:,:] #using c2
             
-            # Lp2=self.Omega_FFp[ikq, ik,:,:]
-            # Lm2=self.Omega_FFm[ikq, ik,:,:]
-            # Lm2=-(sx@self.Omega_FFp[ikq, ik,:,:]@sx) #using chiral
-            # Lm2=sz@np.conj(self.Omega_FFp[imkq, imk,:,:])@sz #using time reversal
-            # Lm2=self.Omega_FFp[imkq, imk,:,:] #using c2
-            
-            # Lp1m=self.Omega_FFp[imk, imkq,:,:]
-            # Lm1m=self.Omega_FFm[imk, imkq,:,:]
-            # Lm1m=-(sx@self.Omega_FFp[imk, imkq,:,:]@sx) #using chiral
-            # Lm1m=sz@np.conj(self.Omega_FFp[ik, ikq,:,:])@sz #using time reversal
-            # Lm1m=self.Omega_FFp[ik, ikq,:,:] #using c2
-            
-            # Lp2m=self.Omega_FFp[imkq, imk,:,:]
-            # Lm2m=self.Omega_FFm[imkq, imk,:,:]
-            # Lm2m=-(sx@self.Omega_FFp[imkq, imk,:,:]@sx) #using chiral
-            # Lm2m=sz@np.conj(self.Omega_FFp[ikq, ik,:,:])@sz #using time reversal
-            # Lm2m=self.Omega_FFp[ikq, ik,:,:] #using c2
-            
-            
-            # Lp1mx=self.Omega_FFp[imxk, imxkq,:,:]
-            # Lm1mx=self.Omega_FFp[imyk, imykq,:,:] #using c2
-            # Lp1my=self.Omega_FFp[imyk, imykq,:,:]
-            # Lm1my=self.Omega_FFp[imxk, imxkq,:,:] #using c2
             
             print("chiral ph",np.mean(np.abs(Lp1[:,:]+sx@Lm1[:,:]@sx)))
             print("chiral ph",np.mean(np.abs(Lm1[:,:]+sx@Lp1[:,:]@sx)))
@@ -348,14 +315,7 @@ class ep_Bubble:
             print("chiral sub",np.mean(np.abs(Lm1[:,:]-sz@Lm1[:,:]@sz)))
             print("c2T ",np.mean(np.abs(Lp1[:,:]-sz@np.conj(Lp1[:,:])@sz)))
             print("c2T ",np.mean(np.abs(Lm1[:,:]-sz@np.conj(Lm1[:,:])@sz)))
-            # print("T ",np.mean(np.abs(Lp1[:,:]-sz@np.conj(Lm1m[:,:])@sz)))
-            # print("T ",np.mean(np.abs(Lm1[:,:]-sz@np.conj(Lp1m[:,:])@sz)))
-            # print("c2z ",np.mean(np.abs(Lp1[:,:]-Lm1m[:,:])))
-            # print("c2z ",np.mean(np.abs(Lm1[:,:]-Lp1m[:,:])))
-            # print("c2x ",np.mean(np.abs(Lp1[:,:]-sz@Lm1mx[:,:]@sz)))
-            # print("c2x ",np.mean(np.abs(Lm1[:,:]-sz@Lp1mx[:,:]@sz)))
-            # print("c2y ",np.mean(np.abs(Lp1[:,:]-sz@Lp1my[:,:]@sz)))
-            # print("c2y ",np.mean(np.abs(Lm1[:,:]-sz@Lm1my[:,:]@sz)))
+
             
             
             for nband in range(self.nbands):

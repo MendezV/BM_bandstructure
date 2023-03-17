@@ -9,7 +9,7 @@
 ###########################
 
 #generic parameters 
-Lattice_size=6
+Lattice_size=24
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
@@ -24,7 +24,7 @@ dire_to_mods='../Mods/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="XW"  #JOBNAME importan to declare -has to be descriptive
+jobname="c2"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
