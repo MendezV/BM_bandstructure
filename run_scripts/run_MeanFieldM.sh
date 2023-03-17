@@ -28,8 +28,8 @@ jobname="2recoverytest"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
-echo "${date_in}" >inforun
-echo '....Jobs started running' >>  inforun
+echo "${date_in}" >output.out
+echo '....Jobs started running' >>  output.out
 
 #Temporary directories where the runs will take place
 dire_to_temps="../temp/temp_${jobname}_${date_in}"
@@ -50,6 +50,7 @@ for param_val in ${param_arr[@]}; do
     cp ${dire_to_mods}MoireLattice.py  "${dire}"
     cp ${parameter_file}  "${dire}"
 	cp -r dispersions "${dire}"
+	mv "output.out" "${dire}"
 	#entering the temp directory, running and coming back
 	cd "${dire}"
 	echo "parameters: L " ${Lattice_size} " nu " ${filling_seed} " th " ${param_val} " kap " ${kappa} " HF " ${Mode_HF} " phLT " ${phonon_polarization} >> output.out
@@ -65,8 +66,8 @@ wait
 
 #general info about the job as it ends
 date_fin="`date "+%Y-%m-%d-%H-%M-%S"`"
-echo "${date_fin}" >>inforun
-echo 'Jobs finished running'>>inforun
+echo "${date_fin}" >>output.out
+echo 'Jobs finished running'>>output.out
 
 #moving files to the data directory and tidying up
 dire_to_data="../data/${jobname}_${date_fin}"

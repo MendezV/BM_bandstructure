@@ -168,7 +168,7 @@ class MoireTriangLattice:
         print( 'the shape of the index -M array',np.shape(self.IkmM))
         
         IkpMrep=np.zeros([self.Npoi])
-        IkpMrep=np.array(self.insertion_index( self.KX+Mp[0],self.KY+Mp_rep[1], self.KQX, self.KQY))
+        IkpMrep=np.array(self.insertion_index( self.KX+Mp_rep[0],self.KY+Mp_rep[1], self.KQX, self.KQY))
         self.IkpMrep=IkpMrep.astype(int)
         print( 'the shape of the index Mrep array',np.shape(self.IkpM))
         
