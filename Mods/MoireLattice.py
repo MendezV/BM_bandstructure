@@ -85,11 +85,13 @@ class MoireTriangLattice:
         
         #scattering from k in 1bz to q in the momentum transfer lattice
         # Ikpq=[]
-        Ikpq=np.zeros([self.Npoi,self.Npoi1bz])
+        Ikpq=np.zeros([self.Npoi1bz,self.Npoi])
         for q in range(self.Npoi):
-            Ikpq[q,:]=np.array(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
-        self.Ikpq=(Ikpq.astype(int)).T
+            Ikpq[:,q]=np.array(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
+        self.Ikpq=Ikpq.astype(int)
         print( 'the shape of the index q array',np.shape(self.Ikpq))
+        
+
 
         
         #scattering from k in 1bz to G in the reciprocal lattice
@@ -110,10 +112,75 @@ class MoireTriangLattice:
         self.M1=-self.GMvec[1]/2
         self.M2=self.GMvec[0]/2
         self.M3=self.GMvec[0]/2+self.GMvec[1]/2
-
+        
         #Kpoints
         self.K1=(2*self.GMvec[0]+self.GMvec[1])/3
         self.K2=(-self.GMvec[1]+self.GMvec[0]) /3
+
+
+
+
+        #Index arrays for mean field 
+        #and for checking symmetries of the form factors
+        
+        ###index of k+M
+        
+        IkpM=np.zeros([self.Npoi])
+        IkpM=np.array(self.insertion_index( self.KX+self.M1[0],self.KY+self.M1[1], self.KQX, self.KQY))
+        self.IkpM=IkpM.astype(int)
+        print( 'the shape of the index M array',np.shape(self.IkpM))
+        
+        IkmM=np.zeros([self.Npoi])
+        IkmM=np.array(self.insertion_index( self.KX-self.M1[0],self.KY-self.M1[1], self.KQX, self.KQY))
+        self.IkmM=IkmM.astype(int)
+        print( 'the shape of the index -M array',np.shape(self.IkmM))
+        
+        #minus
+        
+        ImkpM=np.zeros([self.Npoi])
+        ImkpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
+        self.ImkpM=ImkpM.astype(int)
+        print( 'the shape of the index M - array',np.shape(self.ImkpM))
+        
+        ImkmM=np.zeros([self.Npoi])
+        ImkmM=np.array(self.insertion_index( -(self.KX-self.M1[0]),-(self.KY-self.M1[1]), self.KQX, self.KQY))
+        self.ImkmM=ImkmM.astype(int)
+        print( 'the shape of the index -M - array',np.shape(self.ImkmM))
+        
+        Imk=np.zeros([self.Npoi])
+        Imk=np.array(self.insertion_index( -(self.KX),-(self.KY), self.KQX, self.KQY))
+        self.Imk=Imk.astype(int)
+        print( 'the shape of the index k - array',np.shape(self.Imk))
+        
+        #mirrorx (flips y->-y)
+        
+        ImxkpM=np.zeros([self.Npoi])
+        ImxkpM=np.array(self.insertion_index( (self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
+        self.ImxkpM=ImxkpM.astype(int)
+        print( 'the shape of the index M mirrorx array',np.shape(self.ImxkpM))
+        
+        Imxk=np.zeros([self.Npoi])
+        Imxk=np.array(self.insertion_index( (self.KX),-(self.KY), self.KQX, self.KQY))
+        self.Imxk=Imxk.astype(int)
+        print( 'the shape of the index k mirrorx array',np.shape(self.Imxk))
+        
+        #mirrory (flips x->-x)
+        
+        ImykpM=np.zeros([self.Npoi])
+        ImykpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),(self.KY+self.M1[1]), self.KQX, self.KQY))
+        self.ImykpM=ImykpM.astype(int)
+        print( 'the shape of the index M mirrory array',np.shape(self.ImykpM))
+        
+        Imyk=np.zeros([self.Npoi])
+        Imyk=np.array(self.insertion_index( -(self.KX),(self.KY), self.KQX, self.KQY))
+        self.Imyk=Imyk.astype(int)
+        print( 'the shape of the index k mirrory array',np.shape(self.Imyk))
+        
+        
+
+        
+
+        
         
         
 

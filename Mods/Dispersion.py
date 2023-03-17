@@ -652,6 +652,8 @@ class Dispersion():
         E1m,wave1=self.hmin.eigens(kx, ky,self.nbands)
         wave1m=self.impose_Cstar(wave1p) #this way of fixing the phase of the wavefunctions also changes the order of the basis
                                          #compared to the convention of the inverted Q hexagonal lattice
+                                         
+        # wave1m=self.gauge_fix( wave1, E1m, kx, ky, self.hmin)
         self.check_C2T(wave1m)
         
         # # ######## checks for chiral and time reversal symmetry
@@ -1377,7 +1379,7 @@ class FormFactors():
     
 
     ########### Anti-symmetric displacement of the layers
-    def denqFF_a(self):
+    def denFF_a(self):
         L30=self.calcFormFactor( layer=3, sublattice=0)
         return L30
     
