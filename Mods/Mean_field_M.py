@@ -196,6 +196,9 @@ class ep_Bubble:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_a(), self.HB.FFm.NemqFFL_a())
             elif mode=="trans":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
+            elif mode=="Mins":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
+                [self.sublp,self.sublm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_s(), self.HB.FFm.denFF_s())
             elif mode=="subl":
@@ -297,6 +300,9 @@ class ep_Bubble:
             ikq=self.latt.IkpM[Nk]
             ikmq=self.latt.IkmM[Nk]
             ik=self.latt.Ik[Nk]
+            
+            ikq2=self.latt.IkpMrep[Nk]
+            ikmq2=self.latt.IkmMrep[Nk]
 
 
             Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
@@ -305,8 +311,8 @@ class ep_Bubble:
             sx=np.array([[0,1],[1,0]])
             sz=np.array([[1,0],[0,-1]])
         
-            Lp1=self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Lm1=-(sx@self.Omega_FFp[ik, ikq,:,:]@sx) -(sx@self.Omega_FFp[ik, ikmq,:,:]@sx)#using chiral
+            Lp1=0*self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Lm1=-0*(sx@self.Omega_FFp[ik, ikq,:,:]@sx) -(sx@self.Omega_FFp[ik, ikmq,:,:]@sx)#using chiral
             
             
             print("chiral ph",np.mean(np.abs(Lp1[:,:]+sx@Lm1[:,:]@sx)))
@@ -315,6 +321,16 @@ class ep_Bubble:
             print("chiral sub",np.mean(np.abs(Lm1[:,:]-sz@Lm1[:,:]@sz)))
             print("c2T ",np.mean(np.abs(Lp1[:,:]-sz@np.conj(Lp1[:,:])@sz)))
             print("c2T ",np.mean(np.abs(Lm1[:,:]-sz@np.conj(Lm1[:,:])@sz)))
+            
+            Sp1 = self.sublp[ik, ikq2,:,:]+self.sublp[ik, ikmq2,:,:]
+            Sm1 = -(sx@self.sublp[ik, ikq2,:,:]@sx) - (sx@self.sublp[ik, ikmq2,:,:]@sx)#using chiral
+            
+            print("subl chiral ph",np.mean(np.abs(Sp1[:,:]+sx@Sm1[:,:]@sx)))
+            print("subl chiral ph",np.mean(np.abs(Sm1[:,:]+sx@Sp1[:,:]@sx)))
+            print("subl chiral sub",np.mean(np.abs(Sp1[:,:]-sz@Sp1[:,:]@sz)))
+            print("subl chiral sub",np.mean(np.abs(Sm1[:,:]-sz@Sm1[:,:]@sz)))
+            print("subl c2T ",np.mean(np.abs(Sp1[:,:]-sz@np.conj(Sp1[:,:])@sz)))
+            print("subl c2T ",np.mean(np.abs(Sm1[:,:]-sz@np.conj(Sm1[:,:])@sz)))
 
             
             
@@ -328,12 +344,12 @@ class ep_Bubble:
                     
                 for mband in range(self.nbands):
                     
-                    Hqp[self.nbands+nband,mband]=Hqp[self.nbands+nband,mband]+Lp1[nband,mband]
-                    Hqp[nband,self.nbands+mband]=Hqp[nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    Hqp[self.nbands+nband,mband]=Hqp[self.nbands+nband,mband]+Lp1[nband,mband]+Sp1[nband,mband]
+                    Hqp[nband,self.nbands+mband]=Hqp[nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]+np.conj(Sp1.T)[nband,mband]
                     # Hqp[nband,self.nbands+mband]=Hqp[nband,self.nbands+mband]+Lp2[nband,mband]
 
-                    Hqm[self.nbands+nband,mband]=Hqm[self.nbands+nband,mband]+Lm1[nband,mband]
-                    Hqm[nband,self.nbands+mband]=Hqm[nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    Hqm[self.nbands+nband,mband]=Hqm[self.nbands+nband,mband]+Lm1[nband,mband]+Sm1[nband,mband]
+                    Hqm[nband,self.nbands+mband]=Hqm[nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]+np.conj(Sm1.T)[nband,mband]
                     # Hqm[nband,self.nbands+mband]=Hqm[nband,self.nbands+mband]+Lm2[nband,mband]
 
 

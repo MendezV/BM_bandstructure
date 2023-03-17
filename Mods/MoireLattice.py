@@ -55,7 +55,7 @@ class MoireTriangLattice:
             
             
         self.umkl=umkl
-        self.umkl_Q=umkl+1 # need one more unklapp to inlcude the edges when k + q_edge 
+        self.umkl_Q=umkl+2 # need one more unklapp to inlcude the edges when k + q_edge #two more for mean field with valley hall
         self.c6sym=c6sym
 
         [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
@@ -106,31 +106,46 @@ class MoireTriangLattice:
         self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")
         print( 'the shape of the index G array',np.shape(self.IkpG))
         
-        
+        #assuming self.GMvec[1] points directly in the -kx direction
+        #assuming self.GMvec[0] points 60 deg up from the + kx direction
+        #M1_rep is at 90 deg from M1, same for M2_rep and M2, M3_rep and M3
 
         #Mpoints
         self.M1=-self.GMvec[1]/2 #right 
         self.M2=self.GMvec[0]/2 # c6 Right
         self.M3=self.GMvec[0]/2+self.GMvec[1]/2 #c3 Right
         
-        self.M1_m=self.GMvec[1]/2 #left
+        self.M1_m=self.GMvec[1]/2 
         self.M2_m=-self.GMvec[0]/2
         self.M3_m=-(self.GMvec[0]/2+self.GMvec[1]/2)
         
+        self.Ms=[self.M1,self.M2,self.M3]
+        
+        #Mpoint Rep
+        self.M1_rep=self.M1_m+self.GMvec[0] # above up Kp_point
+        self.M2_rep=self.M2+self.GMvec[1] #c6 above up Kp_point
+        self.M3_rep=self.M3_m+self.GMvec[1] #c3 above up Kp_point
+        self.M1m_rep=-self.M1_rep
+        self.M2m_rep=-self.M2_rep
+        self.M3m_rep=-self.M3_rep
+        
+        self.M_reps=[self.M1_rep,self.M2_rep,self.M3_rep]
+        
         #Kpoints
-        self.K1=(2*self.GMvec[0]+self.GMvec[1])/3 #left up
+        self.K1=(2*self.GMvec[1]+self.GMvec[0]) /3 #left up
         self.K2=(-self.GMvec[1]+self.GMvec[0]) /3 #right up
-        self.K3=-(self.K1+self.K2) #bottom
+        self.K3=-(2*self.GMvec[0]+self.GMvec[1])/3 #bottom
         
         self.Kp1=-self.K2 #left down
-        self.Kp2=-self.K1 #right down
         self.Kp2=-self.K3 #top
+        self.Kp3=-self.K1 #right down
         
+        self.Ks=[self.K1,self.K2,self.K3]
+        self.Kps=[self.Kp1,self.Kp2,self.Kp3]
         
         #Gamma
         self.Gamma=self.GMvec[1]*0
-        
-        
+
 
 
 
@@ -138,28 +153,32 @@ class MoireTriangLattice:
         #and for checking symmetries of the form factors
         
         ###index of k+M
+        indM=0
+        Mp=self.Ms[indM]
+        Mp_rep=self.M_reps[indM]
         
         IkpM=np.zeros([self.Npoi])
-        IkpM=np.array(self.insertion_index( self.KX+self.M1[0],self.KY+self.M1[1], self.KQX, self.KQY))
+        IkpM=np.array(self.insertion_index( self.KX+Mp[0],self.KY+Mp[1], self.KQX, self.KQY))
         self.IkpM=IkpM.astype(int)
         print( 'the shape of the index M array',np.shape(self.IkpM))
         
         IkmM=np.zeros([self.Npoi])
-        IkmM=np.array(self.insertion_index( self.KX-self.M1[0],self.KY-self.M1[1], self.KQX, self.KQY))
+        IkmM=np.array(self.insertion_index( self.KX-Mp[0],self.KY-Mp[1], self.KQX, self.KQY))
         self.IkmM=IkmM.astype(int)
         print( 'the shape of the index -M array',np.shape(self.IkmM))
         
+        IkpMrep=np.zeros([self.Npoi])
+        IkpMrep=np.array(self.insertion_index( self.KX+Mp[0],self.KY+Mp_rep[1], self.KQX, self.KQY))
+        self.IkpMrep=IkpMrep.astype(int)
+        print( 'the shape of the index Mrep array',np.shape(self.IkpM))
+        
+        IkmMrep=np.zeros([self.Npoi])
+        IkmMrep=np.array(self.insertion_index( self.KX-Mp_rep[0],self.KY-Mp_rep[1], self.KQX, self.KQY))
+        self.IkmMrep=IkmMrep.astype(int)
+        print( 'the shape of the index -Mprep array',np.shape(self.IkmM))
+        
         #minus
         
-        ImkpM=np.zeros([self.Npoi])
-        ImkpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
-        self.ImkpM=ImkpM.astype(int)
-        print( 'the shape of the index M - array',np.shape(self.ImkpM))
-        
-        ImkmM=np.zeros([self.Npoi])
-        ImkmM=np.array(self.insertion_index( -(self.KX-self.M1[0]),-(self.KY-self.M1[1]), self.KQX, self.KQY))
-        self.ImkmM=ImkmM.astype(int)
-        print( 'the shape of the index -M - array',np.shape(self.ImkmM))
         
         Imk=np.zeros([self.Npoi])
         Imk=np.array(self.insertion_index( -(self.KX),-(self.KY), self.KQX, self.KQY))
@@ -167,34 +186,7 @@ class MoireTriangLattice:
         print( 'the shape of the index k - array',np.shape(self.Imk))
         
         
-        sym_arr=False 
-        if sym_arr:
-            #mirrorx (flips y->-y)
-            
-            ImxkpM=np.zeros([self.Npoi])
-            ImxkpM=np.array(self.insertion_index( (self.KX+self.M1[0]),-(self.KY+self.M1[1]), self.KQX, self.KQY))
-            self.ImxkpM=ImxkpM.astype(int)
-            print( 'the shape of the index M mirrorx array',np.shape(self.ImxkpM))
-            
-            Imxk=np.zeros([self.Npoi])
-            Imxk=np.array(self.insertion_index( (self.KX),-(self.KY), self.KQX, self.KQY))
-            self.Imxk=Imxk.astype(int)
-            print( 'the shape of the index k mirrorx array',np.shape(self.Imxk))
-            
-            #mirrory (flips x->-x)
-            
-            ImykpM=np.zeros([self.Npoi])
-            ImykpM=np.array(self.insertion_index( -(self.KX+self.M1[0]),(self.KY+self.M1[1]), self.KQX, self.KQY))
-            self.ImykpM=ImykpM.astype(int)
-            print( 'the shape of the index M mirrory array',np.shape(self.ImykpM))
-            
-            Imyk=np.zeros([self.Npoi])
-            Imyk=np.array(self.insertion_index( -(self.KX),(self.KY), self.KQX, self.KQY))
-            self.Imyk=Imyk.astype(int)
-            print( 'the shape of the index k mirrory array',np.shape(self.Imyk))
-            
-        
-
+  
         
 
         
