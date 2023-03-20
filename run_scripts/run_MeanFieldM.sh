@@ -9,7 +9,7 @@
 ###########################
 
 #generic parameters 
-Lattice_size=12
+Lattice_size=24
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
@@ -24,7 +24,7 @@ dire_to_mods='../Mods/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="2recoverytest"  #JOBNAME importan to declare -has to be descriptive
+jobname="subl_only_M1_HR"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
