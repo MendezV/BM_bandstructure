@@ -172,7 +172,7 @@ class Mean_field_M:
         self.sz=np.array([[1,0],[0,-1]])
         
         
-        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts()
+        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts_MBZ()
 
     ################################
     """
@@ -203,7 +203,7 @@ class Mean_field_M:
         else:
             return np.heaviside(-e,0.5)
 
-    def H_MF_parts(self):
+    def H_MF_parts_MBZ(self):
         
         N_Mp=2 # number of symmetry breaking momenta +1
         
@@ -259,9 +259,11 @@ class Mean_field_M:
         return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
         
     
-    def corr(self,args):
-        ( mu, T)=args
+    def precompute_E_MBZ(self,args):
+        (phis, mu, T)=args
 
+        phi_T=phis[0]
+        phi_sub=phis[1]
         
         sb=time.time()
 
@@ -271,16 +273,115 @@ class Mean_field_M:
         Eval_plus=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
         Eval_min=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
         
+        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
         for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
 
-            Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-            Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+            Hqp=self.Heq_p+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
+            Hqm=self.Heq_m+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
             
-            Hqp=self.HT_p[Nk,:,:]+0.5*self.Hsub_p[Nk,:,:]
-            Hqm=self.HT_m[Nk,:,:]+0.5*self.Hsub_m[Nk,:,:]
+            eigp=np.linalg.eigvalsh(Hqp)
+            
+            Eval_plus[Nk,0]=eigp[0]
+            Eval_plus[Nk,1]=eigp[1]
+            Eval_plus[Nk,2]=eigp[2]
+            Eval_plus[Nk,3]=eigp[3]
+            
+            eigm=np.linalg.eigvalsh(Hqm )
+            
+            Eval_min[Nk,0]=eigm[0]
+            Eval_min[Nk,1]=eigm[1]
+            Eval_min[Nk,2]=eigm[2]
+            Eval_min[Nk,3]=eigm[3]
+
+        eb=time.time()
+        
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
+        print("time for Disp...",eb-sb)
+        return [Eval_plus,Eval_min]
+    
+    def H_MF_parts_rMBZ(self):
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+            ik=self.latt.Ik[Nk]
+            
+            ikq=self.latt.IMF_M_kpM[Nk]
+            ikmq=self.latt.IMF_M_kmM[Nk]
+            
+            ikq2=self.latt.IMF_M_kpMrep[Nk]
+            ikmq2=self.latt.IMF_M_kmMrep[Nk]
+
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
+            
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
+            
+            for nband in range(self.nbands):
+                
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
+                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
+                    
+                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
+                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
 
 
+        
+        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
+        
+    
+    def precompute_E_rMBZ(self,args):
+        
+        (phis, mu, T)=args
+
+        phi_T=phis[0]
+        phi_sub=phis[1]
+        
+        sb=time.time()
+
+        print("starting Disp.......")
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Eval_plus=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
+        Eval_min=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
+        
+        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+
+            Hqp=self.Heq_p+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
+            Hqm=self.Heq_m+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
+            
             eigp=np.linalg.eigvalsh(Hqp)
             
             Eval_plus[Nk,0]=eigp[0]
@@ -299,13 +400,9 @@ class Mean_field_M:
         
 
         print("time for Disp...",eb-sb)
-        
-        # self.savedata(Eval_min, mu, T, 'min0')
-        self.savedata(Eval_plus,Eval_min, mu, T, '')
-
-        return None
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
+        return [Eval_plus,Eval_min]
     
-
     def savedata(self, disp, dism, mu_value, T, add_tag):
         Nsamp=self.latt.Npoints
         index_f=0#np.argmin((mu_value-self.mu_values)**2)
@@ -356,7 +453,6 @@ class Mean_field_M:
 
         return None
     
-  
         
 def main() -> int:
 
@@ -555,7 +651,7 @@ def main() -> int:
     #BUBBLE CALCULATION        
     test_symmetry=True
     B1=Mean_field_M(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    B1.corr( args=(0.0,0.0))
+    B1.precompute_E_MBZ( args=([1,0.5],0.0,0.0))
     # B1.Fill_sweep(3,0.01)
 
     return 0
