@@ -352,8 +352,6 @@ class Mean_field_M:
                     
                     Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
                     Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
-
-
         
         return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
         
