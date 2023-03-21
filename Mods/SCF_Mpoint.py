@@ -133,17 +133,7 @@ class Mean_field_M:
         ################################
 
         if symmetric=="s":
-            if mode=="L":
-                self.L00p=self.HB.FFp.denqFFL_s()
-                self.L00m=self.HB.FFm.denqFFL_s()
-                self.Lnemp=self.HB.FFp.NemqFFL_s()
-                self.Lnemm=self.HB.FFm.NemqFFL_s()
-                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-            elif mode=="T": 
-                self.Lnemp=self.HB.FFp.NemqFFT_s()
-                self.Lnemm=self.HB.FFm.NemqFFT_s()
-                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-            elif mode=="long":
+            if mode=="long":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_s(), self.HB.FFm.NemqFFL_s())
             elif mode=="trans":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_s(), self.HB.FFm.NemqFFT_s())
@@ -158,18 +148,8 @@ class Mean_field_M:
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_s(), self.HB.FFm.denFF_s())
             
-        else: # a- mode
-            if mode=="L":
-                self.L00p=self.HB.FFp.denqFFL_a()
-                self.L00m=self.HB.FFm.denqFFL_a()
-                self.Lnemp=self.HB.FFp.NemqFFL_a()
-                self.Lnemm=self.HB.FFm.NemqFFL_a()
-                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()                
-            elif mode=="T":
-                self.Lnemp=self.HB.FFp.NemqFFT_a()
-                self.Lnemm=self.HB.FFm.NemqFFT_a()
-                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-            elif mode=="long":
+        else: # a- mode        
+            if mode=="long":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_a(), self.HB.FFm.NemqFFL_a())
             elif mode=="trans":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
@@ -190,6 +170,9 @@ class Mean_field_M:
         #arrays for MF
         self.sx=np.array([[0,1],[1,0]])
         self.sz=np.array([[1,0],[0,-1]])
+        
+        
+        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts()
 
     ################################
     """
@@ -220,47 +203,62 @@ class Mean_field_M:
         else:
             return np.heaviside(-e,0.5)
 
-
-    def nb(self, e, T):
-        """[summary]
-        bose occupation function with a truncation if the argument exceeds 
-        double precission
-
-        Args:
-            e ([double]): [description] energy
-            T ([double]): [description] temperature
-
-        Returns:
-            [double]: [description] value of the fermi function 
-        """
-        Tp=T+1e-17 #To capture zero temperature
-        rat=np.abs(np.max(e/Tp))
+    def H_MF_parts(self):
         
-        if rat<700:
-            return 1/(np.exp( e/T )-1)
-        else:
-            return -np.heaviside(-e,0.5) # at zero its 1
-    
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+            ik=self.latt.Ik[Nk]
+            
+            ikq=self.latt.IkpM[Nk]
+            ikmq=self.latt.IkmM[Nk]
+            
+            ikq2=self.latt.IkpMrep[Nk]
+            ikmq2=self.latt.IkmMrep[Nk]
 
-    def OmegaL(self):
-        
-        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
-        
-        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
+            
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
+            
+            for nband in range(self.nbands):
                 
-        return [Omega_FFp,Omega_FFm]
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
+                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
+                    
+                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
+                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
 
-    def OmegaT(self):
-
-        Omega_FFp_pre=self.beta_ep*self.Lnemp
-        Omega_FFm_pre=self.beta_ep*self.Lnemm
 
         
-        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
         
-        return [Omega_FFp,Omega_FFm]
-
+    
     def corr(self,args):
         ( mu, T)=args
 
@@ -275,45 +273,12 @@ class Mean_field_M:
         
         for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
-            
-            ikq=self.latt.IkpM[Nk]
-            ikmq=self.latt.IkmM[Nk]
-            ik=self.latt.Ik[Nk]
-            
-            ikq2=self.latt.IkpMrep[Nk]
-            ikmq2=self.latt.IkmMrep[Nk]
-
 
             Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
             Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
             
-            
-        
-            Lp1=self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Lm1=-(self.sx@Lp1@self.sx) #using chiral
-
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            Sm1 = -(self.sx@Sp1@self.sx)  #using chiral
-            
-            Sp1=Sp1*0.5
-            Sm1=Sm1*0.5
-            
-            for nband in range(self.nbands):
-                
-                Hqp[nband,nband]=Hqp[nband,nband]#+self.Ene_valley_plus[ik,nband]
-                Hqp[self.nbands+nband,self.nbands+nband]=Hqp[self.nbands+nband,self.nbands+nband]#+self.Ene_valley_plus[ikq,nband]
-                
-                Hqm[nband,nband]=Hqm[nband,nband]#+self.Ene_valley_min[ik,nband]
-                Hqm[self.nbands+nband,self.nbands+nband]=Hqm[self.nbands+nband,self.nbands+nband]#+self.Ene_valley_min[ikq,nband]
-                    
-                for mband in range(self.nbands):
-                    
-                    Hqp[self.nbands+nband,mband]=Hqp[self.nbands+nband,mband]+Lp1[nband,mband]+Sp1[nband,mband]
-                    Hqp[nband,self.nbands+mband]=Hqp[nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]+np.conj(Sp1.T)[nband,mband]
-
-                    Hqm[self.nbands+nband,mband]=Hqm[self.nbands+nband,mband]+Lm1[nband,mband]+Sm1[nband,mband]
-                    Hqm[nband,self.nbands+mband]=Hqm[nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]+np.conj(Sm1.T)[nband,mband]
-
+            Hqp=self.HT_p[Nk,:,:]+0.5*self.Hsub_p[Nk,:,:]
+            Hqm=self.HT_m[Nk,:,:]+0.5*self.Hsub_m[Nk,:,:]
 
 
             eigp=np.linalg.eigvalsh(Hqp)

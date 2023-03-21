@@ -225,11 +225,11 @@ class MoireTriangLattice:
         print( 'the shape of the index M array',np.shape(self.IMF_M_kmM))
 
     
-        # plt.scatter(self.KQX, self.KQY)
-        # plt.scatter(self.KQX[self.IkMF_M_1bz], self.KQY[self.IkMF_M_1bz])
-        # plt.scatter(self.KQX[self.IMF_M_kmMrep], self.KQY[self.IMF_M_kmMrep])
-        # plt.scatter(self.KQX[self.IMF_M_kpMrep], self.KQY[self.IMF_M_kpMrep])
-        # plt.show()
+        plt.scatter(self.KQX, self.KQY)
+        plt.scatter(self.KQX[self.IkMF_M_1bz], self.KQY[self.IkMF_M_1bz])
+        plt.scatter(self.KQX[self.IMF_M_kmMrep], self.KQY[self.IMF_M_kmMrep])
+        plt.scatter(self.KQX[self.IMF_M_kpMrep], self.KQY[self.IMF_M_kpMrep])
+        plt.show()
 
 
         

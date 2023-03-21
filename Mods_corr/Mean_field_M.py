@@ -290,21 +290,21 @@ class Mean_field_M:
             
         
             Lp1=self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Lm1=-(self.sx@Lp1@self.sx) #using chiral
+            Lm1=-(self.sx@self.Omega_FFp[ik, ikq,:,:]@self.sx) -(self.sx@self.Omega_FFp[ik, ikmq,:,:]@self.sx)#using chiral
 
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            Sm1 = -(self.sx@Sp1@self.sx)  #using chiral
             
-            Sp1=Sp1*0.5
-            Sm1=Sm1*0.5
+            Sp1 = self.sublp[ik, ikq2,:,:]+self.sublp[ik, ikmq2,:,:]
+            Sm1 = -(self.sx@self.sublp[ik, ikq2,:,:]@self.sx) - (self.sx@self.sublp[ik, ikmq2,:,:]@self.sx)#using chiral
+            
+
             
             for nband in range(self.nbands):
                 
-                Hqp[nband,nband]=Hqp[nband,nband]#+self.Ene_valley_plus[ik,nband]
-                Hqp[self.nbands+nband,self.nbands+nband]=Hqp[self.nbands+nband,self.nbands+nband]#+self.Ene_valley_plus[ikq,nband]
+                Hqp[nband,nband]=Hqp[nband,nband]+self.Ene_valley_plus[ik,nband]
+                Hqp[self.nbands+nband,self.nbands+nband]=Hqp[self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
                 
-                Hqm[nband,nband]=Hqm[nband,nband]#+self.Ene_valley_min[ik,nband]
-                Hqm[self.nbands+nband,self.nbands+nband]=Hqm[self.nbands+nband,self.nbands+nband]#+self.Ene_valley_min[ikq,nband]
+                Hqm[nband,nband]=Hqm[nband,nband]+self.Ene_valley_min[ik,nband]
+                Hqm[self.nbands+nband,self.nbands+nband]=Hqm[self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
                     
                 for mband in range(self.nbands):
                     
@@ -391,7 +391,51 @@ class Mean_field_M:
 
         return None
     
-  
+    def Fill_sweep(self, Nfils, T, parallel=False):
+        
+        if Nfils>1:
+            [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
+        else:
+            fillings=np.array([0])
+            mu_values=np.array([0])
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+
+     
         
 def main() -> int:
 
