@@ -172,7 +172,8 @@ class Mean_field_M:
         self.sz=np.array([[1,0],[0,-1]])
         
         
-        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts()
+        [self.Heq_p_MBZ,self.HT_p_MBZ,self.Hsub_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ,self.Hsub_m_MBZ]=self.H_MF_parts_MBZ()
+        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts_rMBZ()
 
     ################################
     """
@@ -203,7 +204,7 @@ class Mean_field_M:
         else:
             return np.heaviside(-e,0.5)
 
-    def H_MF_parts(self):
+    def H_MF_parts_MBZ(self):
         
         N_Mp=2 # number of symmetry breaking momenta +1
         
@@ -259,7 +260,7 @@ class Mean_field_M:
         return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
         
     
-    def precompute_E(self,args):
+    def precompute_E_MBZ(self,args):
         (phis, mu, T)=args
 
         phi_T=phis[0]
@@ -279,14 +280,109 @@ class Mean_field_M:
         for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
 
+            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]+phi_sub*self.Hsub_p_MBZ[Nk,:,:]
+            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]+phi_sub*self.Hsub_m_MBZ[Nk,:,:]
+            
+            eigp=np.linalg.eigvalsh(Hqp)
+            
+            Eval_plus[Nk,0]=eigp[0]
+            Eval_plus[Nk,1]=eigp[1]
+            Eval_plus[Nk,2]=eigp[2]
+            Eval_plus[Nk,3]=eigp[3]
+            
+            eigm=np.linalg.eigvalsh(Hqm )
+            
+            Eval_min[Nk,0]=eigm[0]
+            Eval_min[Nk,1]=eigm[1]
+            Eval_min[Nk,2]=eigm[2]
+            Eval_min[Nk,3]=eigm[3]
+
+        eb=time.time()
+        
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
+        print("time for Disp...",eb-sb)
+        return [Eval_plus,Eval_min]
+    
+    def H_MF_parts_rMBZ(self):
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+            ik=self.latt.IkMF_M_1bz[Nk]
+            
+            ikq=self.latt.IMF_M_kpM[Nk]
+            ikmq=self.latt.IMF_M_kmM[Nk]
+            
+            ikq2=self.latt.IMF_M_kpMrep[Nk]
+            ikmq2=self.latt.IMF_M_kmMrep[Nk]
+
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
+            
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
+            
+            for nband in range(self.nbands):
+                
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
+                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
+                    
+                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
+                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
+        
+        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
+        
+    
+    def precompute_E_rMBZ(self,args):
+        
+        (phis, mu, T)=args
+
+        phi_T=phis[0]
+        phi_sub=phis[1]
+        
+        sb=time.time()
+
+        print("starting Disp.......")
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Eval_plus=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
+        Eval_min=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
+        
+        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+
             Hqp=self.Heq_p[Nk,:,:]+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
             Hqm=self.Heq_m[Nk,:,:]+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
             
-            print(np.shape(Hqp))
-            
             eigp=np.linalg.eigvalsh(Hqp)
-            print(np.shape(eigp))
-
+            
             Eval_plus[Nk,0]=eigp[0]
             Eval_plus[Nk,1]=eigp[1]
             Eval_plus[Nk,2]=eigp[2]
@@ -303,10 +399,60 @@ class Mean_field_M:
         
 
         print("time for Disp...",eb-sb)
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
         return [Eval_plus,Eval_min]
     
+    def savedata(self, disp, dism, mu_value, T, add_tag):
+        Nsamp=self.latt.Npoints
+        index_f=0#np.argmin((mu_value-self.mu_values)**2)
+        filling=0#self.fillings[index_f]
+        identifier=add_tag+str(Nsamp)+self.name
+        Nss=np.size(self.latt.KX)
+
+        #products of the run
+        
+
+        filling_list=[]
+        mu_list=[]
+        filling_list=[filling]*Nss
+        mu_list=[mu_value]*Nss
+            
+        KXall=self.latt.KX
+        KYall=self.latt.KY
+        fillingarr=np.array(filling_list)
+        muarr=np.array(mu_list)
+        disp_m1=self.Ene_valley_min_K[:,0].flatten()
+        disp_m2=self.Ene_valley_min_K[:,1].flatten()
+        disp_p1=self.Ene_valley_plus_K[:,0].flatten()
+        disp_p2=self.Ene_valley_plus_K[:,1].flatten()
+        
+        
+        MFdisp0=disp[:,0].flatten()
+        MFdisp1=disp[:,1].flatten()
+        MFdisp2=disp[:,2].flatten()
+        MFdisp3=disp[:,3].flatten()
+        
+        MFdism0=dism[:,0].flatten()
+        MFdism1=dism[:,1].flatten()
+        MFdism2=dism[:,2].flatten()
+        MFdism3=dism[:,3].flatten()
+
+        
+        #constants
+        thetas_arr=np.array([self.latt.theta]*(Nss))
+        kappa_arr=np.array([self.HB.hpl.kappa]*(Nss))
+        
+        print('checking sizes of the arrays for hdf5 storage')
+        print(Nss, Nss,np.size(MFdisp0),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
+
+            
+        df = pd.DataFrame({'dp0': MFdisp0,'dp1': MFdisp1,'dp2': MFdisp2,'dp3': MFdisp3,'dm0': MFdism0,'dm1': MFdism1,'dm2': MFdism2,'dm3': MFdism3, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
+        df.to_hdf('data'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
+        return None
+    
+        
 def main() -> int:
 
     """[summary]
@@ -501,13 +647,19 @@ def main() -> int:
     HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
-    #BUBBLE CALCULATION        
+    #Mean Field Calculation        
     test_symmetry=True
     B1=Mean_field_M(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    [Eval_plus,Eval_min]=B1.precompute_E( args=([1,0.5],0.0,0.0))
+    [Eval_plus,Eval_min]=B1.precompute_E_MBZ( args=([1,0.5],0.0,0.0))
 
     plt.scatter(lq.KX,lq.KY,c=Eval_plus[:,0])
+
+    
+    [Eval_plus,Eval_min]=B1.precompute_E_rMBZ( args=([1,0.5],0.0,0.0))
+
+    plt.scatter(lq.KQX[B1.latt.IkMF_M_1bz],lq.KQY[B1.latt.IkMF_M_1bz],c=Eval_plus[:,0], marker='s')
     plt.show()
+
     return 0
 
 if __name__ == '__main__':

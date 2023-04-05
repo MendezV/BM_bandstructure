@@ -44,7 +44,7 @@ for param_val in ${param_arr[@]}; do
 	mkdir -vp "${dire}"
 
 
-    cp ${dire_to_mods}SCF_Mpoint.py "${dire}"
+    cp ${dire_to_mods}preSCF_Mpoint.py "${dire}"
     cp ${dire_to_mods}Dispersion.py  "${dire}"
     cp ${dire_to_mods}MoireLattice.py  "${dire}"
     cp ${parameter_file}  "${dire}"
@@ -54,7 +54,7 @@ for param_val in ${param_arr[@]}; do
 	cd "${dire}"
 	echo "parameters: L " ${Lattice_size} " nu " ${filling_seed} " th " ${param_val} " kap " ${kappa} " HF " ${Mode_HF} " phLT " ${phonon_polarization} >> output.out
 
-	nohup time python3 -u SCF_Mpoint.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out	
+	nohup time python3 -u preSCF_Mpoint.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out	
 	
 	cd "../../../Mods"
 	sleep 1
