@@ -10,7 +10,7 @@ import concurrent.futures
 import os
 import pandas as pd
 import Dispersion
-
+from scipy.optimize import minimize
 
         
 class Mean_field_M:
@@ -122,7 +122,7 @@ class Mean_field_M:
         #agraph and the mass are used to get the conversion from the normalized bubble to the unitful bubble when doing the fit
         #to extract the sound velocity
         ################################
-        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
+        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass, self.c_phonon ]=cons #constants for the exraction of the effective velocity
         self.mode=mode
         self.symmetric=symmetric
         self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.HB.hpl.kappa)+"_theta_"+str(self.latt.theta)+"_modeHF_"+str(HB.mode)
@@ -172,7 +172,8 @@ class Mean_field_M:
         self.sz=np.array([[1,0],[0,-1]])
         
         
-        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts()
+        [self.Heq_p_MBZ,self.HT_p_MBZ,self.Hsub_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ,self.Hsub_m_MBZ]=self.H_MF_parts_MBZ()
+        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts_rMBZ()
 
     ################################
     """
@@ -203,7 +204,7 @@ class Mean_field_M:
         else:
             return np.heaviside(-e,0.5)
 
-    def H_MF_parts(self):
+    def H_MF_parts_MBZ(self):
         
         N_Mp=2 # number of symmetry breaking momenta +1
         
@@ -259,7 +260,7 @@ class Mean_field_M:
         return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
         
     
-    def precompute_E(self,args):
+    def precompute_E_MBZ(self,args):
         (phis, mu, T)=args
 
         phi_T=phis[0]
@@ -279,14 +280,109 @@ class Mean_field_M:
         for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
 
+            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]+phi_sub*self.Hsub_p_MBZ[Nk,:,:]
+            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]+phi_sub*self.Hsub_m_MBZ[Nk,:,:]
+            
+            eigp=np.linalg.eigvalsh(Hqp)
+            
+            Eval_plus[Nk,0]=eigp[0]
+            Eval_plus[Nk,1]=eigp[1]
+            Eval_plus[Nk,2]=eigp[2]
+            Eval_plus[Nk,3]=eigp[3]
+            
+            eigm=np.linalg.eigvalsh(Hqm )
+            
+            Eval_min[Nk,0]=eigm[0]
+            Eval_min[Nk,1]=eigm[1]
+            Eval_min[Nk,2]=eigm[2]
+            Eval_min[Nk,3]=eigm[3]
+
+        eb=time.time()
+        
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
+        print("time for Disp...",eb-sb)
+        return [Eval_plus,Eval_min]
+    
+    def H_MF_parts_rMBZ(self):
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+            ik=self.latt.IkMF_M_1bz[Nk]
+            
+            ikq=self.latt.IMF_M_kpM[Nk]
+            ikmq=self.latt.IMF_M_kmM[Nk]
+            
+            ikq2=self.latt.IMF_M_kpMrep[Nk]
+            ikmq2=self.latt.IMF_M_kmMrep[Nk]
+
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
+            
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
+            
+            for nband in range(self.nbands):
+                
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
+                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
+                    
+                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
+                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
+        
+        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
+        
+    
+    def precompute_E_rMBZ(self,args):
+        
+        (phis, mu, T)=args
+
+        phi_T=phis[0]
+        phi_sub=phis[1]
+        
+        sb=time.time()
+
+        print("starting Disp.......")
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Eval_plus=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
+        Eval_min=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
+        
+        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+            
+
             Hqp=self.Heq_p[Nk,:,:]+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
             Hqm=self.Heq_m[Nk,:,:]+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
             
-            print(np.shape(Hqp))
-            
             eigp=np.linalg.eigvalsh(Hqp)
-            print(np.shape(eigp))
-
+            
             Eval_plus[Nk,0]=eigp[0]
             Eval_plus[Nk,1]=eigp[1]
             Eval_plus[Nk,2]=eigp[2]
@@ -303,10 +399,34 @@ class Mean_field_M:
         
 
         print("time for Disp...",eb-sb)
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
         return [Eval_plus,Eval_min]
     
-
-
+    
+    def calc_free_energy_M_phiT(self,Delt,T_ev, mu):
+        
+        phi_T=Delt
+        args=([Delt,0], T_ev, mu)
+        
+        [Ene_valley_plus,Ene_valley_min]=self.precompute_E_rMBZ(args)
+        Elam1 = Ene_valley_plus[ :, :] - mu
+        Elam2 = Ene_valley_min[ :, :] - mu
+        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))/self.latt.Npoi_MF
+        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))/self.latt.Npoi_MF
+        F = F1 + F2 + 0.5 * (phi_T**2) * self.mass * (self.c_phonon**2) * np.sum(self.latt.M1**2) / (self.beta_ep**2)
+        print(Delt, F, np.min(Elam2/T_ev), np.min(Elam1/T_ev))
+        return F
+    
+    def calc_free_energy_semimetal(self,T_ev, mu):
+        
+        Elam1 = self.Ene_valley_plus_1bz - mu
+        Elam2 = self.Ene_valley_min_1bz - mu
+        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))
+        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))
+        N = np.size(Elam1)
+        F = F1 + F2 
+        return F
+        
 def main() -> int:
 
     """[summary]
@@ -393,16 +513,6 @@ def main() -> int:
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
-
-    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
-    # hbvf = 2.1354; # eV
-    # hvkd=hbvf*q
-    # kappa_p=0.0797/0.0975
-    # kappa=kappa_p
-    # up = 0.0975; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
     PH=True
     
 
@@ -415,14 +525,6 @@ def main() -> int:
     alpha=up/hvkd
     alph=alpha
 
-    #Andrei params 
-    # hbvf = 19.81/(8*np.pi/3); # eV
-    # hvkd=hbvf*q
-    # kappa=1
-    # up = 0.110; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
     print("\n \n")
     print("parameters of the hamiltonian...")
     print("hbvf is ..",hbvf )
@@ -457,23 +559,24 @@ def main() -> int:
     mass=M/(c_light**2) # in ev *s^2/m^2
     alpha_ep=0 # in ev
     beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
-    
+    c_phonon=13600 #m/s
 
     if mode=="L":
         c_phonon=21400 #m/s
     if mode=="T":
         c_phonon=13600 #m/s
-    else:
-        c_phonon=21400 #m/s
+        
     
     #calculating effective coupling
     A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
     AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
     A1bz=(2*np.pi)**2 / AWZ_graphene
-    alpha_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    beta_ep_effective=np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    alpha_ep_effective_tilde=alpha_ep_effective/beta_ep_effective
-    beta_ep_effective_tilde=beta_ep_effective/beta_ep_effective
+    
+    g1=4
+    g2=4
+    
+    alpha_ep_effective=g1*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    beta_ep_effective=g2*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
     
     #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene
@@ -489,7 +592,7 @@ def main() -> int:
     
     #parameters to be passed to the Bubble class
     mode_layer_symmetry="a" #whether we are looking at the symmetric or the antisymmetric mode
-    cons=[alpha_ep_effective_tilde,beta_ep_effective_tilde, Wupsilon, a_graphene, mass] #constants used in the bubble calculation and data anlysis
+    cons=[alpha_ep_effective, beta_ep_effective, Wupsilon, a_graphene, mass, c_phonon] #constants used in the bubble calculation and data anlysis
 
     
     #Hartree fock correction to the bandstructure
@@ -501,13 +604,60 @@ def main() -> int:
     HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
-    #BUBBLE CALCULATION        
+    #Mean Field Calculation        
     test_symmetry=True
     B1=Mean_field_M(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    [Eval_plus,Eval_min]=B1.precompute_E( args=([1,0.5],0.0,0.0))
+    
+    a1=B1.calc_free_energy_M_phiT(0,0.1, 0)
+    b1=B1.calc_free_energy_semimetal(0.1, 0)
+    print(a1,b1)
+    
+    # TT=np.linspace(0.01,1.0,100)[::-1]
+    
+    #seed
+    phi_0=0.01
+    mu=0
 
-    plt.scatter(lq.KX,lq.KY,c=Eval_plus[:,0])
-    plt.show()
+    FEne_M_0_list=[]
+    FEne_M_list=[]
+    Delt_list=[]
+
+    TT=np.linspace(0.01,0.0001,30)
+    
+    for T in TT:
+        
+        #zerp values at this T
+        FEne_M_0=B1.calc_free_energy_M_phiT(0, T, 0)
+        
+        FEne_M_0_list.append(FEne_M_0)
+
+        #minimization SC
+        s=time.time()
+        res=minimize(B1.calc_free_energy_M_phiT, phi_0, args=(T, mu), method='Nelder-Mead', tol=1e-6, options={'maxiter': 100})
+        Delt=res.x
+        Fres=res.fun
+        e=time.time()
+        
+        
+        Delt_list.append(Delt)
+        FEne_M_list.append(Fres)
+        
+        # phi_0=Delt
+        
+
+        print(T,Delt,Fres, "time for minimization", e-s)
+    
+    
+    
+    #saving data
+    Delts=np.abs(np.array(Delt_list))
+    FEne_M_0=np.array(FEne_M_0_list)
+    FEne_M=np.array(FEne_M_list)
+    one=np.ones(np.size(Delts))
+    
+    df = pd.DataFrame({'T':TT, 'mu':mu*one, 'J':beta_ep_effective*one,'D':Delts,'F0':FEne_M_0,'FSC':FEne_M, 'L':Nsamp*one})
+    df.to_hdf('data_mu_'+str(mu)+'_g2_'+str(g2)+'.h5', key='df', mode='w')
+    
     return 0
 
 if __name__ == '__main__':

@@ -25,7 +25,7 @@ dire_to_mods='../Mods/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="both_half_M1_HR"  #JOBNAME importan to declare -has to be descriptive
+jobname="free"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"

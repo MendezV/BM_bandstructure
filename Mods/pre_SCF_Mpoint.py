@@ -539,16 +539,6 @@ def main() -> int:
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
-
-    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
-    # hbvf = 2.1354; # eV
-    # hvkd=hbvf*q
-    # kappa_p=0.0797/0.0975
-    # kappa=kappa_p
-    # up = 0.0975; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
     PH=True
     
 
@@ -561,14 +551,6 @@ def main() -> int:
     alpha=up/hvkd
     alph=alpha
 
-    #Andrei params 
-    # hbvf = 19.81/(8*np.pi/3); # eV
-    # hvkd=hbvf*q
-    # kappa=1
-    # up = 0.110; # eV
-    # u = kappa*up; # eV
-    # alpha=up/hvkd
-    # alph=alpha
     print("\n \n")
     print("parameters of the hamiltonian...")
     print("hbvf is ..",hbvf )
