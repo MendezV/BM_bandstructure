@@ -10,7 +10,7 @@
 export OPENBLAS_NUM_THREADS=6
 
 #generic parameters 
-Lattice_size=12
+Lattice_size=18
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
@@ -19,13 +19,13 @@ phonon_polarization='Mins'
 
 #needed prerequisites for the run
 parameter_file='params'
-dire_to_mods='../Mods/'
+dire_to_mods='../Mods_disp/'
 
 #Reading parameter file
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="free"  #JOBNAME importan to declare -has to be descriptive
+jobname="g3_18"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"
@@ -44,7 +44,7 @@ for param_val in ${param_arr[@]}; do
 	mkdir -vp "${dire}"
 
 
-    cp ${dire_to_mods}preSCF_Mpoint.py "${dire}"
+    cp ${dire_to_mods}SCF_M_point.py "${dire}"
     cp ${dire_to_mods}Dispersion.py  "${dire}"
     cp ${dire_to_mods}MoireLattice.py  "${dire}"
     cp ${parameter_file}  "${dire}"
@@ -54,9 +54,9 @@ for param_val in ${param_arr[@]}; do
 	cd "${dire}"
 	echo "parameters: L " ${Lattice_size} " nu " ${filling_seed} " th " ${param_val} " kap " ${kappa} " HF " ${Mode_HF} " phLT " ${phonon_polarization} >> output.out
 
-	nohup time python3 -u preSCF_Mpoint.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out	
+	nohup time python3 -u SCF_M_point.py ${Lattice_size} ${filling_seed} ${param_val} ${kappa} ${Mode_HF} ${phonon_polarization} >> output.out	
 	
-	cd "../../../Mods"
+	cd "../../${dire_to_mods}"
 	sleep 1
 
 done

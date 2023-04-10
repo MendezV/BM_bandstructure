@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 class MoireTriangLattice:
 
-    def __init__(self, Npoints, theta, normed, c6sym, umkl):
+    def __init__(self, Npoints, theta, normed, c6sym, umkl, umklq = 0):
 
         self.Npoints = Npoints
         self.theta = theta
@@ -55,21 +55,25 @@ class MoireTriangLattice:
             
             
         self.umkl=umkl
-        self.umkl_Q=umkl+2 # need one more unklapp to inlcude the edges when k + q_edge #two more for mean field with valley hall
+        self.umkl_Q=umkl+1+umklq # need one more unklapp to inlcude the edges when k + q_edge #two more for mean field with valley hall
         self.c6sym=c6sym
 
         [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
         [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
         
+        [self.KX_pre,self.KY_pre]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz, self.umkl) #for the momentum transfer lattice
+        [self.KQX_pre,self.KQY_pre]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl_Q) #for the momentum transfer lattice
+        
         if c6sym:
             
-            [self.KX_1,self.KY_1]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
-            [self.KX,self.KY]=self.c3symmetrize(self.KX_1,self.KY_1)
+            [self.KX,self.KY]=self.c3symmetrize(self.KX_pre,self.KY_pre)
+            [self.KQX,self.KQY]=self.c3symmetrize(self.KQX_pre,self.KQY_pre)
+            
         else:
 
-            [self.KX,self.KY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,umkl) #for the momentum transfer lattice
+            [self.KX,self.KY]=[self.KX_pre,self.KY_pre]
+            [self.KQX,self.KQY]=[self.KQX_pre,self.KQY_pre]
             
-        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl_Q) #for the momentum transfer lattice
         
         
         #sizes of the lattices 
@@ -91,8 +95,6 @@ class MoireTriangLattice:
         self.Ikpq=Ikpq.astype(int)
         print( 'the shape of the index q array',np.shape(self.Ikpq))
         
-
-
         
         #scattering from k in 1bz to G in the reciprocal lattice
         Gu=self.Umklapp_List(self.umkl)
@@ -146,83 +148,6 @@ class MoireTriangLattice:
         #Gamma
         self.Gamma=self.GMvec[1]*0
 
-
-
-
-        #Index arrays for mean field 
-        #and for checking symmetries of the form factors
-        
-        ###index of k+M
-        indM=0
-        Mp=self.Ms[indM]
-        Mp_rep=self.M_reps[indM]
-        
-        IkpM=np.zeros([self.Npoi])
-        IkpM=np.array(self.insertion_index( self.KX+Mp[0],self.KY+Mp[1], self.KQX, self.KQY))
-        self.IkpM=IkpM.astype(int)
-        print( 'the shape of the index M array',np.shape(self.IkpM))
-        
-        IkmM=np.zeros([self.Npoi])
-        IkmM=np.array(self.insertion_index( self.KX-Mp[0],self.KY-Mp[1], self.KQX, self.KQY))
-        self.IkmM=IkmM.astype(int)
-        print( 'the shape of the index -M array',np.shape(self.IkmM))
-        
-        IkpMrep=np.zeros([self.Npoi])
-        IkpMrep=np.array(self.insertion_index( self.KX+Mp_rep[0],self.KY+Mp_rep[1], self.KQX, self.KQY))
-        self.IkpMrep=IkpMrep.astype(int)
-        print( 'the shape of the index Mrep array',np.shape(self.IkpM))
-        
-        IkmMrep=np.zeros([self.Npoi])
-        IkmMrep=np.array(self.insertion_index( self.KX-Mp_rep[0],self.KY-Mp_rep[1], self.KQX, self.KQY))
-        self.IkmMrep=IkmMrep.astype(int)
-        print( 'the shape of the index -Mprep array',np.shape(self.IkmM))
-        
-        #minus
-        
-        
-        Imk=np.zeros([self.Npoi])
-        Imk=np.array(self.insertion_index( -(self.KX),-(self.KY), self.KQX, self.KQY))
-        self.Imk=Imk.astype(int)
-        print( 'the shape of the index k - array',np.shape(self.Imk))
-        
-        
-        #reduced BZ for calculating the free energy
-
-        self.kx_max=self.M1[0]/2.0
-        self.ky_max=self.M1_rep[1]/2.0
-        
-        IkMF_M_1bz=[]
-        for k in range(self.NpoiQ):
-            if (self.KQX[k]<=self.kx_max) and (self.KQX[k]>-self.kx_max):
-                if (self.KQY[k]<=self.ky_max) and (self.KQY[k]>-self.ky_max):
-                    IkMF_M_1bz.append(k)
-                    # plt.scatter([self.latt.KX1bz[k]],[self.latt.KY1bz[k]],c='r', marker='x')
-                    
-        self.IkMF_M_1bz=np.array(IkMF_M_1bz)
-        self.Npoi_MF=int(self.Npoi1bz/2)
-        
-
-        ###index of k+M
-        
-        IMF_M_kpM=np.zeros([self.Npoi_MF])
-        IMF_M_kpM=np.array(self.insertion_index( self.KQX[self.IkMF_M_1bz]+Mp[0],self.KQY[self.IkMF_M_1bz]+Mp[1], self.KQX, self.KQY))
-        self.IMF_M_kpM=IMF_M_kpM.astype(int)
-        print( 'the shape of the index M array',np.shape(self.IMF_M_kpM))
-        
-        IMF_M_kmM=np.zeros([self.Npoi_MF])
-        IMF_M_kmM=np.array(self.insertion_index( self.KQX[self.IkMF_M_1bz]-Mp[0],self.KQY[self.IkMF_M_1bz]-Mp[1], self.KQX, self.KQY))
-        self.IMF_M_kmM=IMF_M_kmM.astype(int)
-        print( 'the shape of the index M array',np.shape(self.IMF_M_kmM))
-        
-        IMF_M_kpMrep=np.zeros([self.Npoi_MF])
-        IMF_M_kpMrep=np.array(self.insertion_index( self.KQX[self.IkMF_M_1bz]+Mp_rep[0],self.KQY[self.IkMF_M_1bz]+Mp_rep[1], self.KQX, self.KQY))
-        self.IMF_M_kpMrep=IMF_M_kpMrep.astype(int)
-        print( 'the shape of the index M array',np.shape(self.IMF_M_kpM))
-        
-        IMF_M_kmMrep=np.zeros([self.Npoi_MF])
-        IMF_M_kmMrep=np.array(self.insertion_index( self.KQX[self.IkMF_M_1bz]-Mp_rep[0],self.KQY[self.IkMF_M_1bz]-Mp_rep[1], self.KQX, self.KQY))
-        self.IMF_M_kmMrep=IMF_M_kmMrep.astype(int)
-        print( 'the shape of the index M array',np.shape(self.IMF_M_kmM))
 
     
         # plt.scatter(self.KQX, self.KQY)

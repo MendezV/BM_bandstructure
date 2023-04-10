@@ -12,10 +12,11 @@ import pandas as pd
 import Dispersion
 
 
+
         
-class Mean_field_M:
+class Dynamic_corrs:
     """
-    A class used to represent all parameters in constructing the mean field Hamiltonian
+    A class used to represent electron phonon bubbles
 
     ...
 
@@ -133,12 +134,22 @@ class Mean_field_M:
         ################################
 
         if symmetric=="s":
-            if mode=="long":
+            if mode=="L":
+                self.L00p=self.HB.FFp.denqFFL_s()
+                self.L00m=self.HB.FFm.denqFFL_s()
+                self.Lnemp=self.HB.FFp.NemqFFL_s()
+                self.Lnemm=self.HB.FFm.NemqFFL_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
+            elif mode=="T": 
+                self.Lnemp=self.HB.FFp.NemqFFT_s()
+                self.Lnemm=self.HB.FFm.NemqFFT_s()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="long":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_s(), self.HB.FFm.NemqFFL_s())
             elif mode=="trans":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_s(), self.HB.FFm.NemqFFT_s())
             elif mode=="dens":
-                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_s(), self.HB.FFm.denFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             elif mode=="subl":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
             elif mode=="nemx":
@@ -146,18 +157,25 @@ class Mean_field_M:
             elif mode=="nemy":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_s(), self.HB.FFm.nemyFF_s())
             else:
-                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_s(), self.HB.FFm.denFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             
-        else: # a- mode        
-            if mode=="long":
+        else: # a- mode
+            if mode=="L":
+                self.L00p=self.HB.FFp.denqFFL_a()
+                self.L00m=self.HB.FFm.denqFFL_a()
+                self.Lnemp=self.HB.FFp.NemqFFL_a()
+                self.Lnemm=self.HB.FFm.NemqFFL_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()                
+            elif mode=="T":
+                self.Lnemp=self.HB.FFp.NemqFFT_a()
+                self.Lnemm=self.HB.FFm.NemqFFT_a()
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="long":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_a(), self.HB.FFm.NemqFFL_a())
             elif mode=="trans":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
-            elif mode=="Mins":
-                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
-                [self.sublp,self.sublm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
             elif mode=="dens":
-                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_s(), self.HB.FFm.denFF_s())
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             elif mode=="subl":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_a(), self.HB.FFm.sublFF_a())
             elif mode=="nemx":
@@ -165,19 +183,13 @@ class Mean_field_M:
             elif mode=="nemy":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_a(), self.HB.FFm.nemyFF_a())
             else:
-                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denFF_a(), self.HB.FFm.denFF_a())
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
-        #arrays for MF
-        self.sx=np.array([[0,1],[1,0]])
-        self.sz=np.array([[1,0],[0,-1]])
         
-        
-        [self.Heq_p_MBZ,self.HT_p_MBZ,self.Hsub_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ,self.Hsub_m_MBZ]=self.H_MF_parts_MBZ()
-        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts_rMBZ()
 
     ################################
     """
-    METHODS for the Mean_field_M class 
+    METHODS for the ep_Bubble class 
     """
     ################################
     
@@ -204,213 +216,181 @@ class Mean_field_M:
         else:
             return np.heaviside(-e,0.5)
 
-    def H_MF_parts_MBZ(self):
-        
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        
-        for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
-            
-            ik=self.latt.Ik[Nk]
-            
-            ikq=self.latt.IkpM[Nk]
-            ikmq=self.latt.IkmM[Nk]
-            
-            ikq2=self.latt.IkpMrep[Nk]
-            ikmq2=self.latt.IkmMrep[Nk]
 
-            
-            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            
-            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
-            
-            for nband in range(self.nbands):
-                
-                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
-                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
-                
-                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
-                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
-                
-                for mband in range(self.nbands):
-                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
-                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
-                    
-                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
-                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
-                    
-                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
-                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
-                    
-                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
-                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
+    def nb(self, e, T):
+        """[summary]
+        bose occupation function with a truncation if the argument exceeds 
+        double precission
 
+        Args:
+            e ([double]): [description] energy
+            T ([double]): [description] temperature
 
+        Returns:
+            [double]: [description] value of the fermi function 
+        """
+        Tp=T+1e-17 #To capture zero temperature
+        rat=np.abs(np.max(e/Tp))
         
-        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
-        
+        if rat<700:
+            return 1/(np.exp( e/T )-1)
+        else:
+            return -np.heaviside(-e,0.5) # at zero its 1
     
-    def precompute_E_MBZ(self,args):
-        (phis, mu, T)=args
 
-        phi_T=phis[0]
-        phi_sub=phis[1]
+    def OmegaL(self):
+        
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        
+        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+                
+        return [Omega_FFp,Omega_FFm]
+
+    def OmegaT(self):
+
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemp
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemm
+
+        
+        [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
+        
+        return [Omega_FFp,Omega_FFm]
+
+
+    def deltad(self, x, epsil):
+        return (1/(np.pi*epsil))/(1+(x/epsil)**2)
+
+    
+    def GRw0s(self,ekn,ekm,mu,T):
+        edkq=ekn-mu
+        edk=ekm-mu
+
+        #finite temp
+        nfk= self.nf(edk,T)
+        nfkq= self.nf(edkq,T)
+        
+        ###iepsilon
+        eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
+
+        fac_p=(nfkq-nfk)/(-(edkq-edk)+1j*eps)
+        return np.real(fac_p)
+    
+    def GReqs(self,ekn,ekm,mu,T):
+        edkq=ekn-mu
+        edk=ekm-mu
+
+        #finite temp
+        nfkq= self.nf(edkq,T)
+        nfk= self.nf(edk,T)
+        
+        return (1-nfkq)*nfk
+
+
+    def corr(self,args):
+        ( mu, T)=args
+
         
         sb=time.time()
 
-        print("starting Disp.......")
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        Eval_plus=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
-        Eval_min=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
-        
-        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
-            
+        print("starting bubble.......")
 
-            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]+phi_sub*self.Hsub_p_MBZ[Nk,:,:]
-            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]+phi_sub*self.Hsub_m_MBZ[Nk,:,:]
-            
-            eigp=np.linalg.eigvalsh(Hqp)
-            
-            Eval_plus[Nk,0]=eigp[0]
-            Eval_plus[Nk,1]=eigp[1]
-            Eval_plus[Nk,2]=eigp[2]
-            Eval_plus[Nk,3]=eigp[3]
-            
-            eigm=np.linalg.eigvalsh(Hqm )
-            
-            Eval_min[Nk,0]=eigm[0]
-            Eval_min[Nk,1]=eigm[1]
-            Eval_min[Nk,2]=eigm[2]
-            Eval_min[Nk,3]=eigm[3]
+        integ=np.zeros(self.latt.Npoi)
 
-        eb=time.time()
-        
-        # self.savedata(Eval_plus,Eval_min, mu, T, '')
-        print("time for Disp...",eb-sb)
-        return [Eval_plus,Eval_min]
-    
-    def H_MF_parts_rMBZ(self):
-        
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        
-        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
-            ik=self.latt.IkMF_M_1bz[Nk]
+            bub=0
             
-            ikq=self.latt.IMF_M_kpM[Nk]
-            ikmq=self.latt.IMF_M_kmM[Nk]
-            
-            ikq2=self.latt.IMF_M_kpMrep[Nk]
-            ikmq2=self.latt.IMF_M_kmMrep[Nk]
-
-            
-            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            
-            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
-            
-            for nband in range(self.nbands):
+            for Nk in range(self.latt.Npoi1bz):
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ik=self.latt.Ik1bz[Nk]
                 
-                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
-                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
-                
-                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
-                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
-                
-                for mband in range(self.nbands):
-                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
-                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
-                    
-                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
-                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
-                    
-                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
-                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
-                    
-                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
-                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
-        
-        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
-        
-    
-    def precompute_E_rMBZ(self,args):
-        
-        (phis, mu, T)=args
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp=self.Omega_FFp[ikq, ik,nband,mband]
+                        ekq_p_n=self.Ene_valley_plus[ikq,nband]
+                        ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GRw0s(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
+                        ekq_m_n=self.Ene_valley_min[ikq,nband]
+                        ek_m_m=self.Ene_valley_min[ik,mband]
+                        GRs_m=self.GRw0s(ekq_m_n,ek_m_m,mu,T)
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
 
-        phi_T=phis[0]
-        phi_sub=phis[1]
-        
-        sb=time.time()
-
-        print("starting Disp.......")
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        Eval_plus=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
-        Eval_min=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
-        
-        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
-            
-
-            Hqp=self.Heq_p[Nk,:,:]+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
-            Hqm=self.Heq_m[Nk,:,:]+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
-            
-            eigp=np.linalg.eigvalsh(Hqp)
-            
-            Eval_plus[Nk,0]=eigp[0]
-            Eval_plus[Nk,1]=eigp[1]
-            Eval_plus[Nk,2]=eigp[2]
-            Eval_plus[Nk,3]=eigp[3]
-            
-            eigm=np.linalg.eigvalsh(Hqm )
-            
-            Eval_min[Nk,0]=eigm[0]
-            Eval_min[Nk,1]=eigm[1]
-            Eval_min[Nk,2]=eigm[2]
-            Eval_min[Nk,3]=eigm[3]
+            integ[Nq]=bub
 
         eb=time.time()
         
 
-        print("time for Disp...",eb-sb)
-        # self.savedata(Eval_plus,Eval_min, mu, T, '')
-        return [Eval_plus,Eval_min]
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
+        return res
     
-    def savedata(self, disp, dism, mu_value, T, add_tag):
+    
+    def corr_eq(self,args):
+        ( mu, T)=args
+
+        
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+            bub=0
+            
+            for Nk in range(self.latt.Npoi1bz):
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ik=self.latt.Ik1bz[Nk]
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp=self.Omega_FFp[ikq, ik,nband,mband]
+                        ekq_p_n=self.Ene_valley_plus[ikq,nband]
+                        ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
+                        ekq_m_n=self.Ene_valley_min[ikq,nband]
+                        ek_m_m=self.Ene_valley_min[ik,mband]
+                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
+
+            integ[Nq]=bub
+
+        eb=time.time()
+        
+
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
+        return res
+    
+    def savedata(self, integ, mu_value, T, add_tag):
         Nsamp=self.latt.Npoints
-        index_f=0#np.argmin((mu_value-self.mu_values)**2)
-        filling=0#self.fillings[index_f]
+        index_f=np.argmin((mu_value-self.mu_values)**2)
+        filling=self.fillings[index_f]
         identifier=add_tag+str(Nsamp)+self.name
         Nss=np.size(self.latt.KX)
 
         #products of the run
-        
+        Pibub=np.hstack(integ)
 
         filling_list=[]
         mu_list=[]
@@ -425,17 +405,6 @@ class Mean_field_M:
         disp_m2=self.Ene_valley_min_K[:,1].flatten()
         disp_p1=self.Ene_valley_plus_K[:,0].flatten()
         disp_p2=self.Ene_valley_plus_K[:,1].flatten()
-        
-        
-        MFdisp0=disp[:,0].flatten()
-        MFdisp1=disp[:,1].flatten()
-        MFdisp2=disp[:,2].flatten()
-        MFdisp3=disp[:,3].flatten()
-        
-        MFdism0=dism[:,0].flatten()
-        MFdism1=dism[:,1].flatten()
-        MFdism2=dism[:,2].flatten()
-        MFdism3=dism[:,3].flatten()
 
         
         #constants
@@ -443,15 +412,60 @@ class Mean_field_M:
         kappa_arr=np.array([self.HB.hpl.kappa]*(Nss))
         
         print('checking sizes of the arrays for hdf5 storage')
-        print(Nss, Nss,np.size(MFdisp0),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
+        print(Nss, Nss,np.size(Pibub),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
 
             
-        df = pd.DataFrame({'dp0': MFdisp0,'dp1': MFdisp1,'dp2': MFdisp2,'dp3': MFdisp3,'dm0': MFdism0,'dm1': MFdism1,'dm2': MFdism2,'dm3': MFdism3, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
         df.to_hdf('data'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
         return None
     
+    def Fill_sweep(self, Nfils, T, parallel=False):
+        
+        if Nfils>1:
+            [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
+        else:
+            fillings=np.array([0])
+            mu_values=np.array([0])
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+
+     
         
 def main() -> int:
 
@@ -531,7 +545,7 @@ def main() -> int:
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
-    umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umkl=1 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q
@@ -539,6 +553,16 @@ def main() -> int:
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
+
+    #kosh params realistic  -- this is the closest to the actual Band Struct used in the paper
+    # hbvf = 2.1354; # eV
+    # hvkd=hbvf*q
+    # kappa_p=0.0797/0.0975
+    # kappa=kappa_p
+    # up = 0.0975; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     PH=True
     
 
@@ -551,6 +575,14 @@ def main() -> int:
     alpha=up/hvkd
     alph=alpha
 
+    #Andrei params 
+    # hbvf = 19.81/(8*np.pi/3); # eV
+    # hvkd=hbvf*q
+    # kappa=1
+    # up = 0.110; # eV
+    # u = kappa*up; # eV
+    # alpha=up/hvkd
+    # alph=alpha
     print("\n \n")
     print("parameters of the hamiltonian...")
     print("hbvf is ..",hbvf )
@@ -585,8 +617,6 @@ def main() -> int:
     mass=M/(c_light**2) # in ev *s^2/m^2
     alpha_ep=0 # in ev
     beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
-    
-
     if mode=="L":
         c_phonon=21400 #m/s
     if mode=="T":
@@ -629,18 +659,11 @@ def main() -> int:
     HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
     
-    #Mean Field Calculation        
+    #BUBBLE CALCULATION        
     test_symmetry=True
-    B1=Mean_field_M(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-    [Eval_plus,Eval_min]=B1.precompute_E_MBZ( args=([1,0.5],0.0,0.0))
-
-    plt.scatter(lq.KX,lq.KY,c=Eval_plus[:,0])
-
-    
-    [Eval_plus,Eval_min]=B1.precompute_E_rMBZ( args=([1,0.5],0.0,0.0))
-
-    plt.scatter(lq.KQX[B1.latt.IkMF_M_1bz],lq.KQY[B1.latt.IkMF_M_1bz],c=Eval_plus[:,0], marker='s')
-    plt.show()
+    B1=Dynamic_corrs(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # a=B1.corr( args=(0.0,0.0))
+    B1.Fill_sweep(3,0.01)
 
     return 0
 

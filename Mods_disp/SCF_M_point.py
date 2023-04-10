@@ -11,6 +11,8 @@ import os
 import pandas as pd
 import Dispersion
 from scipy.optimize import minimize
+import pickle
+
 
         
 class Mean_field_M:
@@ -74,9 +76,6 @@ class Mean_field_M:
         ################################
         self.latt=latt
         # print(latt.Npoints, "points in the lattice")
-        self.umkl=umkl
-        
-        self.Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
         [q1,q2,q3]=latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         print("qq",self.qscale)
@@ -95,23 +94,6 @@ class Mean_field_M:
         self.Ene_valley_plus=HB.E_HFp_ex
         self.Ene_valley_min=HB.E_HFm_ex
 
-        
-        
-        ################################
-        ###selecting eta
-        ################################
-        eps_l=[]
-        for i in range(nbands):
-            eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_plus_1bz[:,i].flatten() )  ) )/2)
-            eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_min_1bz[:,i].flatten() )  ) )/2)
-        eps_a=np.array(eps_l)
-        eps=np.min(eps_a)
-        
-        
-        self.eta=eps
-        self.eta_dirac_delta=eps/4
-        self.eta_cutoff=eps
-        self.eta_small_imag=0.1*eps
         
         
         
@@ -171,9 +153,70 @@ class Mean_field_M:
         self.sx=np.array([[0,1],[1,0]])
         self.sz=np.array([[1,0],[0,-1]])
         
+
+        ################################
+        #lattice attributes
+        ################################
+        #Index arrays for mean field 
+        #and for checking symmetries of the form factors
         
-        [self.Heq_p_MBZ,self.HT_p_MBZ,self.Hsub_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ,self.Hsub_m_MBZ]=self.H_MF_parts_MBZ()
-        [self.Heq_p,self.HT_p,self.Hsub_p,self.Heq_m,self.HT_m,self.Hsub_m]=self.H_MF_parts_rMBZ()
+        ###index of k+M
+        indM=0
+        Mp=self.latt.Ms[indM]
+        Mp_rep=self.latt.M_reps[indM]
+        
+        IkpM=np.zeros([self.latt.Npoi])
+        IkpM=np.array(self.latt.insertion_index( self.latt.KX+Mp[0],self.latt.KY+Mp[1], self.latt.KQX, self.latt.KQY))
+        self.IkpM=IkpM.astype(int)
+        print( 'the shape of the index M array',np.shape(self.IkpM))
+        
+        IkmM=np.zeros([self.latt.Npoi])
+        IkmM=np.array(self.latt.insertion_index( self.latt.KX-Mp[0],self.latt.KY-Mp[1], self.latt.KQX, self.latt.KQY))
+        self.IkmM=IkmM.astype(int)
+        print( 'the shape of the index -M array',np.shape(self.IkmM))
+        
+        
+        #minus
+        Imk=np.zeros([self.latt.Npoi])
+        Imk=np.array(self.latt.insertion_index( -(self.latt.KX),-(self.latt.KY), self.latt.KQX, self.latt.KQY))
+        self.Imk=Imk.astype(int)
+        print( 'the shape of the index k - array',np.shape(self.Imk))
+        
+        
+        
+        #reduced BZ for calculating the free energy
+        self.kx_max=self.latt.M1[0]/2.0
+        self.ky_max=self.latt.M1_rep[1]/2.0
+        
+        IkMF_M_1bz=[]
+        for k in range(self.latt.NpoiQ):
+            if (self.latt.KQX[k]<=self.kx_max) and (self.latt.KQX[k]>-self.kx_max):
+                if (self.latt.KQY[k]<=self.ky_max) and (self.latt.KQY[k]>-self.ky_max):
+                    IkMF_M_1bz.append(k)
+                    
+        self.IkMF_M_1bz=np.array(IkMF_M_1bz)
+        self.Npoi_MF=int(self.latt.Npoi1bz/2)
+        
+
+        ###index of k+M
+        IMF_M_kpM=np.zeros([self.Npoi_MF])
+        IMF_M_kpM=np.array(self.latt.insertion_index( self.latt.KQX[self.IkMF_M_1bz]+Mp[0],self.latt.KQY[self.IkMF_M_1bz]+Mp[1], self.latt.KQX, self.latt.KQY))
+        self.IMF_M_kpM=IMF_M_kpM.astype(int)
+        print( 'the shape of the index M array',np.shape(self.IMF_M_kpM))
+        
+        IMF_M_kmM=np.zeros([self.Npoi_MF])
+        IMF_M_kmM=np.array(self.latt.insertion_index( self.latt.KQX[self.IkMF_M_1bz]-Mp[0],self.latt.KQY[self.IkMF_M_1bz]-Mp[1], self.latt.KQX, self.latt.KQY))
+        self.IMF_M_kmM=IMF_M_kmM.astype(int)
+        print( 'the shape of the index M array',np.shape(self.IMF_M_kmM))
+        
+        
+        
+        ################################
+        #precomputing useful matrices for HF
+        ################################
+        
+        [self.Heq_p_MBZ,self.HT_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ]=self.H_MF_parts_MBZ()
+        [self.Heq_p,self.HT_p,self.Heq_m,self.HT_m]=self.H_MF_parts_rMBZ()
 
     ################################
     """
@@ -209,11 +252,9 @@ class Mean_field_M:
         N_Mp=2 # number of symmetry breaking momenta +1
         
         HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         
@@ -221,18 +262,11 @@ class Mean_field_M:
             
             ik=self.latt.Ik[Nk]
             
-            ikq=self.latt.IkpM[Nk]
-            ikmq=self.latt.IkmM[Nk]
-            
-            ikq2=self.latt.IkpMrep[Nk]
-            ikmq2=self.latt.IkmMrep[Nk]
-
+            ikq=self.IkpM[Nk]
+            ikmq=self.IkmM[Nk]
             
             Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            
             Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
             
             for nband in range(self.nbands):
                 
@@ -249,22 +283,13 @@ class Mean_field_M:
                     HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
                     HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
                     
-                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
-                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
-                    
-                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
-                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
-
-
-        
-        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
+        return [Heq_p,HT_p,Heq_m,HT_m]
         
     
     def precompute_E_MBZ(self,args):
         (phis, mu, T)=args
 
-        phi_T=phis[0]
-        phi_sub=phis[1]
+        phi_T=phis
         
         sb=time.time()
 
@@ -280,22 +305,16 @@ class Mean_field_M:
         for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
 
-            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]+phi_sub*self.Hsub_p_MBZ[Nk,:,:]
-            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]+phi_sub*self.Hsub_m_MBZ[Nk,:,:]
+            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]
+            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]
             
             eigp=np.linalg.eigvalsh(Hqp)
             
-            Eval_plus[Nk,0]=eigp[0]
-            Eval_plus[Nk,1]=eigp[1]
-            Eval_plus[Nk,2]=eigp[2]
-            Eval_plus[Nk,3]=eigp[3]
+            Eval_plus[Nk,:]=eigp[:]
             
             eigm=np.linalg.eigvalsh(Hqm )
             
-            Eval_min[Nk,0]=eigm[0]
-            Eval_min[Nk,1]=eigm[1]
-            Eval_min[Nk,2]=eigm[2]
-            Eval_min[Nk,3]=eigm[3]
+            Eval_min[Nk,:]=eigm[:]
 
         eb=time.time()
         
@@ -303,35 +322,68 @@ class Mean_field_M:
         print("time for Disp...",eb-sb)
         return [Eval_plus,Eval_min]
     
+    def precompute_Eigen_MBZ(self,args):
+        (phis, mu, T)=args
+
+        phi_T=phis
+        
+        sb=time.time()
+
+        print("starting Disp.......")
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Eval_plus=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
+        Eval_min=np.zeros([self.latt.Npoi,N_Mp*self.nbands])
+        
+        Vval_plus=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        
+        
+        Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        for Nk in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+
+            Hqp=self.Heq_p_MBZ[Nk,:,:]+phi_T*self.HT_p_MBZ[Nk,:,:]
+            Hqm=self.Heq_m_MBZ[Nk,:,:]+phi_T*self.HT_m_MBZ[Nk,:,:]
+            
+            eigp, vp = np.linalg.eigh(Hqp)
+            Eval_plus[Nk, :] = eigp[:]
+            Vval_plus[Nk, :, :] = vp
+            
+            eigm, vm = np.linalg.eigh(Hqm )
+            Eval_min[Nk, :] = eigm[:]
+            Vval_min[Nk, :, :] = vm
+
+
+        eb=time.time()
+        
+        # self.savedata(Eval_plus,Eval_min, mu, T, '')
+        print("time for Disp...",eb-sb)
+        return [Eval_plus,Eval_min,Vval_plus,Vval_min]
+    
     def H_MF_parts_rMBZ(self):
         
         N_Mp=2 # number of symmetry breaking momenta +1
         
         HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hsub_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         
-        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+        for Nk in range(self.Npoi_MF):  #for calculating only along path in FBZ
             
-            ik=self.latt.IkMF_M_1bz[Nk]
+            ik=self.IkMF_M_1bz[Nk]
             
-            ikq=self.latt.IMF_M_kpM[Nk]
-            ikmq=self.latt.IMF_M_kmM[Nk]
-            
-            ikq2=self.latt.IMF_M_kpMrep[Nk]
-            ikmq2=self.latt.IMF_M_kmMrep[Nk]
+            ikq=self.IMF_M_kpM[Nk]
+            ikmq=self.IMF_M_kmM[Nk]
 
             
             Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Sp1 = 1j*self.sublp[ik, ikq2,:,:]-1j*self.sublp[ik, ikmq2,:,:]
-            
             Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-            Sm1 = - (self.sx@Sp1@self.sx)  #using chiral
             
             for nband in range(self.nbands):
                 
@@ -348,52 +400,40 @@ class Mean_field_M:
                     HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
                     HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
                     
-                    Hsub_p[Nk,self.nbands+nband,mband]=Hsub_p[Nk,self.nbands+nband,mband]+Sp1[nband,mband]
-                    Hsub_p[Nk,nband,self.nbands+mband]=Hsub_p[Nk,nband,self.nbands+mband]+np.conj(Sp1.T)[nband,mband]
-                    
-                    Hsub_m[Nk,self.nbands+nband,mband]=Hsub_m[Nk,self.nbands+nband,mband]+Sm1[nband,mband]
-                    Hsub_m[Nk,nband,self.nbands+mband]=Hsub_m[Nk,nband,self.nbands+mband]+np.conj(Sm1.T)[nband,mband]
         
-        return [Heq_p,HT_p,Hsub_p,Heq_m,HT_m,Hsub_m]
+        return [Heq_p,HT_p,Heq_m,HT_m]
         
     
     def precompute_E_rMBZ(self,args):
         
         (phis, mu, T)=args
 
-        phi_T=phis[0]
-        phi_sub=phis[1]
+        phi_T=phis
         
         sb=time.time()
 
         print("starting Disp.......")
         N_Mp=2 # number of symmetry breaking momenta +1
         
-        Eval_plus=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
-        Eval_min=np.zeros([self.latt.Npoi_MF,N_Mp*self.nbands])
+        Eval_plus=np.zeros([self.Npoi_MF,N_Mp*self.nbands])
+        Eval_min=np.zeros([self.Npoi_MF,N_Mp*self.nbands])
         
         Hqp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         Hqm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
-        for Nk in range(self.latt.Npoi_MF):  #for calculating only along path in FBZ
+        for Nk in range(self.Npoi_MF):  #for calculating only along path in FBZ
             
 
-            Hqp=self.Heq_p[Nk,:,:]+phi_T*self.HT_p[Nk,:,:]+phi_sub*self.Hsub_p[Nk,:,:]
-            Hqm=self.Heq_m[Nk,:,:]+phi_T*self.HT_m[Nk,:,:]+phi_sub*self.Hsub_m[Nk,:,:]
+            Hqp=self.Heq_p[Nk,:,:]+phi_T*self.HT_p[Nk,:,:]
+            Hqm=self.Heq_m[Nk,:,:]+phi_T*self.HT_m[Nk,:,:]
             
             eigp=np.linalg.eigvalsh(Hqp)
             
-            Eval_plus[Nk,0]=eigp[0]
-            Eval_plus[Nk,1]=eigp[1]
-            Eval_plus[Nk,2]=eigp[2]
-            Eval_plus[Nk,3]=eigp[3]
+            Eval_plus[Nk, :] = eigp[:]
             
             eigm=np.linalg.eigvalsh(Hqm )
             
-            Eval_min[Nk,0]=eigm[0]
-            Eval_min[Nk,1]=eigm[1]
-            Eval_min[Nk,2]=eigm[2]
-            Eval_min[Nk,3]=eigm[3]
+            Eval_min[Nk, :] = eigm[:]
 
         eb=time.time()
         
@@ -403,27 +443,27 @@ class Mean_field_M:
         return [Eval_plus,Eval_min]
     
     
-    def calc_free_energy_M_phiT(self,Delt,T_ev, mu):
+    def calc_free_energy_M_phiT(self, Delt, T_ev, mu):
         
         phi_T=Delt
-        args=([Delt,0], T_ev, mu)
+        args=(Delt, T_ev, mu)
         
         [Ene_valley_plus,Ene_valley_min]=self.precompute_E_rMBZ(args)
         Elam1 = Ene_valley_plus[ :, :] - mu
         Elam2 = Ene_valley_min[ :, :] - mu
-        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))/self.latt.Npoi_MF
-        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))/self.latt.Npoi_MF
+        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))/self.Npoi_MF
+        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))/self.Npoi_MF
         F = F1 + F2 + 0.5 * (phi_T**2) * self.mass * (self.c_phonon**2) * np.sum(self.latt.M1**2) / (self.beta_ep**2)
         print(Delt, F, np.min(Elam2/T_ev), np.min(Elam1/T_ev))
         return F
     
-    def calc_free_energy_semimetal(self,T_ev, mu):
+    def calc_free_energy_semimetal(self, T_ev, mu):
         
         Elam1 = self.Ene_valley_plus_1bz - mu
         Elam2 = self.Ene_valley_min_1bz - mu
-        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))
-        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))
-        N = np.size(Elam1)
+        F1 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam1/T_ev)))/self.latt.Npoi
+        F2 = -2*T_ev*np.sum(np.log(1+np.exp(-Elam2/T_ev)))/self.latt.Npoi
+
         F = F1 + F2 
         return F
         
@@ -506,8 +546,9 @@ def main() -> int:
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
     umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
-    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
-    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
+    umklq = 0
+    l=MoireLattice.MoireTriangLattice(Nsamp, theta, 0, c6sym, umkl, umklq = 0)
+    lq=MoireLattice.MoireTriangLattice(Nsamp, theta, 2, c6sym, umkl, umklq = 0) #this one is normalized
     [q1,q2,q3]=l.q
     q=np.sqrt(q1@q1)
     print(f"taking {umkl} umklapps")
@@ -515,7 +556,6 @@ def main() -> int:
 
     PH=True
     
-
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
     hvkd=hbvf*q
@@ -572,8 +612,8 @@ def main() -> int:
     AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
     A1bz=(2*np.pi)**2 / AWZ_graphene
     
-    g1=4
-    g2=4
+    g1=3
+    g2=3
     
     alpha_ep_effective=g1*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
     beta_ep_effective=g2*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
@@ -622,7 +662,7 @@ def main() -> int:
     FEne_M_list=[]
     Delt_list=[]
 
-    TT=np.linspace(0.01,0.0001,30)
+    TT=np.linspace(0.01,0.00005,30)
     
     for T in TT:
         
@@ -650,13 +690,18 @@ def main() -> int:
     
     
     #saving data
-    Delts=np.abs(np.array(Delt_list))
+    Delts=np.abs(np.array(Delt_list)).flatten()
     FEne_M_0=np.array(FEne_M_0_list)
     FEne_M=np.array(FEne_M_list)
     one=np.ones(np.size(Delts))
     
-    df = pd.DataFrame({'T':TT, 'mu':mu*one, 'J':beta_ep_effective*one,'D':Delts,'F0':FEne_M_0,'FSC':FEne_M, 'L':Nsamp*one})
+    print(np.shape(TT),np.shape(mu*one),np.shape(beta_ep_effective*one),np.shape(Delts),np.shape(FEne_M_0),np.shape(FEne_M),np.shape(Nsamp*one))
+    
+    df = pd.DataFrame({'T':TT, 'mu':mu*one, 'bet':beta_ep_effective*one,'D':Delts,'F0':FEne_M_0,'FSC':FEne_M, 'L':Nsamp*one})
     df.to_hdf('data_mu_'+str(mu)+'_g2_'+str(g2)+'.h5', key='df', mode='w')
+    
+    with open('data_mu_'+str(mu)+'_g2_'+str(g2)+'.pkl', 'wb') as file:
+        pickle.dump(B1, file)
     
     return 0
 

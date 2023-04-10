@@ -13,30 +13,8 @@ import Dispersion
 
 
 
-# Print iterations progress
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix} ", end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
 
-        
-class ep_Bubble:
+class Eq_time_corrs:
     """
     A class used to represent electron phonon bubbles
 
@@ -166,9 +144,18 @@ class ep_Bubble:
                 self.Lnemp=self.HB.FFp.NemqFFT_s()
                 self.Lnemm=self.HB.FFm.NemqFFT_s()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
+            elif mode=="long":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_s(), self.HB.FFm.NemqFFL_s())
+            elif mode=="trans":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_s(), self.HB.FFm.NemqFFT_s())
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
-                
+            elif mode=="subl":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_s(), self.HB.FFm.sublFF_s())
+            elif mode=="nemx":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemxFF_s(), self.HB.FFm.nemxFF_s())
+            elif mode=="nemy":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_s(), self.HB.FFm.nemyFF_s())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
             
@@ -178,43 +165,23 @@ class ep_Bubble:
                 self.L00m=self.HB.FFm.denqFFL_a()
                 self.Lnemp=self.HB.FFp.NemqFFL_a()
                 self.Lnemm=self.HB.FFm.NemqFFL_a()
-                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()
-                
-                # ##Plotting form factors
-                # self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                # self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=0, sublattice=0), mode+'_m2')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=0, sublattice=0), mode+'_p2')
-                
-                
-                # self.HB.FFm.plotFF(self.Lnemp, mode+'_Nemp')
-                # self.HB.FFp.plotFF(self.Lnemm, mode+'_Nemm')
-                # self.HB.FFm.plotFF(self.L00p, mode+'_denp')
-                # self.HB.FFp.plotFF(self.L00m, mode+'_denm')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=0), mode+'_m1')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=0), mode+'_p1')
-                
-                
-                
+                [self.Omega_FFp,self.Omega_FFm]=self.OmegaL()                
             elif mode=="T":
                 self.Lnemp=self.HB.FFp.NemqFFT_a()
                 self.Lnemm=self.HB.FFm.NemqFFT_a()
                 [self.Omega_FFp,self.Omega_FFm]=self.OmegaT()
-                
-                # ##Plotting form factors
-                # self.HB.FFm.plotFF(self.Omega_FFm, mode+'_Om')
-                # self.HB.FFp.plotFF(self.Omega_FFp, mode+'_Op')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=1), mode+'_Nemm1')
-                # self.HB.FFm.plotFF(self.HB.FFm.calcFormFactor( layer=3, sublattice=2), mode+'_Nemm2')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=1), mode+'_Nemp1')
-                # self.HB.FFp.plotFF(self.HB.FFp.calcFormFactor( layer=3, sublattice=2), mode+'_Nemp2')
-                
+            elif mode=="long":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFL_a(), self.HB.FFm.NemqFFL_a())
+            elif mode=="trans":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.NemqFFT_a(), self.HB.FFm.NemqFFT_a())
             elif mode=="dens":
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_s(), self.HB.FFm.denqFF_s())
+            elif mode=="subl":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.sublFF_a(), self.HB.FFm.sublFF_a())
+            elif mode=="nemx":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemxFF_a(), self.HB.FFm.nemxFF_a())
+            elif mode=="nemy":
+                [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.nemyFF_a(), self.HB.FFm.nemyFF_a())
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
@@ -226,6 +193,8 @@ class ep_Bubble:
     """
     ################################
     
+    
+        
     def nf(self, e, T):
         
         """[summary]
@@ -240,7 +209,7 @@ class ep_Bubble:
             [double]: [description] value of the fermi function 
         """
         Tp=T+1e-17 #To capture zero temperature
-        rat=np.abs(np.max(e/Tp))
+        rat=np.abs(e/Tp)
         
         if rat<700:
             return 1/(1+np.exp( e/T ))
@@ -271,8 +240,8 @@ class ep_Bubble:
 
     def OmegaL(self):
         
-        Omega_FFp_pre=(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00p+self.beta_ep*self.Lnemp)
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*(self.alpha_ep*self.L00m+self.beta_ep*self.Lnemm)
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
                 
@@ -280,8 +249,8 @@ class ep_Bubble:
 
     def OmegaT(self):
 
-        Omega_FFp_pre=(self.beta_ep*self.Lnemp)
-        Omega_FFm_pre=(self.beta_ep*self.Lnemm)
+        Omega_FFp_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemp
+        Omega_FFm_pre=np.sqrt(self.Wupsilon)*self.beta_ep*self.Lnemm
 
         
         [Omega_FFp,Omega_FFm]=self.HB.Form_factor_unitary( Omega_FFp_pre, Omega_FFm_pre)
@@ -292,209 +261,200 @@ class ep_Bubble:
     def deltad(self, x, epsil):
         return (1/(np.pi*epsil))/(1+(x/epsil)**2)
 
-
-    def integrand_T(self,nkq,nk,ekn,ekm,w,mu,T):
-        edkq=ekn[nkq]-mu
-        edk=ekm[nk]-mu
+    
+    def GRw0s(self,ekn,ekm,mu,T):
+        edkq=ekn-mu
+        edk=ekm-mu
 
         #finite temp
         nfk= self.nf(edk,T)
         nfkq= self.nf(edkq,T)
-
-        ####delta
-        # deltad_cut=1e-17*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        # fac_p=(nfkq-nfk)*np.heaviside(np.abs(edkq-edk)-self.eta_cutoff, 0.0)/(deltad_cut-(edkq-edk))
-        # fac_p2=(self.deltad( edk, self.eta_dirac_delta))*np.heaviside(self.eta_cutoff-np.abs(edkq-edk), 1.0)
-        
-        # return (fac_p+fac_p2)
         
         ###iepsilon
         eps=self.eta_small_imag ##SENSITIVE TO DISPERSION
 
-        fac_p=(nfkq-nfk)/(w-(edkq-edk)+1j*eps)
-        return (fac_p)
+        fac_p=(nfkq-nfk)/(-(edkq-edk)+1j*eps)
+        return np.real(fac_p)
+    
+    def GReqs(self,ekn,ekm,mu,T):
+        edkq=ekn-mu
+        edk=ekm-mu
 
-
-    def parCompute(self, args):
+        #finite temp
+        nfkq= self.nf(edkq,T)
+        nfk= self.nf(edk,T)
         
-        (theta, omegas, kpath, VV, Nsamp,  muv, fil, prop_BZ, ind, T)=args
-        mu=muv[ind]
-        integ=[]
+        return (1-nfkq)*nfk
+
+
+    def corr(self,args):
+        ( mu, T)=args
+
+        
         sb=time.time()
 
-        print("starting bubble.......",np.shape(kpath)[0])
+        print("starting bubble.......")
 
-        path=np.arange(0,np.shape(kpath)[0])
-        
-        for omegas_m_i in omegas:
-            sd=[]
-            for l in path:  #for calculating only along path in FBZ
-                bub=0
-                
-                qx=kpath[int(l), 0]
-                qy=kpath[int(l), 1]
-                
-                Ikq=self.latt.insertion_index( self.latt.KX1bz+qx,self.latt.KY1bz+qy, self.latt.KQX, self.latt.KQY)
+        integ=np.zeros(self.latt.Npoi)
 
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
-                #first index is momentum, second is band third and fourth are the second momentum arg and the fifth is another band index
-                Lambda_Tens_plus_kq_k=np.array([self.Omega_FFp[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.latt.Npoi1bz)])
-                Lambda_Tens_min_kq_k=np.array([self.Omega_FFm[Ikq[ss],:,self.Ik[ss],:] for ss in range(self.latt.Npoi1bz)])
-
-
-                integrand_var=0
-                #####all bands for the + and - valley
+            bub=0
+            
+            for Nk in range(self.latt.Npoi1bz):
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ik=self.latt.Ik1bz[Nk]
+                
                 for nband in range(self.nbands):
                     for mband in range(self.nbands):
                         
-                        ek_n=self.Ene_valley_plus[:,nband]
-                        ek_m=self.Ene_valley_plus[:,mband]
-                        Lambda_Tens_plus_kq_k_nm=Lambda_Tens_plus_kq_k[:,nband,mband]
-                        # Lambda_Tens_plus_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_plus_kq_k_nm )**2)*self.integrand_T(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu,T)
-
-
-                        ek_n=self.Ene_valley_min[:,nband]
-                        ek_m=self.Ene_valley_min[:,mband]
-                        Lambda_Tens_min_kq_k_nm=Lambda_Tens_min_kq_k[:,nband,mband]
-                        # Lambda_Tens_min_kq_k_nm=int(nband==mband)  #TO SWITCH OFF THE FORM FACTORS
-                        integrand_var=integrand_var+np.abs(np.abs( Lambda_Tens_min_kq_k_nm )**2)*self.integrand_T(Ikq,self.Ik,ek_n,ek_m,omegas_m_i,mu,T)
+                        Lp=self.Omega_FFp[ikq, ik,nband,mband]
+                        ekq_p_n=self.Ene_valley_plus[ikq,nband]
+                        ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GRw0s(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
                         
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
+                        ekq_m_n=self.Ene_valley_min[ikq,nband]
+                        ek_m_m=self.Ene_valley_min[ik,mband]
+                        GRs_m=self.GRw0s(ekq_m_n,ek_m_m,mu,T)
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
 
-                bub=bub+np.sum(integrand_var)*self.dS_in
+            integ[Nq]=bub
 
-                sd.append( bub )
-
-            integ.append(sd)
         eb=time.time()
         
-        
-        integ_arr_no_reshape=np.real(np.array(integ).flatten())#/(8*Vol_rec) #8= 4bands x 2valleys
+
         print("time for bubble...",eb-sb)
         
-
-        integ=integ_arr_no_reshape.flatten()  #in ev
-        popt, res, c, resc=self.extract_cs( integ, prop_BZ)
-        integ= self.Wupsilon*integ
-        print("effective speed of sound down renormalization..."+r"$-\Delta c$", c)
-        print("residual of the fit...", res)
-        
-        # self.plot_res( integ, self.latt.KX1bz,self.latt.KY1bz, VV, fil[ind], Nsamp,c, res, str(theta)+"_lh_")
-        
-        return [integ, res, c]
-
-    def extract_cs(self, integ, prop_BZ):
-        qq=self.qscale/self.agraph
-        scaling_fac= self.Wupsilon/(qq*qq*self.mass)
-        [KX_m, KY_m, ind]=self.latt.mask_KPs( self.latt.KX,self.latt.KY, prop_BZ)
-        Gmat=np.array([ KX_m**2,KY_m**2]).T
-        GTG=Gmat.T@Gmat
-        d=np.real(integ[ind])
-        b=Gmat.T@d
-        popt=la.pinv(GTG)@b
-        res=np.sqrt(np.sum((Gmat@popt-d)**2)) #residual of the least squares procedure
-        nn=np.sqrt(np.sum((d)**2)) #residual of the least squares procedure
-        effective_c_downrenorm=np.sqrt(np.mean(popt)*scaling_fac)
-
-        return popt, res/nn, effective_c_downrenorm ,np.sqrt(res*scaling_fac/nn)
-
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
+        return res
     
-    def plot_res(self, integ, KX,KY, VV, filling, Nsamp, c , res, add_tag):
-        identifier=add_tag+str(Nsamp)+"_nu_"+str(filling)+self.name
-        
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.real(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_real_"+identifier+".png")
-        plt.close()
-        # print("the minimum real part is ...", np.min(np.real(integ)))
+    
+    def corr_eq(self,args):
+        ( mu, T)=args
 
-        plt.plot(VV[:,0],VV[:,1])
-        plt.scatter(KX,KY, s=20, c=np.abs(integ))
-        plt.gca().set_aspect('equal', adjustable='box')
-        plt.colorbar()
-        plt.savefig("Pi_ep_energy_cut_abs_"+identifier+".png")
-        plt.close()
+        
+        sb=time.time()
 
-        return None
-        
-        
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
             
-    def savedata(self, integ, filling , mu_values,T, Nsamp, c , res, add_tag):
+            bub=0
+            
+            for Nk in range(self.latt.Npoi1bz):
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ik=self.latt.Ik1bz[Nk]
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp=self.Omega_FFp[ikq, ik,nband,mband]
+                        ekq_p_n=self.Ene_valley_plus[ikq,nband]
+                        ek_p_m=self.Ene_valley_plus[ik,mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=self.Omega_FFm[ikq, ik,nband,mband]
+                        ekq_m_n=self.Ene_valley_min[ikq,nband]
+                        ek_m_m=self.Ene_valley_min[ik,mband]
+                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
+
+            integ[Nq]=bub
+
+        eb=time.time()
         
+
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, '')
+        return res
+    
+    def savedata(self, integ, mu_value, T, add_tag):
+        Nsamp=self.latt.Npoints
+        index_f=np.argmin((mu_value-self.mu_values)**2)
+        filling=self.fillings[index_f]
         identifier=add_tag+str(Nsamp)+self.name
-        Nfills=np.size(filling)
         Nss=np.size(self.latt.KX)
 
         #products of the run
         Pibub=np.hstack(integ)
-        c_list=[]
-        res_list=[]
+
         filling_list=[]
         mu_list=[]
-        for i,cph in enumerate(c):
-            c_list=c_list+[cph]*Nss
-            res_list=res_list+[res[i]]*Nss
-            filling_list=filling_list+[filling[i]]*Nss
-            mu_list=mu_list+[mu_values[i]]*Nss
+        filling_list=[filling]*Nss
+        mu_list=[mu_value]*Nss
             
-        KXall=np.hstack([self.latt.KX]*Nfills)
-        KYall=np.hstack([self.latt.KY]*Nfills)
-        carr=np.array(c_list)
-        resarr=np.array(res_list)
+        KXall=self.latt.KX
+        KYall=self.latt.KY
         fillingarr=np.array(filling_list)
         muarr=np.array(mu_list)
-        disp_m1=np.array([self.Ene_valley_min_K[:,0].flatten()]*Nfills).flatten()
-        disp_m2=np.array([self.Ene_valley_min_K[:,1].flatten()]*Nfills).flatten()
-        disp_p1=np.array([self.Ene_valley_plus_K[:,0].flatten()]*Nfills).flatten()
-        disp_p2=np.array([self.Ene_valley_plus_K[:,1].flatten()]*Nfills).flatten()
+        disp_m1=self.Ene_valley_min_K[:,0].flatten()
+        disp_m2=self.Ene_valley_min_K[:,1].flatten()
+        disp_p1=self.Ene_valley_plus_K[:,0].flatten()
+        disp_p2=self.Ene_valley_plus_K[:,1].flatten()
 
         
         #constants
-        thetas_arr=np.array([self.latt.theta]*(Nss*Nfills))
-        kappa_arr=np.array([self.HB.hpl.kappa]*(Nss*Nfills))
+        thetas_arr=np.array([self.latt.theta]*(Nss))
+        kappa_arr=np.array([self.HB.hpl.kappa]*(Nss))
         
         print('checking sizes of the arrays for hdf5 storage')
-        print(Nss,Nfills, Nss*Nfills,np.size(Pibub),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(carr), np.size(resarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
+        print(Nss, Nss,np.size(Pibub),np.size(KXall), np.size(KYall), np.size(fillingarr), np.size(muarr), np.size(thetas_arr), np.size(kappa_arr), np.size(disp_m1), np.size(disp_m2), np.size(disp_p1), np.size(disp_p2), np.size(T))
 
             
-        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr,'delt_cph':carr, 'res_fit': resarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
-        df.to_hdf('data'+identifier+'_T_'+str(T)+'.h5', key='df', mode='w')
+        df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
+        df.to_hdf('data'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
         return None
-
-
-    def Fill_sweep(self,mu_values,fillings,VV, Nsamp, c_phonon,theta, T):
+    
+    def Fill_sweep(self, Nfils, T, parallel=False):
         
-        prop_BZ=0.3
-        cs=[]
-        rs=[]
-        selfE=[]
+        if Nfils>1:
+            [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
+        else:
+            fillings=np.array([0])
+            mu_values=np.array([0])
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
 
         qp=np.arange(np.size(fillings))
         s=time.time()
-        omega=[1e-14]
-        kpath=np.array([self.latt.KX,self.latt.KY]).T
-        
+
         arglist=[]
-        for i, qpval in enumerate(qp):
-            arglist.append( (theta, omega, kpath, VV, Nsamp, mu_values,fillings,prop_BZ, qpval,T) )
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
 
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            future_to_file = {
-                
-                executor.submit(self.parCompute, arglist[qpval]): qpval for qpval in qp
-            }
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
 
-            for future in concurrent.futures.as_completed(future_to_file):
-                result = future.result()  # read the future object for result
-                selfE.append(result[0])
-                cs.append(result[2])
-                rs.append(result[1])
-                qpval = future_to_file[future]  
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
 
         
         
@@ -502,9 +462,10 @@ class ep_Bubble:
         t=e-s
         print("time for sweep delta", t)
         
-        self.savedata( selfE, fillings, mu_values, T, Nsamp, cs , rs, "")
                 
         return t
+
+     
         
 def main() -> int:
 
@@ -584,7 +545,7 @@ def main() -> int:
     #lattices with different normalizations
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
-    umkl=3 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umkl=1 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
     l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
     lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
     [q1,q2,q3]=l.q
@@ -694,52 +655,15 @@ def main() -> int:
     hmin=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH, 1 ) #last argument is whether or not we have interlayer hopping
     
     
-    hpl_decoupled=Dispersion.Ham_BM(hvkd, alph, 1, lq, kappa, PH,0)
-    hmin_decoupled=Dispersion.Ham_BM(hvkd, alph, -1, lq, kappa, PH,0)
+    substract=0 #0 for decoupled layers
+    HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl, hmin, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
     
-    # TQMC=0.001*np.array([1/0.1,1/0.2,1/0.5,1,1/2,1/4]) #in ev
-    TQMC=[0]
     
-    if mode_HF==1:
-        
-        substract=0 #0 for decoupled layers
-        mu=0
-        filling=0
-        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-        
-        
-        #BUBBLE CALCULATION
-        test_symmetry=True
-        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-        for T in TQMC:
-            B1.Fill_sweep( [mu], [filling], VV, Nsamp, c_phonon, theta, T) #no sweeep for now, it only works with neutrality
-        
-    else:
-        
-        #CALCULATING FILLING AND CHEMICAL POTENTIAL ARRAYS
-        Ndos=8
-        ldos=MoireLattice.MoireTriangLattice(Ndos,theta,2,True,0)
-        [ Kxp, Kyp]=ldos.Generate_lattice()
-        disp=Dispersion.Dispersion( ldos, nbands, hpl, hmin)
-        Nfils=3
-        # [fillings,mu_values]=disp.mu_filling_array(Nfils, True, False, False) #read write calculate kappa
-        [fillings,mu_values]=disp.mu_filling_array(Nfils, False, True, True) #read write calculate theta
-        mu=mu_values[filling_index]
-        filling=fillings[filling_index]
-        print("CHEMICAL POTENTIALS AND FILLINGS", mu_values, fillings)
-        print("CHEMICAL POTENTIAL AND FILLING", mu, filling)
-        
-        substract=0 #0 for decoupled layers
-        mu=0
-        filling=0
-        HB=Dispersion.HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
-        
-        
-        #BUBBLE CALCULATION
-        test_symmetry=True
-        B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
-        for T in TQMC:
-            B1.Fill_sweep( mu_values, fillings, VV, Nsamp, c_phonon, theta,T)
+    #BUBBLE CALCULATION        
+    test_symmetry=True
+    B1=Eq_time_corrs(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    # a=B1.corr( args=(0.0,0.0))
+
 
     return 0
 

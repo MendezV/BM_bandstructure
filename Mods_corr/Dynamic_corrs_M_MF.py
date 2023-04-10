@@ -13,30 +13,8 @@ import Dispersion
 
 
 
-# Print iterations progress
-def printProgressBar (iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iteration   - Required  : current iteration (Int)
-        total       - Required  : total iterations (Int)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-    filledLength = int(length * iteration // total)
-    bar = fill * filledLength + '-' * (length - filledLength)
-    print(f"\r{prefix} |{bar}| {percent}% {suffix} ", end = printEnd)
-    # Print New Line on Complete
-    if iteration == total: 
-        print()
 
-        
-class ep_Bubble:
+class Eq_time_corrs:
     """
     A class used to represent electron phonon bubbles
 
@@ -89,42 +67,39 @@ class ep_Bubble:
     """
     ################################
     
-    def __init__(self, latt, nbands, HB, symmetric, mode, cons , test, umkl):
+    def __init__(self, Mean_field_M, symmetric, mode, dir ):
 
         
         ################################
         #lattice attributes
         ################################
-        self.latt=latt
+        self.latt=Mean_field_M.latt
         # print(latt.Npoints, "points in the lattice")
-        self.umkl=umkl
-        
-        self.Ik=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
-        [q1,q2,q3]=latt.qvect()
+        [q1,q2,q3]=self.latt.qvect()
         self.qscale=la.norm(q1) #necessary for rescaling since we where working with a normalized lattice 
         print("qq",self.qscale)
         self.dS_in=1/self.latt.Npoi1bz
         
         
         ################################
-        #dispersion attributes
+        # dispersion attributes
         ################################
-        self.nbands=nbands
-        self.HB=HB
-        self.Ene_valley_plus_1bz=HB.E_HFp
-        self.Ene_valley_min_1bz=HB.E_HFm
-        self.Ene_valley_plus_K=HB.E_HFp_K
-        self.Ene_valley_min_K=HB.E_HFm_K
-        self.Ene_valley_plus=HB.E_HFp_ex
-        self.Ene_valley_min=HB.E_HFm_ex
+        self.nbands=Mean_field_M.nbands
+        self.HB=Mean_field_M.HB
+        self.Ene_valley_plus_1bz=Mean_field_M.Ene_valley_plus_1bz
+        self.Ene_valley_min_1bz=Mean_field_M.Ene_valley_min_1bz
+        self.Ene_valley_plus_K=Mean_field_M.Ene_valley_plus_K
+        self.Ene_valley_min_K=Mean_field_M.Ene_valley_min_K
+        self.Ene_valley_plus=Mean_field_M.Ene_valley_plus
+        self.Ene_valley_min=Mean_field_M.Ene_valley_min
 
         
         
         ################################
-        ###selecting eta
+        ### selecting eta
         ################################
         eps_l=[]
-        for i in range(nbands):
+        for i in range(self.nbands):
             eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_plus_1bz[:,i].flatten() )  ) )/2)
             eps_l.append(np.mean( np.abs( np.diff( self.Ene_valley_min_1bz[:,i].flatten() )  ) )/2)
         eps_a=np.array(eps_l)
@@ -138,6 +113,8 @@ class ep_Bubble:
         
         
         
+        
+        
         ################################
         #attributes for the name of the object and the extraction of Ctilde
         #note that the couplings are normalized so that beta_ep is 1 and only the relative value bw them matters
@@ -145,11 +122,10 @@ class ep_Bubble:
         #agraph and the mass are used to get the conversion from the normalized bubble to the unitful bubble when doing the fit
         #to extract the sound velocity
         ################################
-        [self.alpha_ep, self.beta_ep,  self.Wupsilon, self.agraph, self.mass ]=cons #constants for the exraction of the effective velocity
         self.mode=mode
         self.symmetric=symmetric
-        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(self.alpha_ep)+"_beta_"+str(self.beta_ep)+"_umklp_"+str(umkl)+"_kappa_"+str(self.HB.hpl.kappa)+"_theta_"+str(self.latt.theta)+"_modeHF_"+str(HB.mode)
-
+        self.name="_mode_"+self.mode+"_symmetry_"+self.symmetric+"_alpha_"+str(Mean_field_M.alpha_ep)+"_beta_"+str(Mean_field_M.beta_ep)+"_umklp_"+str(self.latt.umkl)+"_kappa_"+str(self.HB.hpl.kappa)+"_theta_"+str(self.latt.theta)+"_modeHF_"+str(self.HB.mode)
+        self.dir=dir #directory where the correlation functions will be stored
         
         ################################
         #generating form factors
@@ -207,6 +183,17 @@ class ep_Bubble:
             else:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
+        
+        
+        ################################
+        #lattice attributes
+        ################################
+        IkpMpq=np.zeros([self.latt.Npoi1bz,self.latt.Npoi])
+        for q in range(self.latt.Npoi):
+            IkpMpq[:,q]=np.array(self.latt.insertion_index( self.latt.KX1bz+self.latt.KX[q]+self.latt.M1[0],self.latt.KY1bz+self.latt.KY[q]+self.latt.M1[1], self.latt.KQX, self.latt.KQY))
+        self.IkpMpq=IkpMpq.astype(int)
+        print( 'the shape of the index q array',np.shape(self.IkpMpq))
+        self.Ik1bz_c=self.latt.insertion_index( self.latt.KX1bz,self.latt.KY1bz, self.latt.KQX,self.latt.KQY)
         
 
     ################################
@@ -306,7 +293,7 @@ class ep_Bubble:
         nfkq= self.nf(edkq,T)
         nfk= self.nf(edk,T)
         
-        return (1-nfkq)*nfk
+        return (1-nfk)*nfkq
 
 
     def corr(self,args):
@@ -405,6 +392,7 @@ class ep_Bubble:
         return res
     
     def savedata(self, integ, mu_value, T, add_tag):
+        
         Nsamp=self.latt.Npoints
         index_f=np.argmin((mu_value-self.mu_values)**2)
         filling=self.fillings[index_f]
@@ -438,7 +426,7 @@ class ep_Bubble:
 
             
         df = pd.DataFrame({'bub': Pibub, 'kx': KXall, 'ky': KYall,'nu': fillingarr,'mu':muarr, 'theta': thetas_arr, 'kappa': kappa_arr, 'Em1':disp_m1, 'Em2':disp_m2,'Ep1':disp_p1,'Ep2':disp_p2 , 'T':T})
-        df.to_hdf('data'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
+        df.to_hdf(self.dir+'/corr_eq'+identifier+'_nu_'+str(filling)+'_T_'+str(T)+'.h5', key='df', mode='w')
 
 
         return None
@@ -486,6 +474,279 @@ class ep_Bubble:
         
                 
         return t
+    
+    def Fill_sweep_eq(self, Nfils, T, parallel=False):
+        
+        if Nfils>1:
+            [fillings,mu_values]=self.HB.disp.mu_filling_array(Nfils,self.Ene_valley_min_1bz, self.Ene_valley_plus_1bz)
+        else:
+            fillings=np.array([0])
+            mu_values=np.array([0])
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr_eq, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr_eq(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+    
+    def Corr_eq(self, mu_values, fillings, T, parallel=False):
+
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+    
+    
+    def Corr(self, mu_values, fillings, T, parallel=False):
+
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i],T) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+    
+    def MF_corr_eq(self, args):
+        
+        ( mu, T, phi_T)=args
+        Form_fact_p = self.Omega_FFp
+        
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Lp_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        Lm_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Lp_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        Lm_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Hqp_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Hqp_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Eval_plus_kq = np.zeros([N_Mp*self.nbands])
+        Eval_min_kq = np.zeros([N_Mp*self.nbands])
+        
+        Vval_plus_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        
+        Eval_plus_k = np.zeros([N_Mp*self.nbands])
+        Eval_min_k = np.zeros([N_Mp*self.nbands])
+        
+        Vval_plus_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+
+        # Mean_field_M
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+            Hqp_kq=self.Mean_field_M.Heq_p_MBZ[Nq,:,:]+phi_T*self.Mean_field_M.HT_p_MBZ[Nq,:,:]
+            Hqm_kq=self.Mean_field_M.Heq_m_MBZ[Nq,:,:]+phi_T*self.Mean_field_M.HT_m_MBZ[Nq,:,:]
+            
+            Eval_plus_kq, Vval_plus_kq = np.linalg.eigh(Hqp_kq)
+            Eval_min_kq, Vval_min_kq = np.linalg.eigh(Hqm_kq)
+
+            
+            for Nk in range(self.latt.Npoi1bz):  #for calculating only along path in FBZ
+                Nk_d = self.Ik1bz_c[Nk]
+                
+                Hqp_k=self.Mean_field_M.Heq_p_MBZ[Nk_d,:,:]+phi_T*self.Mean_field_M.HT_p_MBZ[Nk_d,:,:]
+                Hqm_k=self.Mean_field_M.Heq_m_MBZ[Nk_d,:,:]+phi_T*self.Mean_field_M.HT_m_MBZ[Nk_d,:,:]
+                
+                Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hqp_k)
+                Eval_min_k, Vval_min_k = np.linalg.eigh(Hqm_k)
+                
+                ik=self.latt.Ik1bz[Nk]
+                ikq=self.latt.Ikpq[Nk,Nq]
+                ikMq=self.IkpMpq[Nk,Nq]
+
+                Lp1=  Form_fact_p[ikq, ik, :, :] 
+                Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+                
+                Lp2 =  Form_fact_p[ikMq, ik, :, :]
+                Lm2 = - (self.sx@Lp2@self.sx) #using chiral
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp_pre[nband,mband]=Lp_pre[nband,mband]+Lp1[nband,mband]
+                        Lm_pre[Nq, Nk,nband,mband]=Lm_pre[Nk,nband,mband]+np.conj(Lm1.T)[nband,mband]
+                        
+                        Lp_pre[self.nbands+nband,self.nbands+mband]=Lp_pre[self.nbands+nband,self.nbands+mband]+Lp2[nband,mband]
+                        Lm_pre[self.nbands+nband,self.nbands+mband]=Lm_pre[self.nbands+nband,self.nbands+mband]+np.conj(Lm2.T)[nband,mband]
+                        
+                Lp_u = np.conj(np.transpose(Vval_plus_kq))@(Lp_pre@Vval_plus_k)
+                Lm_u = np.conj(np.transpose(Vval_min_kq))@(Lm_pre@Vval_min_k)
+                
+                for nband in range(N_Mp*self.nbands):
+                    for mband in range(N_Mp*self.nbands):
+                        
+                        Lp=Lp_u[nband,mband]
+                        ekq_p_n=Eval_plus_kq[nband]
+                        ek_p_m=Eval_plus_k[mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=Lm_u[nband,mband]
+                        ekq_m_n=Eval_min_kq[nband]
+                        ek_m_m=Eval_min_k[mband]
+                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
+
+            integ[Nq]=bub
+
+                        
+        eb=time.time()
+        
+
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        self.savedata(res, mu, T, 'MF_M')
+        return res
+    
+    
+    def MF_Corr_eq(self, mu_values, fillings, T , phiT, parallel=False):
+
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i], T, phiT) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
+
 
      
         
@@ -568,8 +829,8 @@ def main() -> int:
     theta=modulation_theta*np.pi/180  # magic angle
     c6sym=True
     umkl=1 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
-    l=MoireLattice.MoireTriangLattice(Nsamp,theta,0,c6sym,umkl)
-    lq=MoireLattice.MoireTriangLattice(Nsamp,theta,2,c6sym,umkl) #this one is normalized
+    l=MoireLattice.MoireTriangLattice(Nsamp, theta, 0, c6sym, umkl)
+    lq=MoireLattice.MoireTriangLattice(Nsamp, theta, 2, c6sym, umkl) #this one is normalized
     [q1,q2,q3]=l.q
     q=np.sqrt(q1@q1)
     print(f"taking {umkl} umklapps")
@@ -683,9 +944,9 @@ def main() -> int:
     
     #BUBBLE CALCULATION        
     test_symmetry=True
-    B1=ep_Bubble(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
+    B1=Eq_time_corrs(lq, nbands, HB,  mode_layer_symmetry, mode, cons, test_symmetry, umkl)
     # a=B1.corr( args=(0.0,0.0))
-    B1.Fill_sweep(3,0.01)
+
 
     return 0
 

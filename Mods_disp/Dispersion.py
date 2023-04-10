@@ -35,6 +35,7 @@ plt.rc('text', usetex=True)
 # TODO: check that the form factors are working properly when I increase the number of bands For HF
     
 class Ham_BM():
+    
     def __init__(self, hvkd, alpha, xi, latt, kappa, PH, Interlay=None):
 
         self.hvkd = hvkd
@@ -619,7 +620,7 @@ class Ham_BM():
         for GG in Gu:
             shi1=int(GG[0])
             shi2=int(GG[1])
-            psishift=self.trans_psi(psi_p, shi1, shi2,passive)
+            psishift=self.trans_psi(psi_p, shi1, shi2, passive)
             psilist=psilist+[psishift]
         psi=np.vstack(psilist)
         return psi
@@ -1245,6 +1246,7 @@ class Dispersion():
     
 class FormFactors():
     def __init__(self, psi_p, xi, latt, umklapp, ham, Bands=None):
+        
         self.psi_p = psi_p #has dimension #kpoints, 4*N, nbands
         self.cpsi_p=np.conj(psi_p)
         self.latt=latt
@@ -1858,8 +1860,9 @@ class HF_BandStruc:
             #dispersion attributes
             ################################
 
-            dispy=Dispersion( latt, 8, hpl, hmin)
-            dispy.High_symmetry()
+            # plotting the bare dispersion
+            # dispy=Dispersion( latt, 8, hpl, hmin)
+            # dispy.High_symmetry()
             
             disp=Dispersion( latt, self.nbands, hpl, hmin)
             self.disp=disp
@@ -1919,7 +1922,7 @@ class HF_BandStruc:
             # self.Um=np.array(U_transfm)
 
         #plots of the Bandstructre if needed
-        self.plots_bands()
+        # self.plots_bands()
         # saves the dispersion
         # self.savedata('disp')
     
