@@ -478,8 +478,30 @@ class Dynamic_corrs:
     
     def MF_corr(self, args):
         
+        
+       
         ( mu, T, phi_T, save)=args
         Form_fact_p = self.Omega_FFp
+        N_Mp = 2 # number of symmetry breaking momenta +1
+        
+        
+        [Eval_plus,Eval_min] = self.Mean_field_M.precompute_E_rMBZ((phi_T, mu, T))
+        
+        ################################
+        ### selecting eta
+        ################################
+        eps_l=[]
+        for i in range(N_Mp*self.nbands):
+            eps_l.append(np.mean( np.abs( np.diff( Eval_plus[:,i].flatten() )  ) ) / 2)
+            eps_l.append(np.mean( np.abs( np.diff( Eval_min[:,i].flatten() )  ) ) / 2)
+        eps_a=np.array(eps_l)
+        eps=np.min(eps_a)
+        
+        self.eta=eps
+        self.eta_dirac_delta=eps/4
+        self.eta_cutoff=eps
+        self.eta_small_imag = 2*eps
+        
         
         sb=time.time()
 
@@ -488,7 +510,7 @@ class Dynamic_corrs:
         integ=np.zeros(self.latt.Npoi)
 
         
-        N_Mp=2 # number of symmetry breaking momenta +1
+        
         
         Lp_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
         Lm_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
