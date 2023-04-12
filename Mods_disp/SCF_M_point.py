@@ -176,6 +176,19 @@ class Mean_field_M:
         print( 'the shape of the index -M array',np.shape(self.IkmM))
         
         
+        if self.latt.umkl_Q-self.latt.umkl >1:
+            
+            IqpM=np.zeros([self.latt.NpoiQ_i])
+            IqpM=np.array(self.latt.insertion_index( self.latt.KQX_i+Mp[0],self.latt.KQY_i+Mp[1], self.latt.KQX, self.latt.KQY))
+            self.IqpM=IqpM.astype(int)
+            print( 'the shape of the index M array',np.shape(self.IqpM))
+            
+            IqmM=np.zeros([self.latt.NpoiQ_i])
+            IqmM=np.array(self.latt.insertion_index( self.latt.KQX_i-Mp[0],self.latt.KQY_i-Mp[1], self.latt.KQX, self.latt.KQY))
+            self.IqmM=IqmM.astype(int)
+            print( 'the shape of the index -M array',np.shape(self.IqmM))
+        
+        
         #minus
         Imk=np.zeros([self.latt.Npoi])
         Imk=np.array(self.latt.insertion_index( -(self.latt.KX),-(self.latt.KY), self.latt.KQX, self.latt.KQY))
@@ -217,6 +230,9 @@ class Mean_field_M:
         
         [self.Heq_p_MBZ,self.HT_p_MBZ,self.Heq_m_MBZ,self.HT_m_MBZ]=self.H_MF_parts_MBZ()
         [self.Heq_p,self.HT_p,self.Heq_m,self.HT_m]=self.H_MF_parts_rMBZ()
+        
+        if self.latt.umkl_Q-self.latt.umkl >1:
+            [self.Heq_p_q,self.HT_p_q,self.Heq_m_q,self.HT_m_q]=self.H_MF_parts()
 
     ################################
     """
@@ -246,6 +262,44 @@ class Mean_field_M:
             return 1/(1+np.exp( e/T ))
         else:
             return np.heaviside(-e,0.5)
+        
+        
+    def H_MF_parts(self):
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.latt.NpoiQ_i,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.latt.NpoiQ_i,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.latt.NpoiQ_i,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.latt.NpoiQ_i,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.latt.NpoiQ_i):  #for calculating only along path in FBZ
+            
+            ik=self.latt.Iq_i[Nk]
+            ikq=self.IqpM[Nk]
+            ikmq=self.IqmM[Nk]
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            
+            for nband in range(self.nbands):
+                
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+        return [Heq_p,HT_p,Heq_m,HT_m]
 
     def H_MF_parts_MBZ(self):
         
@@ -367,17 +421,16 @@ class Mean_field_M:
         
         N_Mp=2 # number of symmetry breaking momenta +1
         
-        HT_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_p=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        HT_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
-        HT_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_m=np.zeros([self.latt.Npoi,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        HT_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         
         for Nk in range(self.Npoi_MF):  #for calculating only along path in FBZ
             
             ik=self.IkMF_M_1bz[Nk]
-            
             ikq=self.IMF_M_kpM[Nk]
             ikmq=self.IMF_M_kmM[Nk]
 
@@ -543,27 +596,27 @@ def main() -> int:
     print("lattice sampling...")
     #Lattice parameters 
     #lattices with different normalizations
-    theta=modulation_theta*np.pi/180  # magic angle
-    c6sym=True
-    umkl=0 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
-    umklq = 0
-    l=MoireLattice.MoireTriangLattice(Nsamp, theta, 0, c6sym, umkl, umklq = 0)
-    lq=MoireLattice.MoireTriangLattice(Nsamp, theta, 2, c6sym, umkl, umklq = 0) #this one is normalized
-    [q1,q2,q3]=l.q
-    q=np.sqrt(q1@q1)
+    theta = modulation_theta*np.pi/180  # magic angle
+    c6sym = True
+    umkl = 1 #the number of umklaps where we calculate an observable ie Pi(q), for momentum transfers we need umkl+1 umklapps when scattering from the 1bz
+    umklq = 1
+    l = MoireLattice.MoireTriangLattice(Nsamp, theta, 0, c6sym, umkl, umklq = umklq)
+    lq = MoireLattice.MoireTriangLattice(Nsamp, theta, 2, c6sym, umkl, umklq = umklq) #this one is normalized
+    [q1,q2,q3] = l.q
+    q = np.sqrt(q1@q1)
     print(f"taking {umkl} umklapps")
     VV=lq.boundary()
 
-    PH=True
+    PH = True
     
     #JY params 
     hbvf = (3/(2*np.sqrt(3)))*2.7; # eV
-    hvkd=hbvf*q
-    kappa=modulation_kappa
+    hvkd = hbvf * q
+    kappa = modulation_kappa
     up = 0.105; # eV
     u = kappa*up; # eV
-    alpha=up/hvkd
-    alph=alpha
+    alpha = up / hvkd
+    alph = alpha
 
     print("\n \n")
     print("parameters of the hamiltonian...")
@@ -576,30 +629,30 @@ def main() -> int:
     print("\n \n")
 
     #electron parameters
-    nbands=2
-    nremote_bands=0
-    hbarc=0.1973269804*1e-6 #ev*m
-    alpha=137.0359895 #fine structure constant
-    a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
-    e_el=1.6021766*(10**(-19))  #in joule/ev
-    ee2=(hbarc/a_graphene)/alpha
+    nbands = 2
+    nremote_bands = 0
+    hbarc = 0.1973269804*1e-6 #ev*m
+    alpha = 137.0359895 #fine structure constant
+    a_graphene = 2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
+    e_el = 1.6021766 * ( 10**(-19) )  #in joule/ev
+    ee2 = (hbarc / a_graphene) / alpha
     eps_inv = 1/10
-    d_screening=20*(1e-9)/a_graphene
-    d_screening_norm=d_screening*lq.qnor()
+    d_screening = 20*(1e-9)/a_graphene
+    d_screening_norm = d_screening*lq.qnor()
     epsilon_0 = 8.85*1e-12
     ev_conv = e_el
-    Vcoul=( e_el*e_el*eps_inv*d_screening/(2*epsilon_0*a_graphene) )
-    V0= (  Vcoul/lq.Vol_WZ() )/ev_conv
-    print(V0, 'la energia de coulomb en ev')
+    Vcoul=( e_el * e_el * eps_inv * d_screening / ( 2 * epsilon_0 * a_graphene) )
+    V0= (  Vcoul / lq.Vol_WZ() ) / ev_conv
+    print( V0, 'la energia de coulomb en ev')
     print("\n \n")
 
     #phonon parameters
-    c_light=299792458 #m/s
-    M=1.99264687992e-26 * (c_light*c_light/e_el) # [in units of eV]
-    mass=M/(c_light**2) # in ev *s^2/m^2
-    alpha_ep=0 # in ev
-    beta_ep=4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
-    c_phonon=13600 #m/s
+    c_light = 299792458 #m/s
+    M = 1.99264687992e-26 * (c_light * c_light / e_el) # [in units of eV]
+    mass = M / ( c_light**2 ) # in ev *s^2/m^2
+    alpha_ep = 0 # in ev
+    beta_ep = 4 #in ev SHOULD ALWAYS BE GREATER THAN ZERO
+    c_phonon = 13600 #m/s
 
     if mode=="L":
         c_phonon=21400 #m/s
@@ -608,15 +661,15 @@ def main() -> int:
         
     
     #calculating effective coupling
-    A1mbz=lq.VolMBZ*((q**2)/(a_graphene**2))
-    AWZ_graphene=np.sqrt(3)*a_graphene*a_graphene/2
-    A1bz=(2*np.pi)**2 / AWZ_graphene
+    A1mbz = lq.VolMBZ*( (q**2) / (a_graphene**2) )
+    AWZ_graphene = np.sqrt(3) * a_graphene * a_graphene / 2
+    A1bz = ( 2 * np.pi )**2 / AWZ_graphene
     
-    g1=3
-    g2=3
+    g1 = 3
+    g2 = 3
     
-    alpha_ep_effective=g1*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
-    beta_ep_effective=g2*np.sqrt(1/2)*np.sqrt(A1mbz/A1bz)*beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    alpha_ep_effective = g1 * np.sqrt(1/2) * np.sqrt( A1mbz / A1bz ) * alpha_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
+    beta_ep_effective = g2 * np.sqrt(1/2) * np.sqrt( A1mbz / A1bz ) * beta_ep #sqrt 1/2 from 2 atoms per unit cell in graphene
     
     #testing the orders of magnitude for the dimensionless velocity squared
     qq=q/a_graphene

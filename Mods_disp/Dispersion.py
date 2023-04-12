@@ -671,7 +671,6 @@ class Dispersion():
         Ene_valley_min_a=np.empty((0))
         psi_plus_a=[]
         psi_min_a=[]
-        psi_min_a_2=[]
 
 
         print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
@@ -705,22 +704,21 @@ class Dispersion():
         return [psi_plus,Ene_valley_plus,psi_min,Ene_valley_min]
     
 
-    def precompute_E_psi_q(self):
+    def precompute_E_psi_c3(self):
         
         Ene_valley_plus_a=np.empty((0))
         Ene_valley_min_a=np.empty((0))
         psi_plus_a=[]
         psi_min_a=[]
-        psi_min_a_2=[]
 
 
-        print(f"starting dispersion with {self.latt.NpoiQ} points..........")
+        print(f"starting dispersion with {self.latt.Npoi1bz_plot} points..........")
         
         s=time.time()
    
-        for l in range(self.latt.NpoiQ):
+        for l in range(self.latt.Npoi1bz_plot):
             
-            [wave1p,E1p,wave1m,E1m]=self.E_gauge_psi(self.latt.KQX[l],self.latt.KQY[l])
+            [wave1p,E1p,wave1m,E1m]=self.E_gauge_psi(self.latt.KX1bz_plot[l],self.latt.KY1bz_plot[l])
             Ene_valley_plus_a=np.append(Ene_valley_plus_a,E1p)
             psi_plus_a.append(wave1p)
 
@@ -746,8 +744,8 @@ class Dispersion():
         
      
         
-        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.latt.NpoiQ,self.nbands])
-        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.latt.NpoiQ,self.nbands])
+        Ene_valley_plus= np.reshape(Ene_valley_plus_a,[self.latt.Npoi1bz_plot,self.nbands])
+        Ene_valley_min= np.reshape(Ene_valley_min_a,[self.latt.Npoi1bz_plot,self.nbands])
 
         diff=Ene_valley_min-(-Ene_valley_plus[:,::-1])
         print('\n symmetry in eigens Cstar*Tr', np.mean(np.sqrt(np.diag(diff.T@diff))),"flips the spectrum and momentum space \n")

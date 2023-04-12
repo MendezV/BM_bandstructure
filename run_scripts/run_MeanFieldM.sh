@@ -10,7 +10,7 @@
 export OPENBLAS_NUM_THREADS=6
 
 #generic parameters 
-Lattice_size=18
+Lattice_size=12
 filling_seed=0
 twist_angle=1.05
 kappa=0.75
@@ -25,7 +25,7 @@ dire_to_mods='../Mods_disp/'
 param_arr=$(awk -F= '{print $1}' ${parameter_file})
 echo ${param_arr}
 
-jobname="g3_18"  #JOBNAME importan to declare -has to be descriptive
+jobname="g3_12"  #JOBNAME importan to declare -has to be descriptive
 
 #General info about the job
 date_in="`date "+%Y-%m-%d-%H-%M-%S"`"

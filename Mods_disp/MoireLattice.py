@@ -60,26 +60,22 @@ class MoireTriangLattice:
 
         [self.KX1bz,self.KY1bz]=self.Generate_lattice_2()
         [self.KX1bz_plot,self.KY1bz_plot]=self.c3symmetrize(self.KX1bz,self.KY1bz)
-        
         [self.KX_pre,self.KY_pre]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz, self.umkl) #for the momentum transfer lattice
-        [self.KQX_pre,self.KQY_pre]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl_Q) #for the momentum transfer lattice
+        [self.KQX,self.KQY]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz,self.umkl_Q) #for the momentum transfer lattice
+        
         
         if c6sym:
-            
             [self.KX,self.KY]=self.c3symmetrize(self.KX_pre,self.KY_pre)
-            [self.KQX,self.KQY]=self.c3symmetrize(self.KQX_pre,self.KQY_pre)
-            
         else:
-
             [self.KX,self.KY]=[self.KX_pre,self.KY_pre]
-            [self.KQX,self.KQY]=[self.KQX_pre,self.KQY_pre]
             
-        
         
         #sizes of the lattices 
         self.Npoi1bz=np.size(self.KX1bz); print(self.Npoi1bz, "1bz numer of sampling lattice points")
+        self.Npoi1bz_plot=np.size(self.KX1bz_plot); print(self.Npoi1bz_plot, "1bz numer of sampling lattice points c3")
         self.Npoi=np.size(self.KX); print(self.Npoi, "X numer of sampling lattice points")
         self.NpoiQ=np.size(self.KQX); print(self.NpoiQ, "Q numer of sampling lattice points")
+        
         
         
         # inserton index attributes to look for smaller lattices in the bigger ones
@@ -94,6 +90,27 @@ class MoireTriangLattice:
             Ikpq[:,q]=np.array(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX, self.KQY))
         self.Ikpq=Ikpq.astype(int)
         print( 'the shape of the index q array',np.shape(self.Ikpq))
+        
+        
+        if umklq>0:
+            
+            [self.KQX_ipre,self.KQY_ipre]=self.Generate_Umklapp_lattice2(self.KX1bz, self.KY1bz, umkl+1) #for the momentum transfer lattice
+            # [self.KQX_i,self.KQY_i]=self.c3symmetrize(self.KQX_ipre,self.KQY_ipre)
+            [self.KQX_i,self.KQY_i] = [self.KQX_ipre,self.KQY_ipre]
+            self.NpoiQ_i=np.size(self.KQX_i); print(self.NpoiQ_i, "Q numer of sampling lattice points in intermediate lattice")
+            #scattering from k in 1bz to q in the momentum transfer lattice
+            # Ikpq=[]
+            Ikpq_i=np.zeros([self.Npoi1bz,self.Npoi])
+            for q in range(self.Npoi):
+                Ikpq_i[:,q]=np.array(self.insertion_index( self.KX1bz+self.KX[q],self.KY1bz+self.KY[q], self.KQX_i, self.KQY_i))
+            self.Ikpq_i=Ikpq_i.astype(int)
+            self.Ik1bz_i=self.insertion_index( self.KX1bz,self.KY1bz, self.KQX_i,self.KQY_i)
+            self.Ik_i=self.insertion_index( self.KX,self.KY, self.KQX_i,self.KQY_i)
+            self.Iq_i=self.insertion_index( self.KQX_i,self.KQY_i, self.KQX,self.KQY)
+            print( 'the shape of the index q array for intermediate q momentum transfers',np.shape(self.Ikpq))
+        
+        
+        
         
         
         #scattering from k in 1bz to G in the reciprocal lattice
@@ -157,13 +174,7 @@ class MoireTriangLattice:
         # plt.show()
 
 
-        
 
-        
-        
-        
-
-        
     def __repr__(self):
         return "lattice( LX={w}, twist_angle={c})".format(h=self.Npoints, c=self.theta)
 
