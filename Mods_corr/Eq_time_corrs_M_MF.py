@@ -779,11 +779,13 @@ class Eq_time_corrs:
             for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
                 
                 #for the dispersions
-                ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
-                ikG = self.IkpG_MF_i[Nk,NG]
-
-                Hkp=self.Mean_field_M.Heq_p_q[ik,:,:]+phi_T*self.Mean_field_M.HT_p_q[ik,:,:]
-                Hkm=self.Mean_field_M.Heq_m_q[ik,:,:]+phi_T*self.Mean_field_M.HT_m_q[ik,:,:]
+                ik   = Nk
+                ikG  = self.IkpG_MF_i[Nk,NG]
+                
+                #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
+                #symmetric with what I have below for k+q
+                Hkp=self.Mean_field_M.Heq_p[ik,:,:]+phi_T*self.Mean_field_M.HT_p[ik,:,:]
+                Hkm=self.Mean_field_M.Heq_m[ik,:,:]+phi_T*self.Mean_field_M.HT_m[ik,:,:]
                  
                 Hkp_G=self.Mean_field_M.Heq_p_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_p_q[ikG,:,:]
                 Hkm_G=self.Mean_field_M.Heq_m_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_m_q[ikG,:,:]
@@ -864,9 +866,9 @@ class Eq_time_corrs:
 
         print("starting bubble.......")
 
-        integ=np.zeros(self.latt.Npoi)
+        integ=np.zeros(self.latt.Npoi, dtype=complex)
 
-        N_Mp=2 # number of symmetry breaking momenta +1
+        N_Mp = 2 # number of symmetry breaking momenta +1
         
         
         ################
@@ -935,20 +937,22 @@ class Eq_time_corrs:
             for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
                 
                 #for the dispersions
-                ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
-                ikG = self.IkpG_MF_i[Nk,NG]
-
-                Hkp=self.Mean_field_M.Heq_p_q[ik,:,:]+phi_T*self.Mean_field_M.HT_p_q[ik,:,:]
-                Hkm=self.Mean_field_M.Heq_m_q[ik,:,:]+phi_T*self.Mean_field_M.HT_m_q[ik,:,:]
+                ik   = Nk
+                ikG  = self.IkpG_MF_i[Nk,NG]
+                
+                #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
+                #symmetric with what I have below for k+q
+                Hkp = self.Mean_field_M.Heq_p[ik,:,:] + phi_T * self.Mean_field_M.HT_p[ik,:,:]
+                Hkm = self.Mean_field_M.Heq_m[ik,:,:] + phi_T * self.Mean_field_M.HT_m[ik,:,:]
                  
-                Hkp_G=self.Mean_field_M.Heq_p_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_p_q[ikG,:,:]
-                Hkm_G=self.Mean_field_M.Heq_m_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_m_q[ikG,:,:]
+                Hkp_G = self.Mean_field_M.Heq_p_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ikG,:,:]
+                Hkm_G = self.Mean_field_M.Heq_m_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ikG,:,:]
                 
                 Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hkp)
-                Eval_min_k, Vval_min_k = np.linalg.eigh(Hkm)
+                Eval_min_k, Vval_min_k   = np.linalg.eigh(Hkm)
                 
                 Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
-                Eval_min_kG, Vval_min_kG = np.linalg.eigh(Hkm_G)
+                Eval_min_kG, Vval_min_kG   = np.linalg.eigh(Hkm_G)
                 
                 
                 #for the form factors
@@ -957,10 +961,10 @@ class Eq_time_corrs:
                 ikG  = self.IkpG_MF[Nk,NG]
                 ikMG = self.IkpMpG_MF[Nk,NG]
             
-                Lp1 =  Form_fact_p[ikG, ik, :, :] 
+                Lp1 =   Form_fact_p[ikG, ik, :, :] 
                 Lm1 = - (self.sx@Lp1@self.sx) #using chiral
                 
-                Lp2 =  Form_fact_p[ikMG, ikpM, :, :]
+                Lp2 =   Form_fact_p[ikMG, ikpM, :, :]
                 Lm2 = - (self.sx@Lp2@self.sx) #using chiral
                 
                 # generating the form factor matrix
@@ -997,75 +1001,77 @@ class Eq_time_corrs:
                     
                 
                 
-                bub_p = 0
-                
-                for Np in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
-                
-                    #for the dispersions
-                    ip   = self.Mean_field_M.IkMF_M_1bz[Np]
-                    ipG = self.IkmG_MF_i[Np,NG]
+            bub_p = 0
+            
+            for Np in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
+            
+                #for the dispersions
+                ip   = Np
+                ipG  = self.IkmG_MF_i[Np,NG]
 
-                    Hpp=self.Mean_field_M.Heq_p_q[ip,:,:]+phi_T*self.Mean_field_M.HT_p_q[ip,:,:]
-                    Hpm=self.Mean_field_M.Heq_m_q[ip,:,:]+phi_T*self.Mean_field_M.HT_m_q[ip,:,:]
-                    
-                    Hpp_G=self.Mean_field_M.Heq_p_q[ipG,:,:]+phi_T*self.Mean_field_M.HT_p_q[ipG,:,:]
-                    Hpm_G=self.Mean_field_M.Heq_m_q[ipG,:,:]+phi_T*self.Mean_field_M.HT_m_q[ipG,:,:]
-                    
-                    Eval_plus_p, Vval_plus_p = np.linalg.eigh(Hpp)
-                    Eval_min_p, Vval_min_p = np.linalg.eigh(Hpm)
-                    
-                    Eval_plus_pG, Vval_plus_pG = np.linalg.eigh(Hpp_G)
-                    Eval_min_pG, Vval_min_pG = np.linalg.eigh(Hpm_G)
-                    
-                    
-                    #for the form factors
-                    ip   = self.Mean_field_M.IkMF_M_1bz[Np]
-                    ippM = self.Mean_field_M.IMF_M_kpM[Np]
-                    ipG  = self.IkpG_MF[Np,NG]
-                    ipMG = self.IkpMmG_MF[Np,NG]
+                #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
+                #symmetric with what I have below for k+q
+                Hpp = self.Mean_field_M.Heq_p[ip,:,:]+ phi_T * self.Mean_field_M.HT_p[ip,:,:]
+                Hpm = self.Mean_field_M.Heq_m[ip,:,:]+ phi_T * self.Mean_field_M.HT_m[ip,:,:]
                 
-                    Lp1 =  Form_fact_p[ipG, ip, :, :] 
-                    Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-                    
-                    Lp2 =  Form_fact_p[ipMG, ippM, :, :]
-                    Lm2 = - (self.sx@Lp2@self.sx) #using chiral
-                    
-                    # generating the form factor matrix
-                    
-                    for nband in range(self.nbands):
-                        for mband in range(self.nbands):
-                            
-                            L_p_p_pre[nband,mband]                         = Lp1[nband,mband]
-                            L_p_p_pre[self.nbands+nband,self.nbands+mband] = Lp2[nband,mband]
-                            
-                            
-                            L_p_m_pre[nband,mband]                         = Lm1[nband,mband]
-                            L_p_m_pre[self.nbands+nband,self.nbands+mband] = Lm2[nband,mband]
-                            
-                    # unitary transformation on the form factor matrix 
-                    
-                    L_p_p_u = np.conj(np.transpose(Vval_plus_pG))@(L_k_p_pre@Vval_plus_p)
-                    L_p_m_u = np.conj(np.transpose(Vval_min_pG))@(L_k_m_pre@Vval_min_p)
-                    
-                    for nband in range(N_Mp*self.nbands):
-                                            
-                        Lp    = L_p_p_u[nband,nband]
-                        ek_p  = Eval_plus_p[nband]
-                        nfk_p = self.nf(ek_p,T)
-                        integrand_var = Lp * nfk_p
-                        bub_p = bub_p + integrand_var
+                Hpp_G = self.Mean_field_M.Heq_p_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ipG,:,:]
+                Hpm_G = self.Mean_field_M.Heq_m_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ipG,:,:]
+                
+                Eval_plus_p, Vval_plus_p = np.linalg.eigh(Hpp)
+                Eval_min_p, Vval_min_p   = np.linalg.eigh(Hpm)
+                
+                Eval_plus_pG, Vval_plus_pG = np.linalg.eigh(Hpp_G)
+                Eval_min_pG, Vval_min_pG   = np.linalg.eigh(Hpm_G)
+                
+                
+                #for the form factors
+                ip   = self.Mean_field_M.IkMF_M_1bz[Np]
+                ippM = self.Mean_field_M.IMF_M_kpM[Np]
+                ipG  = self.IkpG_MF[Np,NG]
+                ipMG = self.IkpMmG_MF[Np,NG]
+            
+                Lp1 =   Form_fact_p[ipG, ip, :, :] 
+                Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+                
+                Lp2 =   Form_fact_p[ipMG, ippM, :, :]
+                Lm2 = - (self.sx@Lp2@self.sx) #using chiral
+                
+                # generating the form factor matrix
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        L_p_p_pre[nband,mband]                         = Lp1[nband,mband]
+                        L_p_p_pre[self.nbands+nband,self.nbands+mband] = Lp2[nband,mband]
                         
                         
-                        Lm    = L_p_m_u[nband,nband]
-                        ek_m  = Eval_min_p[nband]
-                        nfk_m = self.nf(ek_m,T)
-                        integrand_var = Lm * nfk_m
-                        bub_p = bub_p + integrand_var
+                        L_p_m_pre[nband,mband]                         = Lm1[nband,mband]
+                        L_p_m_pre[self.nbands+nband,self.nbands+mband] = Lm2[nband,mband]
+                        
+                # unitary transformation on the form factor matrix 
+                
+                L_p_p_u = np.conj(np.transpose(Vval_plus_pG)) @ (L_p_p_pre @ Vval_plus_p)
+                L_p_m_u = np.conj(np.transpose(Vval_min_pG))  @ (L_p_m_pre @ Vval_min_p)
+                
+                for nband in range(N_Mp*self.nbands):
+                                        
+                    Lp    = L_p_p_u[nband,nband]
+                    ek_p  = Eval_plus_p[nband]
+                    nfk_p = self.nf(ek_p,T)
+                    integrand_var = Lp * nfk_p
+                    bub_p = bub_p + integrand_var
+                    
+                    
+                    Lm    = L_p_m_u[nband,nband]
+                    ek_m  = Eval_min_p[nband]
+                    nfk_m = self.nf(ek_m,T)
+                    integrand_var = Lm * nfk_m
+                    bub_p = bub_p + integrand_var
                         
                     
                             
 
-            integ[self.IGinq[NG]] = integ[self.IGinq[NG]] + bub_p * bub_k
+            integ[self.IGinq[NG]] =  bub_p * bub_k
 
                         
         eb=time.time()
@@ -1073,7 +1079,7 @@ class Eq_time_corrs:
 
         print("time for bubble...",eb-sb)
         
-        res= integ*self.dS_in 
+        res= integ * self.dS_in 
         # self.savedata(res, mu, T, 'MF_M')
         return res
     
