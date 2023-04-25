@@ -114,34 +114,41 @@ class Eq_time_corrs:
         
         
         #For the Form factors
-        IkpMpq_MF = np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
+        
         ik = self.Mean_field_M.IkMF_M_1bz
         self.KX1bz_M = self.latt.KQX[ik]
         self.KY1bz_M = self.latt.KQY[ik]
         self.GMvec = [ self.latt.M1, self.latt.M1_rep  ]
         self.GMs = np.sqrt(self.latt.M1@self.latt.M1)
         
+
+        # location of 1BZ after symmtery breaking + q momenta within the array for which we precompute the form factors
+        Ikpq_MF=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
+        for q in range(self.latt.Npoi):
+            Ikpq_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q], self.KY1bz_M + self.latt.KY[q], self.latt.KQX, self.latt.KQY))
+        self.Ikpq_MF=Ikpq_MF.astype(int)
+        print( 'the shape of the index qpM array',np.shape(self.Ikpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
+        
+        # location of 1BZ after symmtery breaking + q momenta + M within the array for which we precompute the form factors
+        IkpMpq_MF = np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
         for q in range(self.latt.Npoi):
             IkpMpq_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q]+self.latt.M1[0], self.KY1bz_M + self.latt.KY[q] + self.latt.M1[1], self.latt.KQX, self.latt.KQY))
         self.IkpMpq_MF=IkpMpq_MF.astype(int)
         print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
         
-        Ikpq_MF=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
-        for q in range(self.latt.Npoi):
-            Ikpq_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q], self.KY1bz_M + self.latt.KY[q], self.latt.KQX, self.latt.KQY))
-        self.Ikpq_MF=Ikpq_MF.astype(int)
-        print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
         
         # For the dispersion
-        # _i is for intermediate between KX and KQX when umkl_Q> umkl+1
+        # _i is for intermediate between KX and KQX when umkl_Q> umkl+1 
+        # location of 1BZ after symmtery breaking + q momenta within the intermediate array for which we precompute the mean field hamiltonian
         Ikpq_MF_i=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
         for q in range(self.latt.Npoi):
             Ikpq_MF_i[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q], self.KY1bz_M + self.latt.KY[q], self.latt.KQX_i, self.latt.KQY_i))
         self.Ikpq_MF_i=Ikpq_MF_i.astype(int)
-        print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
+        print( 'the shape of the index qpM array',np.shape(self.Ikpq_MF_i),'compare to ', self.Mean_field_M.Npoi_MF)
         
         # For the background
-        #scattering from k in 1bz to G in the reciprocal lattice
+        #scattering from k in 1bz to G in the reciprocal lattice after symmetry breaking
+        # location of 1BZ after symmtery breaking  + M + G momenta within the intermediate array for which we precompute the form factors
         self.umkl = 2
         Gu=self.Umklapp_List(self.umkl)
         [GM1, GM2]=self.GMvec
@@ -154,11 +161,36 @@ class Eq_time_corrs:
         self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")
         print( 'the shape of the index G array',np.shape(self.IkpG))
         
+        # location of 1BZ after symmtery breaking  - M - G momenta within the intermediate array for which we precompute the form factors
+        self.umkl = 2
+        Gu=self.Umklapp_List(self.umkl)
+        [GM1, GM2]=self.GMvec
+        IkmG=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkmG.append(self.latt.insertion_index( self.KX1bz_M+Gxp,self.KY1bz_M+Gyp, self.latt.KQX,self.latt.KQY))
+        self.IkmG=np.array(IkmG).T
+        self.NpoiGm=np.shape(self.IkmG)[1]; print(self.NpoiGm, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkmG))
+        
+        #location of the reciprocal lattice vectors after symmetry breaking in the KX arrays ( q momenta for which we calculate the correlation functions)
+        IGinq=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IGinq.append(self.latt.insertion_index( [Gxp],[Gyp], self.latt.KX,self.latt.KY))
+        self.IGinq=np.array(IGinq).flatten()
+        self.NGvecs=np.size(self.IGinq); print(self.NGvecs, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IGinq))
+        
         
         plt.scatter(self.latt.KX, self.latt.KY)
         for i in range(self.NpoiG):
             plt.scatter(self.latt.KQX[self.IkpG[:,i]],self.latt.KQY[self.IkpG[:,i]], marker='x')
-            
+        
+        for i in range(self.NGvecs):
+            plt.scatter(self.latt.KX[self.IGinq[i]],self.latt.KY[self.IGinq[i]], marker='h', c='k')
         plt.show()
         
         ################################
@@ -415,6 +447,8 @@ class Eq_time_corrs:
             
             for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
                 
+                #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
+                #symmetric with what I have below for k+q
                 Hqp_k=self.Mean_field_M.Heq_p[Nk,:,:]+phi_T*self.Mean_field_M.HT_p[Nk,:,:]
                 Hqm_k=self.Mean_field_M.Heq_m[Nk,:,:]+phi_T*self.Mean_field_M.HT_m[Nk,:,:]
                 
@@ -640,7 +674,7 @@ class Eq_time_corrs:
         return res
     
     
-    def MF_corr_eq_back(self, args):
+    def MF_corr_eq_back_v1(self, args):
         
         ( mu, T, phi_T, save)=args
         Form_fact_p = self.Omega_FFp
