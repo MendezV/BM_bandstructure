@@ -111,30 +111,55 @@ class Eq_time_corrs:
         ################################
         #lattice attributes
         ################################
+        
+        
         #For the Form factors
-        IkpMpq_MF=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
-        ik=self.Mean_field_M.IkMF_M_1bz
+        IkpMpq_MF = np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
+        ik = self.Mean_field_M.IkMF_M_1bz
+        self.KX1bz_M = self.latt.KQX[ik]
+        self.KY1bz_M = self.latt.KQY[ik]
+        self.GMvec = [ self.latt.M1, self.latt.M1_rep  ]
+        self.GMs = np.sqrt(self.latt.M1@self.latt.M1)
+        
         for q in range(self.latt.Npoi):
-            IkpMpq_MF[:,q]=np.array(self.latt.insertion_index( self.latt.KQX[ik]+self.latt.KX[q]+self.latt.M1[0],self.latt.KQY[ik]+self.latt.KY[q]+self.latt.M1[1], self.latt.KQX, self.latt.KQY))
+            IkpMpq_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q]+self.latt.M1[0], self.KY1bz_M + self.latt.KY[q] + self.latt.M1[1], self.latt.KQX, self.latt.KQY))
         self.IkpMpq_MF=IkpMpq_MF.astype(int)
         print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
         
         Ikpq_MF=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
-        ik=self.Mean_field_M.IkMF_M_1bz
         for q in range(self.latt.Npoi):
-            Ikpq_MF[:,q]=np.array(self.latt.insertion_index( self.latt.KQX[ik]+self.latt.KX[q],self.latt.KQY[ik]+self.latt.KY[q], self.latt.KQX, self.latt.KQY))
+            Ikpq_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q], self.KY1bz_M + self.latt.KY[q], self.latt.KQX, self.latt.KQY))
         self.Ikpq_MF=Ikpq_MF.astype(int)
         print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
         
         # For the dispersion
-        
+        # _i is for intermediate between KX and KQX when umkl_Q> umkl+1
         Ikpq_MF_i=np.zeros([self.Mean_field_M.Npoi_MF,self.latt.Npoi])
-        ik=self.Mean_field_M.IkMF_M_1bz
         for q in range(self.latt.Npoi):
-            Ikpq_MF_i[:,q]=np.array(self.latt.insertion_index( self.latt.KQX[ik]+self.latt.KX[q],self.latt.KQY[ik]+self.latt.KY[q], self.latt.KQX_i, self.latt.KQY_i))
+            Ikpq_MF_i[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M +self.latt.KX[q], self.KY1bz_M + self.latt.KY[q], self.latt.KQX_i, self.latt.KQY_i))
         self.Ikpq_MF_i=Ikpq_MF_i.astype(int)
         print( 'the shape of the index qpM array',np.shape(self.IkpMpq_MF),'compare to ', self.Mean_field_M.Npoi_MF)
         
+        # For the background
+        #scattering from k in 1bz to G in the reciprocal lattice
+        self.umkl = 2
+        Gu=self.Umklapp_List(self.umkl)
+        [GM1, GM2]=self.GMvec
+        IkpG=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkpG.append(self.latt.insertion_index( self.KX1bz_M+Gxp,self.KY1bz_M+Gyp, self.latt.KQX,self.latt.KQY))
+        self.IkpG=np.array(IkpG).T
+        self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkpG))
+        
+        
+        plt.scatter(self.latt.KX, self.latt.KY)
+        for i in range(self.NpoiG):
+            plt.scatter(self.latt.KQX[self.IkpG[:,i]],self.latt.KQY[self.IkpG[:,i]], marker='x')
+            
+        plt.show()
         
         ################################
         #generating form factors
@@ -204,6 +229,19 @@ class Eq_time_corrs:
     METHODS for the ep_Bubble class 
     """
     ################################
+    
+    def Umklapp_List(self, umklapps):
+        #G processes
+        G=self.GMs
+        Gu=[]
+        [GM1, GM2]=self.GMvec
+        for i in range(-10,10):
+            for j in range(-10,10):
+                Gp=i*GM1+j*GM2
+                Gpn=np.sqrt(Gp.T@Gp)
+                if  Gpn<=G*(umklapps+0.1):
+                    Gu=Gu+[[i,j]]
+        return Gu
     
     
         
@@ -613,7 +651,6 @@ class Eq_time_corrs:
 
         integ=np.zeros(self.latt.Npoi)
 
-        
         N_Mp=2 # number of symmetry breaking momenta +1
         
         Lp_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
