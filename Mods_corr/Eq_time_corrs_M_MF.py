@@ -602,6 +602,123 @@ class Eq_time_corrs:
         return res
     
     
+    def MF_corr_eq_back(self, args):
+        
+        ( mu, T, phi_T, save)=args
+        Form_fact_p = self.Omega_FFp
+        
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        Lp_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        Lm_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Lp_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        Lm_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Hqp_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Hqp_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hqm_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        Eval_plus_kq = np.zeros([N_Mp*self.nbands])
+        Eval_min_kq = np.zeros([N_Mp*self.nbands])
+        
+        Vval_plus_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        
+        Eval_plus_k = np.zeros([N_Mp*self.nbands])
+        Eval_min_k = np.zeros([N_Mp*self.nbands])
+        
+        Vval_plus_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+
+        # Mean_field_M
+        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
+            
+            bub=0
+            
+            for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
+                
+                Hqp_k=self.Mean_field_M.Heq_p[Nk,:,:]+phi_T*self.Mean_field_M.HT_p[Nk,:,:]
+                Hqm_k=self.Mean_field_M.Heq_m[Nk,:,:]+phi_T*self.Mean_field_M.HT_m[Nk,:,:]
+                
+                Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hqp_k)
+                Eval_min_k, Vval_min_k = np.linalg.eigh(Hqm_k)
+                
+                Nkq=self.Ikpq_MF_i[Nk,Nq]
+                
+                Hqp_kq=self.Mean_field_M.Heq_p_q[Nkq,:,:]+phi_T*self.Mean_field_M.HT_p_q[Nkq,:,:]
+                Hqm_kq=self.Mean_field_M.Heq_m_q[Nkq,:,:]+phi_T*self.Mean_field_M.HT_m_q[Nkq,:,:]
+                
+                Eval_plus_kq, Vval_plus_kq = np.linalg.eigh(Hqp_kq)
+                Eval_min_kq, Vval_min_kq = np.linalg.eigh(Hqm_kq)
+                
+                ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
+                ikpM = self.Mean_field_M.IMF_M_kpM[Nk]
+                ikq  = self.Ikpq_MF[Nk,Nq]
+                ikMq = self.IkpMpq_MF[Nk,Nq]
+            
+
+                Lp1 =  Form_fact_p[ikq, ik, :, :] 
+                Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+                
+                Lp2 =  Form_fact_p[ikMq, ikpM, :, :]
+                Lm2 = - (self.sx@Lp2@self.sx) #using chiral
+                
+                for nband in range(self.nbands):
+                    for mband in range(self.nbands):
+                        
+                        Lp_pre[nband,mband]                         = Lp1[nband,mband]
+                        Lp_pre[self.nbands+nband,self.nbands+mband] = Lp2[nband,mband]
+                        
+                        
+                        Lm_pre[nband,mband]                         = Lm1[nband,mband]
+                        Lm_pre[self.nbands+nband,self.nbands+mband] = Lm2[nband,mband]
+                        
+                Lp_u = np.conj(np.transpose(Vval_plus_kq))@(Lp_pre@Vval_plus_k)
+                Lm_u = np.conj(np.transpose(Vval_min_kq))@(Lm_pre@Vval_min_k)
+
+                
+                
+                for nband in range(N_Mp*self.nbands):
+                    for mband in range(N_Mp*self.nbands):
+                        
+                        Lp=Lp_u[nband,mband]
+                        ekq_p_n=Eval_plus_kq[nband]
+                        ek_p_m=Eval_plus_k[mband]
+                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
+                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm=Lm_u[nband,mband]
+                        ekq_m_n=Eval_min_kq[nband]
+                        ek_m_m=Eval_min_k[mband]
+                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
+                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
+                        bub=bub+integrand_var
+                        
+
+            integ[Nq]=bub
+
+                        
+        eb=time.time()
+        
+
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        # self.savedata(res, mu, T, 'MF_M')
+        return res
+    
     
     def MF_Corr_eq(self, mu_values, fillings, T , phiT, parallel=False):
 
