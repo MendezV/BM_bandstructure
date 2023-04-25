@@ -108,10 +108,21 @@ class Eq_time_corrs:
         self.dir=dir #directory where the correlation functions will be stored
         
         
+        
         ################################
-        #lattice attributes
+        ################################
+        ################################
+        """
+        LATTICE ATTRIBUTES
+        """
+        ################################
+        ################################
         ################################
         
+        
+        ################################
+        # FOR THE CONNECTED PART OF THE CORRELATION FUNCTION
+        ################################
         
         #For the Form factors
         
@@ -146,33 +157,88 @@ class Eq_time_corrs:
         self.Ikpq_MF_i=Ikpq_MF_i.astype(int)
         print( 'the shape of the index qpM array',np.shape(self.Ikpq_MF_i),'compare to ', self.Mean_field_M.Npoi_MF)
         
-        # For the background
-        #scattering from k in 1bz to G in the reciprocal lattice after symmetry breaking
-        # location of 1BZ after symmtery breaking  + M + G momenta within the intermediate array for which we precompute the form factors
+        
+        
+        
+        
+        ################################
+        # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION
+        ################################
+        
         self.umkl = 2
         Gu=self.Umklapp_List(self.umkl)
         [GM1, GM2]=self.GMvec
+        
+        
+        
+        #For the Form factors
+        
+        # location of 1BZ after symmtery breaking  + M + G momenta within the array for which we precompute the form factors
         IkpG=[]
         for GG in Gu:
             Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
             Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
-            IkpG.append(self.latt.insertion_index( self.KX1bz_M+Gxp,self.KY1bz_M+Gyp, self.latt.KQX,self.latt.KQY))
-        self.IkpG=np.array(IkpG).T
-        self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")
-        print( 'the shape of the index G array',np.shape(self.IkpG))
+            IkpG.append(self.latt.insertion_index( self.KX1bz_M + Gxp, self.KY1bz_M + Gyp, self.latt.KQX, self.latt.KQY))
+        self.IkpG_MF=np.array(IkpG).T
+        self.NpoiG_MF=np.shape(self.IkpG_MF)[1]; print(self.NpoiG_MF, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkpG_MF))
         
-        # location of 1BZ after symmtery breaking  - M - G momenta within the intermediate array for which we precompute the form factors
-        self.umkl = 2
-        Gu=self.Umklapp_List(self.umkl)
-        [GM1, GM2]=self.GMvec
+        # location of 1BZ after symmtery breaking  - M - G momenta within the array for which we precompute the form factors
         IkmG=[]
         for GG in Gu:
             Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
             Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
-            IkmG.append(self.latt.insertion_index( self.KX1bz_M+Gxp,self.KY1bz_M+Gyp, self.latt.KQX,self.latt.KQY))
-        self.IkmG=np.array(IkmG).T
-        self.NpoiGm=np.shape(self.IkmG)[1]; print(self.NpoiGm, "G numer of sampling reciprocal lattice points in momentum trans lattt")
-        print( 'the shape of the index G array',np.shape(self.IkmG))
+            IkmG.append(self.latt.insertion_index( self.KX1bz_M - Gxp, self.KY1bz_M - Gyp, self.latt.KQX, self.latt.KQY))
+        self.IkmG_MF=np.array(IkmG).T
+        self.NpoiGm_MF=np.shape(self.IkmG_MF)[1]; print(self.NpoiGm_MF, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkmG_MF))
+        
+        # location of 1BZ after symmtery breaking + q momenta + M within the array for which we precompute the form factors
+        IkpMpG_MF = np.zeros([self.Mean_field_M.Npoi_MF,self.NpoiG_MF])
+        for q in range(self.NpoiG_MF):
+            GG = Gu[q]
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkpMpG_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M + Gxp +self.latt.M1[0], self.KY1bz_M + Gyp + self.latt.M1[1], self.latt.KQX, self.latt.KQY))
+        self.IkpMpG_MF=IkpMpG_MF.astype(int)
+        print( 'the shape of the index qpM array',np.shape(self.IkpMpG_MF),'compare to ', self.Mean_field_M.Npoi_MF)
+        
+        # location of 1BZ after symmtery breaking + q momenta + M within the array for which we precompute the form factors
+        IkpMmG_MF = np.zeros([self.Mean_field_M.Npoi_MF,self.NpoiG_MF])
+        for q in range(self.NpoiG_MF):
+            GG = Gu[q]
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkpMmG_MF[:,q]=np.array(self.latt.insertion_index( self.KX1bz_M - Gxp +self.latt.M1[0], self.KY1bz_M - Gyp + self.latt.M1[1], self.latt.KQX, self.latt.KQY))
+        self.IkpMmG_MF=IkpMmG_MF.astype(int)
+        print( 'the shape of the index qpM array',np.shape(self.IkpMmG_MF),'compare to ', self.Mean_field_M.Npoi_MF)
+        
+        
+        # For the dispersion
+        
+        # location of 1BZ after symmtery breaking  + M + G momenta within the intermediate array for which we precompute the mean field hamiltonian
+        IkpG=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkpG.append(self.latt.insertion_index( self.KX1bz_M + Gxp, self.KY1bz_M + Gyp, self.latt.KQX_i, self.latt.KQY_i))
+        self.IkpG_MF_i=np.array(IkpG).T
+        self.NpoiG_MF_i=np.shape(self.IkpG_MF_i)[1]; print(self.NpoiG_MF_i, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkpG_MF_i))
+        
+        # location of 1BZ after symmtery breaking  - M - G momenta within the intermediate array for which we precompute the mean field hamiltonian
+        IkmG=[]
+        for GG in Gu:
+            Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
+            Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
+            IkmG.append(self.latt.insertion_index( self.KX1bz_M - Gxp, self.KY1bz_M - Gyp, self.latt.KQX_i, self.latt.KQY_i))
+        self.IkmG_MF_i=np.array(IkmG).T
+        self.NpoiGm_MF_i=np.shape(self.IkmG_MF_i)[1]; print(self.NpoiGm_MF_i, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IkmG_MF_i))
+        
+        
+        
+        # auxiliary array
         
         #location of the reciprocal lattice vectors after symmetry breaking in the KX arrays ( q momenta for which we calculate the correlation functions)
         IGinq=[]
@@ -185,17 +251,19 @@ class Eq_time_corrs:
         print( 'the shape of the index G array',np.shape(self.IGinq))
         
         
-        plt.scatter(self.latt.KX, self.latt.KY)
-        for i in range(self.NpoiG):
-            plt.scatter(self.latt.KQX[self.IkpG[:,i]],self.latt.KQY[self.IkpG[:,i]], marker='x')
-        
-        for i in range(self.NGvecs):
-            plt.scatter(self.latt.KX[self.IGinq[i]],self.latt.KY[self.IGinq[i]], marker='h', c='k')
-        plt.show()
         
         ################################
-        #generating form factors
         ################################
+        ################################
+        """
+        FORM FACTOR ATTRIBUTES
+        """
+        ################################
+        ################################
+        ################################
+        
+        self.sx=np.array([[0,1],[1,0]])
+        self.sz=np.array([[1,0],[0,-1]])
 
         if symmetric=="s":
             if mode=="L":
@@ -250,10 +318,6 @@ class Eq_time_corrs:
                 [self.Omega_FFp,self.Omega_FFm]=self.HB.Form_factor_unitary(self.HB.FFp.denqFF_a(), self.HB.FFm.denqFF_a())
 
         
-        
-        
-        self.sx=np.array([[0,1],[1,0]])
-        self.sz=np.array([[1,0],[0,-1]])
         
 
     ################################
@@ -693,56 +757,62 @@ class Eq_time_corrs:
         Lp_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
         Lm_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
         
-        Hqp_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hqm_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hkp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hkm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
-        Hqp_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hqm_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        Eval_plus_kq = np.zeros([N_Mp*self.nbands])
-        Eval_min_kq = np.zeros([N_Mp*self.nbands])
-        
-        Vval_plus_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        Vval_min_kq=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Hkp_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Hkm_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
         Eval_plus_k = np.zeros([N_Mp*self.nbands])
         Eval_min_k = np.zeros([N_Mp*self.nbands])
         
         Vval_plus_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
         Vval_min_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        
+        Eval_plus_kG = np.zeros([N_Mp*self.nbands])
+        Eval_min_kG = np.zeros([N_Mp*self.nbands])
+        
+        Vval_plus_kG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        Vval_min_kG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
 
         # Mean_field_M
-        for Nq in range(self.latt.Npoi):  #for calculating only along path in FBZ
+        for NG in range(self.NGvecs):
             
-            bub=0
+            bub_p = 0
+            bub_q = 0
             
             for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
                 
-                Hqp_k=self.Mean_field_M.Heq_p[Nk,:,:]+phi_T*self.Mean_field_M.HT_p[Nk,:,:]
-                Hqm_k=self.Mean_field_M.Heq_m[Nk,:,:]+phi_T*self.Mean_field_M.HT_m[Nk,:,:]
+                #for the dispersions
+                ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
+                ikG = self.IkpG_MF_i[Nk,NG]
+
+                Hkp=self.Mean_field_M.Heq_p_q[ik,:,:]+phi_T*self.Mean_field_M.HT_p_q[ik,:,:]
+                Hkm=self.Mean_field_M.Heq_m_q[ik,:,:]+phi_T*self.Mean_field_M.HT_m_q[ik,:,:]
+                 
+                Hkp_G=self.Mean_field_M.Heq_p_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_p_q[ikG,:,:]
+                Hkm_G=self.Mean_field_M.Heq_m_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_m_q[ikG,:,:]
                 
-                Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hqp_k)
-                Eval_min_k, Vval_min_k = np.linalg.eigh(Hqm_k)
+                Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hkp)
+                Eval_min_k, Vval_min_k = np.linalg.eigh(Hkm)
                 
-                Nkq=self.Ikpq_MF_i[Nk,Nq]
+                Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
+                Eval_min_kG, Vval_min_kG = np.linalg.eigh(Hkm_G)
                 
-                Hqp_kq=self.Mean_field_M.Heq_p_q[Nkq,:,:]+phi_T*self.Mean_field_M.HT_p_q[Nkq,:,:]
-                Hqm_kq=self.Mean_field_M.Heq_m_q[Nkq,:,:]+phi_T*self.Mean_field_M.HT_m_q[Nkq,:,:]
                 
-                Eval_plus_kq, Vval_plus_kq = np.linalg.eigh(Hqp_kq)
-                Eval_min_kq, Vval_min_kq = np.linalg.eigh(Hqm_kq)
-                
+                #for the form factors
                 ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
                 ikpM = self.Mean_field_M.IMF_M_kpM[Nk]
-                ikq  = self.Ikpq_MF[Nk,Nq]
-                ikMq = self.IkpMpq_MF[Nk,Nq]
+                ikG  = self.IkpG_MF[Nk,NG]
+                ikMG = self.IkpMpG_MF[Nk,NG]
             
-
-                Lp1 =  Form_fact_p[ikq, ik, :, :] 
+                Lp1 =  Form_fact_p[ikMG, ik, :, :] 
                 Lm1 = - (self.sx@Lp1@self.sx) #using chiral
                 
-                Lp2 =  Form_fact_p[ikMq, ikpM, :, :]
+                Lp2 =  Form_fact_p[ikMG, ikpM, :, :]
                 Lm2 = - (self.sx@Lp2@self.sx) #using chiral
+                
+                # generating the form factor matrix
                 
                 for nband in range(self.nbands):
                     for mband in range(self.nbands):
@@ -754,31 +824,30 @@ class Eq_time_corrs:
                         Lm_pre[nband,mband]                         = Lm1[nband,mband]
                         Lm_pre[self.nbands+nband,self.nbands+mband] = Lm2[nband,mband]
                         
-                Lp_u = np.conj(np.transpose(Vval_plus_kq))@(Lp_pre@Vval_plus_k)
-                Lm_u = np.conj(np.transpose(Vval_min_kq))@(Lm_pre@Vval_min_k)
-
+                # unitary transformation on the form factor matrix 
                 
+                Lp_u = np.conj(np.transpose(Vval_plus_kG))@(Lp_pre@Vval_plus_k)
+                Lm_u = np.conj(np.transpose(Vval_min_kG))@(Lm_pre@Vval_min_k)
                 
                 for nband in range(N_Mp*self.nbands):
-                    for mband in range(N_Mp*self.nbands):
-                        
-                        Lp=Lp_u[nband,mband]
-                        ekq_p_n=Eval_plus_kq[nband]
-                        ek_p_m=Eval_plus_k[mband]
-                        GRs_p=self.GReqs(ekq_p_n,ek_p_m,mu,T)
-                        integrand_var=np.abs(Lp*np.conj(Lp))*GRs_p
-                        bub=bub+integrand_var
-                        
-                        
-                        Lm=Lm_u[nband,mband]
-                        ekq_m_n=Eval_min_kq[nband]
-                        ek_m_m=Eval_min_k[mband]
-                        GRs_m=self.GReqs(ekq_m_n,ek_m_m,mu,T) 
-                        integrand_var=np.abs(Lm*np.conj(Lm))*GRs_m
-                        bub=bub+integrand_var
+                                           
+                    Lp    = Lp_u[nband,nband]
+                    ek_p  = Eval_plus_k[nband]
+                    nfk_p = self.nf(ek_p,T)
+                    integrand_var = Lp * nfk_p
+                    bub_p = bub_p+integrand_var
+                    
+                    
+                    Lm    = Lm_u[nband,nband]
+                    ek_m  = Eval_min_k[nband]
+                    nfk_m = self.nf(ek_m,T)
+                    integrand_var = Lm * nfk_m
+                    bub_p= bub_p + integrand_var
+                    
+                
                         
 
-            integ[Nq]=bub
+            integ[self.IGinq[NG]]=np.abs(bub_p)**2
 
                         
         eb=time.time()
