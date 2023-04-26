@@ -339,6 +339,46 @@ class Mean_field_M:
                     
         return [Heq_p,HT_p,Heq_m,HT_m]
         
+    def H_MF_parts_rMBZ(self):
+        
+        N_Mp=2 # number of symmetry breaking momenta +1
+        
+        HT_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        HT_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        Heq_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        
+        
+        for Nk in range(self.Npoi_MF):  #for calculating only along path in FBZ
+            
+            ik=self.IkMF_M_1bz[Nk]
+            ikq=self.IMF_M_kpM[Nk]
+            ikmq=self.IMF_M_kmM[Nk]
+
+            
+            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
+            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
+            
+            for nband in range(self.nbands):
+                
+                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
+                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
+                
+                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
+                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
+                
+                for mband in range(self.nbands):
+                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
+                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
+                    
+                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
+                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
+                    
+        
+        return [Heq_p,HT_p,Heq_m,HT_m]
+        
+    
     
     def precompute_E_MBZ(self,args):
         (phis, mu, T)=args
@@ -417,46 +457,7 @@ class Mean_field_M:
         print("time for Disp...",eb-sb)
         return [Eval_plus,Eval_min,Vval_plus,Vval_min]
     
-    def H_MF_parts_rMBZ(self):
-        
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        HT_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_p=np.zeros([self.Npoi_MF, N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        HT_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Heq_m=np.zeros([self.Npoi_MF,N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        
-        for Nk in range(self.Npoi_MF):  #for calculating only along path in FBZ
-            
-            ik=self.IkMF_M_1bz[Nk]
-            ikq=self.IMF_M_kpM[Nk]
-            ikmq=self.IMF_M_kmM[Nk]
 
-            
-            Lp1=  self.Omega_FFp[ik, ikq,:,:]+self.Omega_FFp[ik, ikmq,:,:]
-            Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-            
-            for nband in range(self.nbands):
-                
-                Heq_p[Nk,nband,nband]=Heq_p[Nk,nband,nband]+self.Ene_valley_plus[ik,nband]
-                Heq_p[Nk,self.nbands+nband,self.nbands+nband]=Heq_p[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_plus[ikq,nband]
-                
-                Heq_m[Nk,nband,nband]=Heq_m[Nk,nband,nband]+self.Ene_valley_min[ik,nband]
-                Heq_m[Nk,self.nbands+nband,self.nbands+nband]=Heq_m[Nk,self.nbands+nband,self.nbands+nband]+self.Ene_valley_min[ikq,nband]
-                
-                for mband in range(self.nbands):
-                    HT_p[Nk,self.nbands+nband,mband]=HT_p[Nk,self.nbands+nband,mband]+Lp1[nband,mband]
-                    HT_p[Nk,nband,self.nbands+mband]=HT_p[Nk,nband,self.nbands+mband]+np.conj(Lp1.T)[nband,mband]
-                    
-                    HT_m[Nk,self.nbands+nband,mband]=HT_m[Nk,self.nbands+nband,mband]+Lm1[nband,mband]
-                    HT_m[Nk,nband,self.nbands+mband]=HT_m[Nk,nband,self.nbands+mband]+np.conj(Lm1.T)[nband,mband]
-                    
-        
-        return [Heq_p,HT_p,Heq_m,HT_m]
-        
-    
     def precompute_E_rMBZ(self,args):
         
         (phis, mu, T)=args
