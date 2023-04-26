@@ -160,10 +160,10 @@ class Eq_time_corrs:
         
         
         ################################
-        # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION
+        # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION WITH MEAN FIELD
         ################################
         
-        self.umkl = 3
+        self.umkl = 2
         Gu=self.Umklapp_List(self.umkl)
         [GM1, GM2]=self.GMvec
         
@@ -255,6 +255,32 @@ class Eq_time_corrs:
         print( 'the shape of the index G array',np.shape(self.IGinq))
         
         
+        ################################
+        # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION WITHOUT MEAN FIELD
+        ################################
+        
+        # auxiliary array
+        
+        #location of the reciprocal lattice vectors after symmetry breaking in the KX arrays ( q momenta for which we calculate the correlation functions)
+        Gu2=self.latt.Umklapp_List(self.latt.umkl)
+        [GM12, GM22]=self.latt.GMvec
+        IGinq=[]
+        for GG in Gu2:
+            Gxp = GG[0] * GM12[0] + GG[1] * GM22[0]
+            Gyp = GG[0] * GM12[1] + GG[1] * GM22[1]
+            IGinq.append(self.latt.insertion_index( [Gxp],[Gyp], self.latt.KX,self.latt.KY))
+        self.IGinq_MBZ=np.array(IGinq).flatten()
+        self.NGvecs_MBZ=np.size(self.IGinq_MBZ); print(self.NGvecs_MBZ, "G numer of sampling reciprocal lattice points in momentum trans lattt")
+        print( 'the shape of the index G array',np.shape(self.IGinq))
+        
+        
+        # plt.scatter(self.latt.KX, self.latt.KY, c='k')
+        # for i,GG in enumerate(Gu2):
+        #     Gxp = GG[0] * GM12[0] + GG[1] * GM22[0]
+        #     Gyp = GG[0] * GM12[1] + GG[1] * GM22[1]
+        #     plt.scatter([Gxp],[Gyp], marker='x', s=(i+1)*30)
+        #     print(GG[0],GG[1],Gxp,Gyp)
+        # plt.show()
         
         
         ################################
@@ -460,6 +486,54 @@ class Eq_time_corrs:
             integ[Nq]=bub
 
         eb=time.time()
+        
+        print("time for bubble...",eb-sb)
+        
+        res= integ*self.dS_in 
+        if save:
+            self.savedata(res, mu, T, '')
+        return res
+        
+        
+    def corr_eq_back(self,args):
+        ( mu, T, save)=args
+
+        
+        sb=time.time()
+
+        print("starting bubble.......")
+
+        integ=np.zeros(self.latt.Npoi)
+
+        for NG in range(self.NGvecs_MBZ):  #for calculating only along path in FBZ
+            
+            bub=0
+            
+            for Nk in range(self.latt.Npoi1bz):
+                
+                ikG=self.latt.IkpG[Nk,NG]
+                ik=self.latt.Ik1bz[Nk]
+                
+                for nband in range(self.nbands):
+                    
+                        
+                        Lp=self.Omega_FFp[ikG, ik, nband, nband]
+                        ek_p=self.Ene_valley_plus[ik, nband] - mu
+                        nfkp=self.nf( ek_p, T )
+                        integrand_var=Lp*nfkp
+                        bub=bub+integrand_var
+                        
+                        
+                        Lm = self.Omega_FFm[ikG, ik, nband, nband]
+                        ek_m = self.Ene_valley_min[ik, nband]
+                        nfkm = self.nf( ek_m, T )
+                        integrand_var = Lm * nfkm
+                        bub=bub+integrand_var
+
+            integ[self.IGinq_MBZ[NG]]=np.abs(bub*np.conj(bub))
+
+        eb=time.time()
+        
         
 
         print("time for bubble...",eb-sb)
