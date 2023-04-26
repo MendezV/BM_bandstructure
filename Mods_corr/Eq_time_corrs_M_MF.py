@@ -165,11 +165,17 @@ class Eq_time_corrs:
         # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION
         ################################
         
-        self.umkl = 2
+        self.umkl = 3
         Gu=self.Umklapp_List(self.umkl)
         [GM1, GM2]=self.GMvec
         
-        
+        # plt.scatter(self.latt.KX, self.latt.KY, c='k')
+        # for i,GG in enumerate(Gu):
+        #     Gxp = GG[0] * GM1[0] + GG[1] * GM2[0]
+        #     Gyp = GG[0] * GM1[1] + GG[1] * GM2[1]
+        #     plt.scatter([Gxp],[Gyp], marker='x', s=(i+1)*30)
+        #     print(GG[0],GG[1],Gxp,Gyp)
+        # plt.show()
         
         #For the Form factors
         
@@ -954,7 +960,6 @@ class Eq_time_corrs:
                 Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
                 Eval_min_kG, Vval_min_kG   = np.linalg.eigh(Hkm_G)
                 
-                
                 #for the form factors
                 ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
                 ikpM = self.Mean_field_M.IMF_M_kpM[Nk]
@@ -989,14 +994,14 @@ class Eq_time_corrs:
                     Lp    = L_k_p_u[nband,nband]
                     ek_p  = Eval_plus_k[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var = nfk_p * Lp 
+                    integrand_var =  Lp 
                     bub_k = bub_k + integrand_var
                     
                     
                     Lm    = L_k_m_u[nband,nband]
                     ek_m  = Eval_min_k[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var = nfk_m * Lm
+                    integrand_var =  Lm
                     bub_k = bub_k + integrand_var
                     
                 
@@ -1058,19 +1063,17 @@ class Eq_time_corrs:
                     Lp    = L_p_p_u[nband,nband]
                     ek_p  = Eval_plus_p[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var = nfk_p * Lp
+                    integrand_var =  Lp
                     bub_p = bub_p + integrand_var
                     
                     
                     Lm    = L_p_m_u[nband,nband]
                     ek_m  = Eval_min_p[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var = nfk_m * Lm
+                    integrand_var =  Lm
                     bub_p = bub_p + integrand_var
                         
-                    
-                            
-
+        
             integ[self.IGinq[NG]] =  bub_p * bub_k
 
                         
