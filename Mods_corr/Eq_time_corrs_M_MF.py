@@ -515,7 +515,6 @@ class Eq_time_corrs:
                 ik=self.latt.Ik1bz[Nk]
                 
                 for nband in range(self.nbands):
-                    
                         
                         Lp=self.Omega_FFp[ikG, ik, nband, nband]
                         ek_p=self.Ene_valley_plus[ik, nband] - mu
@@ -525,7 +524,7 @@ class Eq_time_corrs:
                         
                         
                         Lm = self.Omega_FFm[ikG, ik, nband, nband]
-                        ek_m = self.Ene_valley_min[ik, nband]
+                        ek_m = self.Ene_valley_min[ik, nband] - mu
                         nfkm = self.nf( ek_m, T )
                         integrand_var = Lm * nfkm
                         bub=bub+integrand_var
@@ -812,131 +811,7 @@ class Eq_time_corrs:
         return res
     
     
-    def MF_corr_eq_back_v1(self, args):
-        
-        ( mu, T, phi_T, save)=args
-        Form_fact_p = self.Omega_FFp
-        
-        sb=time.time()
-
-        print("starting bubble.......")
-
-        integ=np.zeros(self.latt.Npoi)
-
-        N_Mp=2 # number of symmetry breaking momenta +1
-        
-        Lp_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
-        Lm_pre=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
-        
-        Lp_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
-        Lm_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
-        
-        Hkp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hkm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        Hkp_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hkm_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        
-        Eval_plus_k = np.zeros([N_Mp*self.nbands])
-        Eval_min_k = np.zeros([N_Mp*self.nbands])
-        
-        Vval_plus_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        Vval_min_k=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        
-        Eval_plus_kG = np.zeros([N_Mp*self.nbands])
-        Eval_min_kG = np.zeros([N_Mp*self.nbands])
-        
-        Vval_plus_kG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        Vval_min_kG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-
-        # Mean_field_M
-        for NG in range(self.NGvecs):
-            
-            bub_p = 0
-            bub_q = 0
-            
-            for Nk in range(self.Mean_field_M.Npoi_MF):  #for calculating only along path in FBZ
-                
-                #for the dispersions
-                ik   = Nk
-                ikG  = self.IkpG_MF_i[Nk,NG]
-                
-                #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
-                #symmetric with what I have below for k+q
-                Hkp=self.Mean_field_M.Heq_p[ik,:,:]+phi_T*self.Mean_field_M.HT_p[ik,:,:]
-                Hkm=self.Mean_field_M.Heq_m[ik,:,:]+phi_T*self.Mean_field_M.HT_m[ik,:,:]
-                 
-                Hkp_G=self.Mean_field_M.Heq_p_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_p_q[ikG,:,:]
-                Hkm_G=self.Mean_field_M.Heq_m_q[ikG,:,:]+phi_T*self.Mean_field_M.HT_m_q[ikG,:,:]
-                
-                Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hkp)
-                Eval_min_k, Vval_min_k = np.linalg.eigh(Hkm)
-                
-                Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
-                Eval_min_kG, Vval_min_kG = np.linalg.eigh(Hkm_G)
-                
-                
-                #for the form factors
-                ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
-                ikpM = self.Mean_field_M.IMF_M_kpM[Nk]
-                ikG  = self.IkpG_MF[Nk,NG]
-                ikMG = self.IkpMpG_MF[Nk,NG]
-            
-                Lp1 =  Form_fact_p[ikG, ik, :, :] 
-                Lm1 = - (self.sx@Lp1@self.sx) #using chiral
-                
-                Lp2 =  Form_fact_p[ikMG, ikpM, :, :]
-                Lm2 = - (self.sx@Lp2@self.sx) #using chiral
-                
-                # generating the form factor matrix
-                
-                for nband in range(self.nbands):
-                    for mband in range(self.nbands):
-                        
-                        Lp_pre[nband,mband]                         = Lp1[nband,mband]
-                        Lp_pre[self.nbands+nband,self.nbands+mband] = Lp2[nband,mband]
-                        
-                        
-                        Lm_pre[nband,mband]                         = Lm1[nband,mband]
-                        Lm_pre[self.nbands+nband,self.nbands+mband] = Lm2[nband,mband]
-                        
-                # unitary transformation on the form factor matrix 
-                
-                Lp_u = np.conj(np.transpose(Vval_plus_kG))@(Lp_pre@Vval_plus_k)
-                Lm_u = np.conj(np.transpose(Vval_min_kG))@(Lm_pre@Vval_min_k)
-                
-                for nband in range(N_Mp*self.nbands):
-                                           
-                    Lp    = Lp_u[nband,nband]
-                    ek_p  = Eval_plus_k[nband]
-                    nfk_p = self.nf(ek_p,T)
-                    integrand_var = Lp * nfk_p
-                    bub_p = bub_p+integrand_var
-                    
-                    
-                    Lm    = Lm_u[nband,nband]
-                    ek_m  = Eval_min_k[nband]
-                    nfk_m = self.nf(ek_m,T)
-                    integrand_var = Lm * nfk_m
-                    bub_p= bub_p + integrand_var
-                    
-                
-                        
-
-            integ[self.IGinq[NG]]=np.abs(bub_p)**2
-
-                        
-        eb=time.time()
-        
-
-        print("time for bubble...",eb-sb)
-        
-        res= integ*self.dS_in 
-        # self.savedata(res, mu, T, 'MF_M')
-        return res
-    
-    
-    def MF_corr_eq_back_v2(self, args):
+    def MF_corr_eq_back(self, args):
         
         ( mu, T, phi_T, save)=args
         Form_fact_p = self.Omega_FFp
@@ -1065,14 +940,14 @@ class Eq_time_corrs:
                 for nband in range(N_Mp*self.nbands):
                                            
                     Lp    = L_k_p_u[nband,nband]
-                    ek_p  = Eval_plus_k[nband]
+                    ek_p  = Eval_plus_k[nband] - mu
                     nfk_p = self.nf(ek_p,T)
                     integrand_var =  nfk_p * Lp
                     bub_k = bub_k + integrand_var
                     
                     
                     Lm    = L_k_m_u[nband,nband]
-                    ek_m  = Eval_min_k[nband]
+                    ek_m  = Eval_min_k[nband] - mu
                     nfk_m = self.nf(ek_m,T)
                     integrand_var =  nfk_m * Lm
                     bub_k = bub_k + integrand_var
@@ -1134,14 +1009,14 @@ class Eq_time_corrs:
                 for nband in range(N_Mp*self.nbands):
                                         
                     Lp    = L_p_p_u[nband,nband]
-                    ek_p  = Eval_plus_p[nband]
+                    ek_p  = Eval_plus_p[nband] - mu
                     nfk_p = self.nf(ek_p,T)
                     integrand_var =  nfk_p * Lp
                     bub_p = bub_p + integrand_var
                     
                     
                     Lm    = L_p_m_u[nband,nband]
-                    ek_m  = Eval_min_p[nband]
+                    ek_m  = Eval_min_p[nband] - mu
                     nfk_m = self.nf(ek_m,T)
                     integrand_var =  nfk_m * Lm
                     bub_p = bub_p + integrand_var
@@ -1160,7 +1035,7 @@ class Eq_time_corrs:
         return res
     
     
-    def MF_corr_eq_back_v3(self, args):
+    def MF_corr_eq_back_v2(self, args):
         
         ( mu, T, phi_T, save)=args
         Form_fact_p = self.Omega_FFp
@@ -1312,11 +1187,11 @@ class Eq_time_corrs:
                 for nband in range(N_Mp*self.nbands):    
                     
                     #valley +
-                    ek_p = Eval_plus_k[nband]
+                    ek_p = Eval_plus_k[nband] - mu
                     nkpq_p[nband] = self.nf(ek_p,T)
                     
                     #valley -
-                    ek_m = Eval_min_k[nband]
+                    ek_m = Eval_min_k[nband] - mu
                     nkpq_m[nband] = self.nf(ek_m,T)
                     
                     
@@ -1349,45 +1224,7 @@ class Eq_time_corrs:
 
     
     
-    def MF_Corr_eq(self, mu_values, fillings, T , phiT, parallel=False):
 
-        print('fillings and mu for the sweep....\n',fillings, mu_values)
-        integ=[]
-        self.fillings=fillings
-        self.mu_values=mu_values
-
-        qp=np.arange(np.size(fillings))
-        s=time.time()
-
-        arglist=[]
-        for i in qp:
-            arglist.append( ( mu_values[i], T, phiT, True) )
-
-        if parallel==True:
-            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
-                future_to_file = {
-                    
-                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
-                }
-
-                for future in concurrent.futures.as_completed(future_to_file):
-                    result = future.result()  # read the future object for result
-                    integ.append(result[0])
-                    qpval = future_to_file[future]  
-        else:
-            print('no parallelization on filling')
-            for qpval in qp:
-                self.corr(arglist[qpval])
-
-        
-        
-        e=time.time()
-        t=e-s
-        print("time for sweep delta", t)
-        
-                
-        return t
-    
     def savedata(self, integ, mu_value, T, add_tag):
         
         Nsamp=self.latt.Npoints
@@ -1511,6 +1348,44 @@ class Eq_time_corrs:
                 
         return t
     
+    def MF_Corr_eq(self, mu_values, fillings, T , phiT, parallel=False):
+
+        print('fillings and mu for the sweep....\n',fillings, mu_values)
+        integ=[]
+        self.fillings=fillings
+        self.mu_values=mu_values
+
+        qp=np.arange(np.size(fillings))
+        s=time.time()
+
+        arglist=[]
+        for i in qp:
+            arglist.append( ( mu_values[i], T, phiT, True) )
+
+        if parallel==True:
+            with concurrent.futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future_to_file = {
+                    
+                    executor.submit(self.corr, arglist[qpval]): qpval for qpval in qp
+                }
+
+                for future in concurrent.futures.as_completed(future_to_file):
+                    result = future.result()  # read the future object for result
+                    integ.append(result[0])
+                    qpval = future_to_file[future]  
+        else:
+            print('no parallelization on filling')
+            for qpval in qp:
+                self.corr(arglist[qpval])
+
+        
+        
+        e=time.time()
+        t=e-s
+        print("time for sweep delta", t)
+        
+                
+        return t
     
 
      
