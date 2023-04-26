@@ -258,6 +258,7 @@ class Eq_time_corrs:
         
         
         
+        
         ################################
         ################################
         ################################
@@ -994,14 +995,14 @@ class Eq_time_corrs:
                     Lp    = L_k_p_u[nband,nband]
                     ek_p  = Eval_plus_k[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var =  Lp 
+                    integrand_var =  nfk_p * Lp
                     bub_k = bub_k + integrand_var
                     
                     
                     Lm    = L_k_m_u[nband,nband]
                     ek_m  = Eval_min_k[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var =  Lm
+                    integrand_var =  nfk_m * Lm
                     bub_k = bub_k + integrand_var
                     
                 
@@ -1063,14 +1064,14 @@ class Eq_time_corrs:
                     Lp    = L_p_p_u[nband,nband]
                     ek_p  = Eval_plus_p[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var =  Lp
+                    integrand_var =  nfk_p * Lp
                     bub_p = bub_p + integrand_var
                     
                     
                     Lm    = L_p_m_u[nband,nband]
                     ek_m  = Eval_min_p[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var =  Lm
+                    integrand_var =  nfk_m * Lm
                     bub_p = bub_p + integrand_var
                         
         
