@@ -354,13 +354,13 @@ class Eq_time_corrs:
         Returns:
             [double]: [description] value of the fermi function 
         """
-        Tp=T+1e-17 #To capture zero temperature
-        rat=np.abs(e/Tp)
+        # Tp=T+1e-17 #To capture zero temperature
+        # rat=np.abs(e/Tp)
         
-        if rat<700:
-            return 1/(1+np.exp( e/T ))
-        else:
-            return np.heaviside(-e,0.5)
+        # if rat<700:
+        #     return 1/(1+np.exp( e/T ))
+        # else:
+        return np.heaviside(-e,0.5)
 
 
     def nb(self, e, T):
@@ -989,14 +989,14 @@ class Eq_time_corrs:
                     Lp    = L_k_p_u[nband,nband]
                     ek_p  = Eval_plus_k[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var = Lp * nfk_p
+                    integrand_var = nfk_p * Lp 
                     bub_k = bub_k + integrand_var
                     
                     
                     Lm    = L_k_m_u[nband,nband]
                     ek_m  = Eval_min_k[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var = Lm * nfk_m
+                    integrand_var = nfk_m * Lm
                     bub_k = bub_k + integrand_var
                     
                 
@@ -1027,7 +1027,7 @@ class Eq_time_corrs:
                 #for the form factors
                 ip   = self.Mean_field_M.IkMF_M_1bz[Np]
                 ippM = self.Mean_field_M.IMF_M_kpM[Np]
-                ipG  = self.IkpG_MF[Np,NG]
+                ipG  = self.IkmG_MF[Np,NG]
                 ipMG = self.IkpMmG_MF[Np,NG]
             
                 Lp1 =   Form_fact_p[ipG, ip, :, :] 
@@ -1058,14 +1058,14 @@ class Eq_time_corrs:
                     Lp    = L_p_p_u[nband,nband]
                     ek_p  = Eval_plus_p[nband]
                     nfk_p = self.nf(ek_p,T)
-                    integrand_var = Lp * nfk_p
+                    integrand_var = nfk_p * Lp
                     bub_p = bub_p + integrand_var
                     
                     
                     Lm    = L_p_m_u[nband,nband]
                     ek_m  = Eval_min_p[nband]
                     nfk_m = self.nf(ek_m,T)
-                    integrand_var = Lm * nfk_m
+                    integrand_var = nfk_m * Lm
                     bub_p = bub_p + integrand_var
                         
                     
