@@ -163,7 +163,7 @@ class Eq_time_corrs:
         # FOR THE DISCONNECTED PART OF THE CORRELATION FUNCTION WITH MEAN FIELD
         ################################
         
-        self.umkl = 2
+        self.umkl = 3
         Gu=self.Umklapp_List(self.umkl)
         [GM1, GM2]=self.GMvec
         
