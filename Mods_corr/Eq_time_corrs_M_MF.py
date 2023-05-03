@@ -274,6 +274,33 @@ class Eq_time_corrs:
         print( 'the shape of the index G array',np.shape(self.IGinq))
         
         
+        
+        #scattering from k in 1bz to G in the reciprocal lattice
+        Gu=self.latt.Umklapp_List(self.latt.umkl)
+        [GM12, GM22]=self.latt.GMvec
+        IkmG=[]
+        for GG in Gu:
+            
+            Gxp=GG[0]*GM12[0]+GG[1]*GM22[0]
+            Gyp=GG[0]*GM12[1]+GG[1]*GM22[1]
+            
+            IkmG.append(self.latt.insertion_index( self.latt.KX1bz - Gxp, self.latt.KY1bz - Gyp, self.latt.KQX, self.latt.KQY))
+            
+        self.IkmG=np.array(IkmG).T
+        
+        #scattering from k in 1bz to G in the reciprocal lattice
+        Gu=self.latt.Umklapp_List(self.latt.umkl)
+        [GM12, GM22]=self.latt.GMvec
+        IkmG=[]
+        for GG in Gu:
+            
+            Gxp=GG[0]*GM12[0]+GG[1]*GM22[0]
+            Gyp=GG[0]*GM12[1]+GG[1]*GM22[1]
+            
+            IkmG.append(self.latt.insertion_index( self.latt.KX1bz + Gxp, self.latt.KY1bz + Gyp, self.latt.KQX, self.latt.KQY))
+            
+        self.IkpG=np.array(IkmG).T
+        
         # plt.scatter(self.latt.KX, self.latt.KY, c='k')
         # for i,GG in enumerate(Gu2):
         #     Gxp = GG[0] * GM12[0] + GG[1] * GM22[0]
@@ -413,7 +440,29 @@ class Eq_time_corrs:
             return 1/(np.exp( e/T )-1)
         else:
             return -np.heaviside(-e,0.5) # at zero its 1
+        
+    def c2T_gauge_fix(self,wave):
+        
+        mat_band = np.kron(np.eye(2), np.diag([1,-1]))
+        trans_wave = mat_band @ np.conj(wave)
+        Bsewing =  np.eye(4)
     
+
+        ang_low = np.angle(np.sum(np.conj(trans_wave)*wave,axis=0)) #phase of the dot product of the columns of wave1_prime  with the G shifted columns
+        reshape_ang_low = np.vstack([ang_low]*np.shape(wave)[0] )  #making the shapes match with the wavefunciton array
+        
+        testw_new = wave*np.exp(-1j*reshape_ang_low/2) #"substracting" the phase for each of the columns
+        new_wave = np.array(testw_new)
+        
+        #testing the representation of c2T
+        trans_new_wave = mat_band @ np.conj(new_wave)
+        Sewing = np.conj(trans_new_wave.T)@ new_wave
+        test = np.abs(np.mean(Sewing-Bsewing))
+        
+            
+        return new_wave
+        
+        
 
     def OmegaL(self):
         
@@ -495,6 +544,54 @@ class Eq_time_corrs:
         return res
         
         
+    # def corr_eq_back(self,args):
+    #     ( mu, T, save)=args
+
+        
+    #     sb=time.time()
+
+    #     print("starting bubble.......")
+
+    #     integ=np.zeros(self.latt.Npoi)
+
+    #     for NG in range(self.NGvecs_MBZ):  #for calculating only along path in FBZ
+            
+    #         bub=0
+            
+    #         for Nk in range(self.latt.Npoi1bz):
+                
+    #             ikG=self.IkpG[Nk,NG]
+    #             ik=self.latt.Ik1bz[Nk]
+                
+    #             for nband in range(self.nbands):
+                        
+    #                     Lp=self.Omega_FFp[ikG, ik, nband, nband]
+    #                     ek_p=self.Ene_valley_plus[ik, nband] - mu
+    #                     nfkp=self.nf( ek_p, T )
+    #                     integrand_var=Lp*nfkp
+    #                     bub=bub+integrand_var
+                        
+                        
+    #                     Lm = self.Omega_FFm[ikG, ik, nband, nband]
+    #                     ek_m = self.Ene_valley_min[ik, nband] - mu
+    #                     nfkm = self.nf( ek_m, T )
+    #                     integrand_var = Lm * nfkm
+    #                     bub=bub+integrand_var
+
+    #         integ[self.IGinq_MBZ[NG]]=np.abs(bub*np.conj(bub))
+
+    #     eb=time.time()
+        
+        
+
+    #     print("time for bubble...",eb-sb)
+        
+    #     res= integ*self.dS_in 
+    #     if save:
+    #         self.savedata(res, mu, T, '')
+    #     return res
+    
+        
     def corr_eq_back(self,args):
         ( mu, T, save)=args
 
@@ -503,33 +600,71 @@ class Eq_time_corrs:
 
         print("starting bubble.......")
 
-        integ=np.zeros(self.latt.Npoi)
+        integ=np.zeros(self.latt.Npoi, dtype=complex)
 
+        bot_one=[]
+        bot_two=[]
+        ind_one=[]
+        ind_two=[]
         for NG in range(self.NGvecs_MBZ):  #for calculating only along path in FBZ
             
             bub=0
-            
+            bub2=0
+            one =[]
+            two =[]
+            indi1=[]
+            indi2=[]
             for Nk in range(self.latt.Npoi1bz):
+                
                 
                 ikG=self.latt.IkpG[Nk,NG]
                 ik=self.latt.Ik1bz[Nk]
                 
+                one.append(self.Omega_FFp[ikG, ik, 0, 0])
+
+                
                 for nband in range(self.nbands):
                         
                         Lp=self.Omega_FFp[ikG, ik, nband, nband]
-                        ek_p=self.Ene_valley_plus[ik, nband] - mu
+                        ek_p=self.Ene_valley_plus_1bz[Nk, nband] - mu
                         nfkp=self.nf( ek_p, T )
-                        integrand_var=Lp*nfkp
+                        integrand_var= nfkp * Lp
                         bub=bub+integrand_var
                         
                         
-                        Lm = self.Omega_FFm[ikG, ik, nband, nband]
-                        ek_m = self.Ene_valley_min[ik, nband] - mu
-                        nfkm = self.nf( ek_m, T )
-                        integrand_var = Lm * nfkm
-                        bub=bub+integrand_var
+                        # Lm = self.Omega_FFm[ikG, ik, nband, nband]
+                        # ek_m = self.Ene_valley_min_1bz[Nk, nband] - mu
+                        # nfkm = self.nf( ek_m, T )
+                        # integrand_var = nfkm #*  Lm 
+                        # bub=bub+integrand_var
 
-            integ[self.IGinq_MBZ[NG]]=np.abs(bub*np.conj(bub))
+            for Nk in range(self.latt.Npoi1bz):
+                
+                ikG=self.IkmG[Nk,NG]
+                ik=self.latt.Ik1bz[Nk]
+                two.append(self.Omega_FFp[ikG, ik, 0, 0])
+                
+                for nband in range(self.nbands):
+                        
+                        Lp=self.Omega_FFp[ikG, ik, nband, nband]
+                        ek_p=self.Ene_valley_plus_1bz[Nk, nband] - mu
+                        nfkp=self.nf( ek_p, T )
+                        integrand_var= nfkp * Lp
+                        bub2=bub2+integrand_var
+                        
+                        
+                        
+                        # Lm = self.Omega_FFm[ikG, ik, nband, nband]
+                        # ek_m = self.Ene_valley_min_1bz[Nk, nband] - mu
+                        # nfkm = self.nf( ek_m, T )
+                        # integrand_var =  nfkm #* Lm
+                        # bub2=bub2+integrand_var
+                        
+            integ[self.IGinq_MBZ[NG]] = bub * bub2
+            bot_one.append(one)
+            bot_two.append(two)
+            ind_one.append(indi1)
+            ind_two.append(indi2)
 
         eb=time.time()
         
@@ -540,7 +675,7 @@ class Eq_time_corrs:
         res= integ*self.dS_in 
         if save:
             self.savedata(res, mu, T, '')
-        return res
+        return res, bot_one, bot_two
     
 
 
@@ -896,17 +1031,27 @@ class Eq_time_corrs:
                 
                 #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
                 #symmetric with what I have below for k+q
-                Hkp = self.Mean_field_M.Heq_p[ik,:,:] + phi_T * self.Mean_field_M.HT_p[ik,:,:]
-                Hkm = self.Mean_field_M.Heq_m[ik,:,:] + phi_T * self.Mean_field_M.HT_m[ik,:,:]
+                Hkp = self.Mean_field_M.Heq_p[ik,:,:]  + phi_T * self.Mean_field_M.HT_p[ik,:,:]
+                Hkm = self.Mean_field_M.Heq_m[ik,:,:]  + phi_T * self.Mean_field_M.HT_m[ik,:,:]
                  
                 Hkp_G = self.Mean_field_M.Heq_p_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ikG,:,:]
-                Hkm_G = self.Mean_field_M.Heq_m_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ikG,:,:]
+                Hkm_G = self.Mean_field_M.Heq_m_q[ikG,:,:]  + phi_T * self.Mean_field_M.HT_m_q[ikG,:,:]
                 
                 Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hkp)
                 Eval_min_k, Vval_min_k   = np.linalg.eigh(Hkm)
                 
                 Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
                 Eval_min_kG, Vval_min_kG   = np.linalg.eigh(Hkm_G)
+                
+                
+                #gauge fixing
+                
+                Vval_plus_k  = self.c2T_gauge_fix(Vval_plus_k)
+                Vval_plus_kG = self.c2T_gauge_fix(Vval_plus_kG)
+                Vval_min_k   = self.c2T_gauge_fix(Vval_min_k)
+                Vval_min_kG  = self.c2T_gauge_fix(Vval_min_kG)
+
+                
                 
                 #for the form factors
                 ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
@@ -964,8 +1109,8 @@ class Eq_time_corrs:
 
                 #could have also looked for the index for k in KX_i and then plug in HT_p_q to make the code
                 #symmetric with what I have below for k+q
-                Hpp = self.Mean_field_M.Heq_p[ip,:,:]+ phi_T * self.Mean_field_M.HT_p[ip,:,:]
-                Hpm = self.Mean_field_M.Heq_m[ip,:,:]+ phi_T * self.Mean_field_M.HT_m[ip,:,:]
+                Hpp = self.Mean_field_M.Heq_p[ip,:,:] + phi_T * self.Mean_field_M.HT_p[ip,:,:]
+                Hpm = self.Mean_field_M.Heq_m[ip,:,:] + phi_T * self.Mean_field_M.HT_m[ip,:,:]
                 
                 Hpp_G = self.Mean_field_M.Heq_p_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ipG,:,:]
                 Hpm_G = self.Mean_field_M.Heq_m_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ipG,:,:]
@@ -976,6 +1121,14 @@ class Eq_time_corrs:
                 Eval_plus_pG, Vval_plus_pG = np.linalg.eigh(Hpp_G)
                 Eval_min_pG, Vval_min_pG   = np.linalg.eigh(Hpm_G)
                 
+                #gauge fixing
+                
+                Vval_plus_p  = self.c2T_gauge_fix(Vval_plus_p)
+                Vval_plus_pG = self.c2T_gauge_fix(Vval_plus_pG)
+                Vval_min_p   = self.c2T_gauge_fix(Vval_min_p)
+                Vval_min_pG  = self.c2T_gauge_fix(Vval_min_pG)
+                
+
                 
                 #for the form factors
                 ip   = self.Mean_field_M.IkMF_M_1bz[Np]
