@@ -1722,7 +1722,6 @@ class HF_BandStruc:
                                                                               # since a finite expectation value of the phonon field at M does not break chiral
                                                                               # it is safe to work within one valley and reconstruct the other valley with Cstar
      
-                
                 if self.hpl.kappa==0.0:
                     
                     self.FFp.test_Csub_dens( self.LamP)
@@ -1749,13 +1748,12 @@ class HF_BandStruc:
             #Constructing projector, Interaction
             ################################
             
-            
             if self.subs==1:
                 Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp)
                 proj_m=self.Slater_comp(Pm)
             else:
-                Pp0,Pm0=self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled,self.psi_plus, self.psi_min)
+                Pp0,Pm0=self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp0)
                 proj_m=self.Slater_comp(Pm0)
                 
@@ -1779,6 +1777,21 @@ class HF_BandStruc:
                 HBMp[:,HF_I,HF_I]=self.Ene_valley_plus_1bz[:,band_I]
                 
             H0=HBMp-Fock*mode
+            
+            
+            #valey min
+            print('started for Fock ')
+            s=time.time()
+            Fock=self.Fock(proj_m)
+            e=time.time()
+            print(f'time for Fock {e-s}')
+
+            HBMm=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
+            
+            for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
+                HBMm[:,HF_I,HF_I]=self.Ene_valley_min_1bz[:,band_I]
+                
+            H0m = HBMm-Fock*mode
             
             
             ################################
@@ -1817,7 +1830,8 @@ class HF_BandStruc:
             for l in range(self.latt.Npoi1bz):
                 Hpl=H0[l,:,:]
                 # print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
-                Hmin=-sx@Hpl@sx
+                # Hmin=-sx@Hpl@sx
+                Hmin=H0m[l,:,:]
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
                 (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
 
@@ -2362,7 +2376,7 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract=1 #0 for decoupled layers
+        substract=0 #0 for decoupled layers
         mu=0
         filling=0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
