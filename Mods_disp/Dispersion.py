@@ -1847,6 +1847,12 @@ class HF_BandStruc:
             e=time.time()
             print(f'time for Diag {e-s}')
             
+            
+            # plots of the Bandstructre if needed
+            self.plots_bands()
+            # saves the dispersion
+            self.savedata('disp')
+            
         else:
             
             # different dimensions for the number of bands that we keeps since we do not need to keep
