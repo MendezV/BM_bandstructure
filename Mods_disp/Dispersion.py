@@ -1753,7 +1753,7 @@ class HF_BandStruc:
                 proj=self.Slater_comp(Pp)
                 proj_m=self.Slater_comp(Pm)
             else:
-                Pp0,Pm0=self.Proy_slat_comp(self.psi_plus_decoupled, self.psi_min_decoupled)
+                Pp0,Pm0=self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled,self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp0)
                 proj_m=self.Slater_comp(Pm0)
                 
@@ -1923,11 +1923,11 @@ class HF_BandStruc:
             print(np.size(self.latt.Ik),np.size(self.E_HFm), 'sizes of the energy arrays in HF module')
             # self.Um=np.array(U_transfm)
 
-        #plots of the Bandstructre if needed
-        # self.plots_bands()
-        # saves the dispersion
-        # self.savedata('disp')
-    
+            # plots of the Bandstructre if needed
+            self.plots_bands()
+            # saves the dispersion
+            self.savedata('disp')
+        
     
     def plots_bands(self):
         
@@ -1998,6 +1998,29 @@ class HF_BandStruc:
             Pm[k,:,:]=first@second
 
         return Pp,Pm
+    
+    def Proy_slat_comp_dec(self, psi_plus_dec, psi_minus_dec, psi_plus, psi_minus):
+        
+        Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        halfb=int(self.nbands_init/2)
+        
+        for k in range(self.latt.NpoiQ):
+            vec=psi_plus[k,:,:]
+            vec_dec=psi_plus_dec[k,:,:]
+            first=np.conj(vec.T)@(vec_dec[:,:halfb])
+            second=np.conj((vec_dec[:,:halfb]).T)@vec
+            Pp[k,:,:]=first@second
+
+            
+            vec=psi_minus[k,:,:]
+            vec_dec=psi_minus_dec[k,:,:]
+            first=np.conj(vec.T)@(vec_dec[:,:halfb])
+            second=np.conj((vec_dec[:,:halfb]).T)@vec
+            Pm[k,:,:]=first@second
+
+        return Pp,Pm
+    
     
     def Slater_comp(self, preP):
         
@@ -2336,7 +2359,7 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract=0 #0 for decoupled layers
+        substract=1 #0 for decoupled layers
         mu=0
         filling=0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
