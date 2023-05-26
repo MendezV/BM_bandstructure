@@ -2036,6 +2036,7 @@ class HF_BandStruc:
         
         #guaranteeing degeneracy at K and K'
         Dirpoints=self.latt.all_dirac_ind_q(self.latt.KQX,self.latt.KQY)
+        
         for k in Dirpoints:
             P[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)/2
             
