@@ -764,8 +764,6 @@ class Dispersion():
         inde1=ihalf - 1 #2*self.Dim-int(self.nbands/2)
         inde2=ihalf + 1 #2*self.Dim+int(self.nbands/2)
         
-        
-        
         #lower half of the spectrum
         wave1_prime=np.array(wave1)
         testw=np.array(wave1_prime[:,:ihalf])

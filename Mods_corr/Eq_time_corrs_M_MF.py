@@ -1079,8 +1079,8 @@ class Eq_time_corrs:
                         
                 # unitary transformation on the form factor matrix 
                 
-                L_k_p_u = np.conj(np.transpose(Vval_plus_kG))@(L_k_p_pre@Vval_plus_k)
-                L_k_m_u = np.conj(np.transpose(Vval_min_kG))@(L_k_m_pre@Vval_min_k)
+                L_k_p_u = np.conj(np.transpose(Vval_plus_k))@(L_k_p_pre@Vval_plus_k)
+                L_k_m_u = np.conj(np.transpose(Vval_min_k))@(L_k_m_pre@Vval_min_k)
                 
                 for nband in range(N_Mp*self.nbands):
                                            
@@ -1156,8 +1156,8 @@ class Eq_time_corrs:
                         
                 # unitary transformation on the form factor matrix 
                 
-                L_p_p_u = np.conj(np.transpose(Vval_plus_pG)) @ (L_p_p_pre @ Vval_plus_p)
-                L_p_m_u = np.conj(np.transpose(Vval_min_pG))  @ (L_p_m_pre @ Vval_min_p)
+                L_p_p_u = np.conj(np.transpose(Vval_plus_p)) @ (L_p_p_pre @ Vval_plus_p)
+                L_p_m_u = np.conj(np.transpose(Vval_min_p))  @ (L_p_m_pre @ Vval_min_p)
                 
                 for nband in range(N_Mp*self.nbands):
                                         
@@ -1234,23 +1234,23 @@ class Eq_time_corrs:
         L_p_p_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
         L_p_m_u=np.zeros([ N_Mp*self.nbands, N_Mp*self.nbands], dtype=np.cdouble)
         
-        Hpp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hpm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        # Hpp=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        # Hpm=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
-        Hpp_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
-        Hpm_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        # Hpp_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
+        # Hpm_G=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=np.cdouble)
         
-        Eval_plus_p = np.zeros([N_Mp*self.nbands])
-        Eval_min_p = np.zeros([N_Mp*self.nbands])
+        # Eval_plus_p = np.zeros([N_Mp*self.nbands])
+        # Eval_min_p = np.zeros([N_Mp*self.nbands])
         
-        Vval_plus_p=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        Vval_min_p=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        # Vval_plus_p=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        # Vval_min_p=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
         
-        Eval_plus_pG = np.zeros([N_Mp*self.nbands])
-        Eval_min_pG = np.zeros([N_Mp*self.nbands])
+        # Eval_plus_pG = np.zeros([N_Mp*self.nbands])
+        # Eval_min_pG = np.zeros([N_Mp*self.nbands])
         
-        Vval_plus_pG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
-        Vval_min_pG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        # Vval_plus_pG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
+        # Vval_min_pG=np.zeros([N_Mp*self.nbands,N_Mp*self.nbands], dtype=complex)
         
         nkpq_p = np.zeros([N_Mp*self.nbands])
         nppq_p =  np.zeros([N_Mp*self.nbands])
@@ -1276,20 +1276,20 @@ class Eq_time_corrs:
                 Hkp = self.Mean_field_M.Heq_p[ik,:,:] + phi_T * self.Mean_field_M.HT_p[ik,:,:]
                 Hkm = self.Mean_field_M.Heq_m[ik,:,:] + phi_T * self.Mean_field_M.HT_m[ik,:,:]
                  
-                Hkp_G = self.Mean_field_M.Heq_p_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ikG,:,:]
-                Hkm_G = self.Mean_field_M.Heq_m_q[ikG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ikG,:,:]
+                # Hkp_G = self.Mean_field_M.Heq_p_q[ikG,:,:] * 0  + phi_T * self.Mean_field_M.HT_p_q[ikG,:,:]
+                # Hkm_G = self.Mean_field_M.Heq_m_q[ikG,:,:] * 0  + phi_T * self.Mean_field_M.HT_m_q[ikG,:,:]
                 
-                Hpp_G = self.Mean_field_M.Heq_p_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_p_q[ipG,:,:]
-                Hpm_G = self.Mean_field_M.Heq_m_q[ipG,:,:] + phi_T * self.Mean_field_M.HT_m_q[ipG,:,:]
+                # Hpp_G = self.Mean_field_M.Heq_p_q[ipG,:,:] * 0  + phi_T * self.Mean_field_M.HT_p_q[ipG,:,:]
+                # Hpm_G = self.Mean_field_M.Heq_m_q[ipG,:,:] * 0  + phi_T * self.Mean_field_M.HT_m_q[ipG,:,:]
                 
                 Eval_plus_k, Vval_plus_k = np.linalg.eigh(Hkp)
                 Eval_min_k, Vval_min_k   = np.linalg.eigh(Hkm)
                 
-                Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
-                Eval_min_kG, Vval_min_kG   = np.linalg.eigh(Hkm_G)
+                # Eval_plus_kG, Vval_plus_kG = np.linalg.eigh(Hkp_G)
+                # Eval_min_kG, Vval_min_kG   = np.linalg.eigh(Hkm_G)
                 
-                Eval_plus_pG, Vval_plus_pG = np.linalg.eigh(Hpp_G)
-                Eval_min_pG, Vval_min_pG   = np.linalg.eigh(Hpm_G)
+                # Eval_plus_pG, Vval_plus_pG = np.linalg.eigh(Hpp_G)
+                # Eval_min_pG, Vval_min_pG   = np.linalg.eigh(Hpm_G)
                 
                 #for the form factors
                 ik   = self.Mean_field_M.IkMF_M_1bz[Nk]
@@ -1319,8 +1319,7 @@ class Eq_time_corrs:
                 
                 # For the form factors
                 for nband in range(self.nbands):
-                    
-                    
+                
                     for mband in range(self.nbands):
                         
                         L_k_p_u[nband,mband]                         = Lp1[nband,mband]
@@ -1348,11 +1347,11 @@ class Eq_time_corrs:
                     nkpq_m[nband] = self.nf(ek_m,T)
                     
                     
-                nkq_mat_p =  Vval_plus_k @ np.diag( nkpq_p )   @ ((Vval_plus_kG.T).conj())
-                nkq_mat_m =  Vval_min_k  @ np.diag( nkpq_m )    @ ((Vval_min_kG.T).conj())
-                
-                npq_mat_p =  Vval_plus_k @ np.diag( nkpq_p )   @ ((Vval_plus_pG.T).conj())
-                npq_mat_m =  Vval_min_k  @ np.diag( nkpq_m )    @ ((Vval_min_pG.T ).conj())
+                nkq_mat_p =  Vval_plus_k @ np.diag( nkpq_p ) @ ((Vval_plus_k.T).conj())
+                nkq_mat_m =  Vval_min_k  @ np.diag( nkpq_m ) @ ((Vval_min_k.T).conj())
+ 
+                npq_mat_p =  Vval_plus_k @ np.diag( nkpq_p ) @ ((Vval_plus_k.T).conj())
+                npq_mat_m =  Vval_min_k  @ np.diag( nkpq_m ) @ ((Vval_min_k.T ).conj())
                 
                 
                 bub_k = bub_k + np.trace( L_k_p_u @ nkq_mat_p )
@@ -1360,7 +1359,6 @@ class Eq_time_corrs:
                 
                 bub_p = bub_p + np.trace( L_p_p_u @ npq_mat_p )
                 bub_p = bub_p + np.trace( L_p_m_u @ npq_mat_m )
-                
                 
 
             integ[self.IGinq[NG]] = bub_p * bub_k
