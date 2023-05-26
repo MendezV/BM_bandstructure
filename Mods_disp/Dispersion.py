@@ -1650,14 +1650,16 @@ class HF_BandStruc:
         self.latt=latt
         
         
-        self.nbands_init=30# 4*hpl.Dim
+        self.nbands_init=30# number of bands kept at the diagonalization stage, maximum number is 4*hpl.Dim
         self.nbands=nbands
         self.nremote_bands=nremote_bands
         self.tot_nbands=nbands+nremote_bands
         
+        #the boundaries where we restrict the calculation in total there are nbands + 2 remote bands in this range
         self.ini_band=int(self.nbands_init/2)-int(self.tot_nbands/2)
         self.fini_band=int(self.nbands_init/2)+int(self.tot_nbands/2)
         
+        # the boundaries where the active bands are within the restircted remote + active subspace above
         self.ini_band_HF=int(self.tot_nbands/2)-int(self.nbands/2)
         self.fini_band_HF=int(self.tot_nbands/2)+int(self.nbands/2)
            
