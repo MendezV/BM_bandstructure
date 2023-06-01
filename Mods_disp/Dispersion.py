@@ -1672,7 +1672,7 @@ class HF_BandStruc:
         self.subs=substract
         self.mode=mode        
         self.test_FF=True
-        self.calc_Hartree=False
+        self.calc_Hartree=True
 
         [self.V0, self.d_screening_norm]=cons
     
@@ -1704,10 +1704,10 @@ class HF_BandStruc:
             self.FFp=FormFactors(self.psi_plus, 1, latt, -1,self.hpl,self.tot_nbands)
             self.FFm=FormFactors(self.psi_min, -1, latt, -1,self.hmin,self.tot_nbands)
             
-            self.LamP=self.FFp.denFF_s() #no initial transpose
-            self.LamP_dag=np.conj(np.einsum('kqnm->kqmn',self.LamP)) #no initial transpose
-            self.LamM=self.FFm.denFF_s() #no initial transpose
-            self.LamM_dag=np.conj(np.einsum('kqnm->kqmn',self.LamM)) #no initial transpose
+            self.LamP     = self.FFp.denFF_s() 
+            self.LamP_dag = np.conj(np.transpose(self.LamP, (0,1,3,2)))
+            self.LamM     = self.FFm.denFF_s() 
+            self.LamM_dag = np.conj(np.transpose(self.LamM, (0,1,3,2)))
             
             ################################
             #testing form factors
@@ -1728,34 +1728,46 @@ class HF_BandStruc:
                     self.FFm.test_Csub_dens( self.LamM)
             
             
-            ################################
-            #reference attributes
-            ################################
             
-            print('\n')
-            print('calculating refernce states...')
-
-            disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
-            [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
-
-            print('started extending reference wavefunctions')
-            self.psi_plus_decoupled=self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
-            self.psi_min_decoupled=self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl_Q)
-            print('finished extending reference wavefunctions')
-                
-
             ################################
             #Constructing projector, Interaction
             ################################
             
             if self.subs==1:
+                
+                #particle hole symmetric interaction
                 Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp)
                 proj_m=self.Slater_comp(Pm)
-            else:
-                Pp0,Pm0=self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
-                proj=self.Slater_comp(Pp0)
-                proj_m=self.Slater_comp(Pm0)
+                
+            elif self.subs==0:
+                
+                ################################
+                #reference attributes for decoupled scheme
+                ################################
+                
+                print('\n')
+                print('calculating refernce states...')
+
+                disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
+                [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
+
+                print('started extending reference wavefunctions')
+                self.psi_plus_decoupled = self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
+                self.psi_min_decoupled  = self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl_Q)
+                print('finished extending reference wavefunctions')
+                
+                #particle hole symmetric interaction
+                Pp0,Pm0 = self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
+                proj    = self.Slater_comp(Pp0)
+                proj_m  = self.Slater_comp(Pm0)
+                
+            else :
+                
+                #interaction is not particle hole symmetric 
+                proj=self.Slater_comp_inf()
+                proj_m=self.Slater_comp_inf()
+            
                 
             self.V=self.Vq()
             print('shapes of the operators for HF',np.shape(self.V), np.shape(self.LamP), np.shape(proj))
@@ -1765,34 +1777,35 @@ class HF_BandStruc:
             #Calculating Fock
             ################################
             
-            print('started for Fock ')
+            #valey plus
+            print('started for Fock + ')
             s=time.time()
             Fock=self.Fock(proj)
             e=time.time()
-            print(f'time for Fock {e-s}')
+            print(f'time for Fock + {e-s}')
 
             HBMp=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
             
             for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
-                HBMp[:,HF_I,HF_I]=self.Ene_valley_plus_1bz[:,band_I]
+                HBMp[:,HF_I,HF_I] = self.Ene_valley_plus_1bz[:,band_I]
                 
-            H0=HBMp-Fock*mode
             
             
             #valey min
-            print('started for Fock ')
+            print('started for Fock -')
             s=time.time()
-            Fock=self.Fock(proj_m)
+            Fock_m=self.Fock_m(proj_m)
             e=time.time()
-            print(f'time for Fock {e-s}')
+            print(f'time for Fock - {e-s}')
 
             HBMm=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
             
             for HF_I,band_I in enumerate(np.arange(self.ini_band,self.fini_band,dtype=type(1))):
-                HBMm[:,HF_I,HF_I]=self.Ene_valley_min_1bz[:,band_I]
-                
-            H0m = HBMm-Fock*mode
+                HBMm[:,HF_I,HF_I] = self.Ene_valley_min_1bz[:,band_I]
             
+            
+            H0  = HBMp - Fock 
+            H0m = HBMm - Fock_m 
             
             ################################
             #Calculating Hartree
@@ -1802,35 +1815,36 @@ class HF_BandStruc:
                 preHartree_cons_G=self.preHartree_cons(proj,proj_m)
                 [Hartree,Hartree_m]=self.Hartree(preHartree_cons_G)            
 
+                H0  = H0  - Hartree
+                H0m = H0m - Hartree_m
                 
-                for l in range(self.latt.Npoi1bz):
-                    Ha_pl=Hartree[l,:,:]
-                    Ha_ml=Hartree_m[l,:,:]
-                    print(Ha_pl,Ha_ml)
-
-            
+                
             ################################
             #Diagonalization of new Ham
             ################################
             print(f"starting dispersion with {self.latt.Npoi1bz} points..........")
             
             s=time.time()
-            EHFp=[]
-            U_transf=[]
-            EHFm=[]
-            U_transfm=[]
             
-            paulix=np.array([[0,1],[1,0]])
             
+            EHFp      =[]
+            U_transf  =[]
+            EHFm      =[]
+            U_transfm =[]
+            
+            paulix = np.array([[0,1],[1,0]])
+            
+            #chiral symmetry generator
             diagI = np.zeros([int(self.nbands/2),int(self.nbands/2)]);
             for ib in range(int(self.nbands/2)):
                 diagI[ib,int(self.nbands/2-1-ib)]=1;
-            sx=np.kron(paulix,diagI)
+            sx = np.kron(paulix,diagI)
+            
             
             for l in range(self.latt.Npoi1bz):
-                Hpl=H0[l,:,:]
+                Hpl = H0[l,:,:]
                 # print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
-                # Hmin=-sx@Hpl@sx
+                # Hmin = - sx @ Hpl @ sx
                 Hmin=H0m[l,:,:]
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
                 (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
@@ -2060,6 +2074,19 @@ class HF_BandStruc:
         
         return proj
     
+    def Slater_comp_inf(self):
+        
+        Id=np.zeros([self.latt.NpoiQ, self.tot_nbands, self.tot_nbands],dtype=type(1j))
+
+        for k in range(self.latt.NpoiQ):
+            
+            Id[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)
+            
+
+        proj=-Id/2
+        
+        return proj
+    
     def Vq(self):
         V0=self.V0/(self.latt.Npoi1bz) #Npoi1bz is already the volume
         print(V0, 'V0 coefficient of the interaction')
@@ -2069,6 +2096,7 @@ class HF_BandStruc:
         return Vq
     
     def preHartree_cons(self, Mp, Mm):
+        
         MT=np.transpose(Mp, (0,2,1))
         MT_m=np.transpose(Mm, (0,2,1))
         Xcons_G=[]
@@ -2091,19 +2119,20 @@ class HF_BandStruc:
         
         for k in range(self.latt.Npoi1bz):
             for G in range(self.latt.NpoiG):
-                kGin=self.latt.Ikpq[k,G]
+                
+                kGin=self.latt.IkpG[k,G]
                 kin=self.latt.Ik1bz[k]
                 VG=self.V[kGin,kin]
 
-                X[k, :,:]=X[k, :, :]+VG*self.LamP_dag[kin,kGin,:,:]*preHartree_X[G]
-                Xm[k, :,:]=Xm[k, :, :]+VG*self.LamM_dag[kin,kGin,:,:]*preHartree_X[G]
+                X[k, :,:]  = X[k, :, :]  + self.LamP_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
+                Xm[k, :,:] = Xm[k, :, :] + self.LamM_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
 
         
-        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
-        Xm=(Xm+np.conj( np.transpose(Xm, (0,2,1)) ))/2.0
+        X  =  ( X  + np.conj( np.transpose(X,  (0,2,1)) ) )/2.0
+        Xm =  ( Xm + np.conj( np.transpose(Xm, (0,2,1)) ) )/2.0
         
 
-        return [X,Xm]
+        return [ X, Xm]
     
     def Fock(self, M):
         MT=np.transpose(M, (0,2,1))
@@ -2116,6 +2145,25 @@ class HF_BandStruc:
                 kin=self.latt.Ik1bz[k]
                 Vq=self.V[kqin,kin]
                 X[k, :,:]=X[k, :, :]+Vq*self.LamP[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP_dag[kin,kqin,:,:])
+                # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
+
+        
+        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
+            
+
+        return -X
+    
+    def Fock_m(self, M):
+        MT=np.transpose(M, (0,2,1))
+        X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
+
+        
+        for k in range(self.latt.Npoi1bz):
+            for q in range(self.latt.Npoi):
+                kqin=self.latt.Ikpq[k,q]
+                kin=self.latt.Ik1bz[k]
+                Vq=self.V[kqin,kin]
+                X[k, :,:]=X[k, :, :]+Vq*self.LamM[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamM_dag[kin,kqin,:,:])
                 # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
 
         
@@ -2376,9 +2424,9 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract=0 #0 for decoupled layers
-        mu=0
-        filling=0
+        substract = 2 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
+        mu = 0
+        filling = 0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
         
         
