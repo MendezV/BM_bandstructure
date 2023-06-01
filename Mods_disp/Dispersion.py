@@ -2135,6 +2135,7 @@ class HF_BandStruc:
         return [ X, Xm]
     
     def Fock(self, M):
+        
         MT=np.transpose(M, (0,2,1))
         X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
 
@@ -2154,6 +2155,7 @@ class HF_BandStruc:
         return -X
     
     def Fock_m(self, M):
+        
         MT=np.transpose(M, (0,2,1))
         X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
 
