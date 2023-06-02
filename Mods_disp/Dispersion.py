@@ -1674,7 +1674,7 @@ class HF_BandStruc:
         self.test_FF=True
         self.calc_Hartree=True
 
-        [self.V0, self.d_screening_norm]=cons
+        [self.V0, self.d_screening_norm, self.mu]=cons
     
         
         
@@ -1736,7 +1736,10 @@ class HF_BandStruc:
             if self.subs==1:
                 
                 #particle hole symmetric interaction
-                Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
+                if self.mu == 0:
+                    Pp,Pm=self.Proy_slat_comp(self.psi_plus, self.psi_min)
+                else:
+                    Pp,Pm=self.Proy_slat_comp_mu(self.psi_plus, self.psi_min)
                 proj=self.Slater_comp(Pp)
                 proj_m=self.Slater_comp(Pm)
                 
@@ -1752,13 +1755,19 @@ class HF_BandStruc:
                 disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
                 [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
+                self.Ene_valley_plus_dec = self.hpl.ExtendE(self.Ene_valley_plus_decoupled_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+                self.Ene_valley_min_dec  = self.hmin.ExtendE(self.Ene_valley_min_decoupled_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+                    
                 print('started extending reference wavefunctions')
                 self.psi_plus_decoupled = self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
                 self.psi_min_decoupled  = self.hmin.ExtendPsi(self.psi_min_decoupled_1bz, self.latt.umkl_Q)
                 print('finished extending reference wavefunctions')
                 
                 #particle hole symmetric interaction
-                Pp0,Pm0 = self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
+                if self.mu == 0:
+                    Pp0,Pm0 = self.Proy_slat_comp_dec(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
+                else:
+                    Pp0,Pm0 = self.Proy_slat_comp_dec_mu(self.psi_plus_decoupled, self.psi_min_decoupled, self.psi_plus, self.psi_min)
                 proj    = self.Slater_comp(Pp0)
                 proj_m  = self.Slater_comp(Pm0)
                 
@@ -2029,6 +2038,27 @@ class HF_BandStruc:
 
         return Pp,Pm
     
+    def Proy_slat_comp_mu( self, psi_plus, psi_minus):
+        
+        Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        
+        for k in range(self.latt.NpoiQ):
+            
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) )
+            vec=psi_plus[k,:,:]
+            first=np.conj(vec.T)@(vec[:,:halfb])
+            second=np.conj((vec[:,:halfb]).T)@vec
+            Pp[k,:,:]=first@second
+
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )            
+            vec=psi_minus[k,:,:]
+            first=np.conj(vec.T)@(vec[:,:halfb])
+            second=np.conj((vec[:,:halfb]).T)@vec
+            Pm[k,:,:]=first@second
+
+        return Pp,Pm
+    
     def Proy_slat_comp_dec(self, psi_plus_dec, psi_minus_dec, psi_plus, psi_minus):
         
         Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
@@ -2043,6 +2073,30 @@ class HF_BandStruc:
             Pp[k,:,:]=first@second
 
             
+            vec=psi_minus[k,:,:]
+            vec_dec=psi_minus_dec[k,:,:]
+            first=np.conj(vec.T)@(vec_dec[:,:halfb])
+            second=np.conj((vec_dec[:,:halfb]).T)@vec
+            Pm[k,:,:]=first@second
+
+        return Pp,Pm
+    
+    def Proy_slat_comp_dec_mu(self, psi_plus_dec, psi_minus_dec, psi_plus, psi_minus ):
+        
+        Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
+        halfb=int(self.nbands_init/2)
+        
+        for k in range(self.latt.NpoiQ):
+            
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus_dec[k,:], 1) ) )
+            vec=psi_plus[k,:,:]
+            vec_dec=psi_plus_dec[k,:,:]
+            first=np.conj(vec.T)@(vec_dec[:,:halfb])
+            second=np.conj((vec_dec[:,:halfb]).T)@vec
+            Pp[k,:,:]=first@second
+
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min_dec[k,:], 1) ) )   
             vec=psi_minus[k,:,:]
             vec_dec=psi_minus_dec[k,:,:]
             first=np.conj(vec.T)@(vec_dec[:,:halfb])
@@ -2149,7 +2203,7 @@ class HF_BandStruc:
                 # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
 
         
-        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
+        X = ( X + np.conj( np.transpose(X, (0,2,1)) ) ) / 2.0
             
 
         return -X
@@ -2169,7 +2223,7 @@ class HF_BandStruc:
                 # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
 
         
-        X=(X+np.conj( np.transpose(X, (0,2,1)) ))/2.0
+        X = ( X + np.conj( np.transpose(X, (0,2,1)) ) ) / 2.0
             
 
         return -X
@@ -2429,7 +2483,7 @@ def main() -> int:
         substract = 2 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
         mu = 0
         filling = 0
-        HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
         
     else:
@@ -2437,7 +2491,7 @@ def main() -> int:
         substract=0 #0 for decoupled layers
         mu=0
         filling=0
-        HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm], mode_HF)
+        HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
     return 0
 if __name__ == '__main__':
