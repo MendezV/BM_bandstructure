@@ -951,6 +951,7 @@ class MoireTriangLattice:
             kkxx=self.KX1bz
             kkyy=self.KY1bz
             for U in Ulist:
+                
                 G=GM1*U[0]+GM2*U[1]
                 kx=kkxx-(G[0]-self.K1[0])
                 ky=kkyy-(G[1]-self.K1[1])

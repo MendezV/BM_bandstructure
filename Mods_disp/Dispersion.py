@@ -1653,7 +1653,7 @@ class HF_BandStruc:
         self.nbands_init=30# number of bands kept at the diagonalization stage, maximum number is 4*hpl.Dim
         self.nbands=nbands
         self.nremote_bands=nremote_bands
-        self.tot_nbands=nbands+nremote_bands
+        self.tot_nbands=nbands+2*nremote_bands
         
         #the boundaries where we restrict the calculation in total there are nbands + 2 remote bands in this range
         self.ini_band=int(self.nbands_init/2)-int(self.tot_nbands/2)
@@ -1662,6 +1662,10 @@ class HF_BandStruc:
         # the boundaries where the active bands are within the restircted remote + active subspace above
         self.ini_band_HF=int(self.tot_nbands/2)-int(self.nbands/2)
         self.fini_band_HF=int(self.tot_nbands/2)+int(self.nbands/2)
+        
+        #the boundaries where we restrict the calculation in total there are nbands 
+        self.ini_band_AC=int(self.nbands_init/2)-int(self.nbands/2)
+        self.fini_band_AC=int(self.nbands_init/2)+int(self.nbands/2)
            
         self.hpl=hpl
         self.hmin=hmin
@@ -1755,8 +1759,8 @@ class HF_BandStruc:
                 disp_decoupled=Dispersion( latt, self.nbands_init, hpl_decoupled, hmin_decoupled)
                 [self.psi_plus_decoupled_1bz,self.Ene_valley_plus_decoupled_1bz,self.psi_min_decoupled_1bz,self.Ene_valley_min_decoupled_1bz]=disp_decoupled.precompute_E_psi()
 
-                self.Ene_valley_plus_dec = self.hpl.ExtendE(self.Ene_valley_plus_decoupled_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
-                self.Ene_valley_min_dec  = self.hmin.ExtendE(self.Ene_valley_min_decoupled_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+                self.Ene_valley_plus_dec = self.hpl.ExtendE(self.Ene_valley_plus_decoupled_1bz , self.latt.umkl_Q)
+                self.Ene_valley_min_dec  = self.hmin.ExtendE(self.Ene_valley_min_decoupled_1bz , self.latt.umkl_Q)
                     
                 print('started extending reference wavefunctions')
                 self.psi_plus_decoupled = self.hpl.ExtendPsi(self.psi_plus_decoupled_1bz, self.latt.umkl_Q)
@@ -1826,7 +1830,7 @@ class HF_BandStruc:
 
                 H0  = H0  - Hartree
                 H0m = H0m - Hartree_m
-                
+            
                 
             ################################
             #Diagonalization of new Ham
@@ -1851,13 +1855,14 @@ class HF_BandStruc:
             
             
             for l in range(self.latt.Npoi1bz):
-                Hpl = H0[l,:,:]
+                Hpl = H0[l,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]
                 # print('ham pl at momentum', self.latt.KX1bz[l],self.latt.KY1bz[l], Hpl)
                 # Hmin = - sx @ Hpl @ sx
-                Hmin=H0m[l,:,:]
+                Hmin = H0m[l,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]
                 # (Eigvals,Eigvect)= np.linalg.eigh(Fock[l,:,:])  #returns sorted eigenvalues
+                
+                
                 (Eigvals,Eigvect)= np.linalg.eigh(Hpl)  #returns sorted eigenvalues
-
                 EHFp.append(Eigvals)
                 U_transf.append(Eigvect)
                 
@@ -1870,14 +1875,14 @@ class HF_BandStruc:
             # Reshaping and storing results
             ################################
             
-            self.EHFp=np.array(EHFp)[:, self.ini_band_HF:self.fini_band_HF]
+            self.EHFp=np.array(EHFp)
             self.E_HFp=self.EHFp[: :]
             self.E_HFp_K=self.hpl.ExtendE(self.E_HFp, self.latt.umkl)
             self.E_HFp_ex=self.hpl.ExtendE(self.E_HFp, self.latt.umkl_Q)
             self.E_HFp_plot=self.E_HFp_ex[self.latt.Ik1bz_plot, :]
             self.Up=np.array(U_transf)
             
-            self.EHFm=np.array(EHFm)[:, self.ini_band_HF:self.fini_band_HF]
+            self.EHFm=np.array(EHFm)
             self.E_HFm=self.EHFm[:, :]
             self.E_HFm_K=self.hmin.ExtendE(self.E_HFm, self.latt.umkl)
             self.E_HFm_ex=self.hmin.ExtendE(self.E_HFm, self.latt.umkl_Q)
@@ -1968,6 +1973,13 @@ class HF_BandStruc:
             self.savedata('disp')
         
     
+    def generate_TRS(self, H):
+        
+        H_trs = np.zeros(np.shape(H), dtype = complex)
+        H_trs[:,:,:] = np.conj(H[::-1,:,:])
+            
+        return H_trs
+    
     def plots_bands(self):
         
         plt.scatter(self.latt.KX1bz_plot,self.latt.KY1bz_plot, c=self.E_HFp_plot[:,0], s=40)
@@ -1997,14 +2009,17 @@ class HF_BandStruc:
         #############################
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
         pth=np.arange(np.size(path))
-        plt.plot(self.E_HFm_ex[path,0], ls='--', c='r')
-        plt.plot(self.E_HFm_ex[path,1], ls='--', c='r')
-        plt.scatter(pth,self.E_HFm_ex[path,0], c='r', s=9)
-        plt.scatter(pth,self.E_HFm_ex[path,1], c='r', s=9)
-        plt.plot(self.E_HFp_ex[path,0], c='b')
-        plt.plot(self.E_HFp_ex[path,1], c='b')
-        plt.scatter(pth,self.E_HFp_ex[path,0], c='b', s=9)
-        plt.scatter(pth,self.E_HFp_ex[path,1], c='b', s=9)
+        E_HFm_ex = self.E_HFm_ex[path,:] - (self.E_HFm_ex[path[0],0] + self.E_HFm_ex[path[0],1]) / 2.0
+        E_HFp_ex = self.E_HFp_ex[path,:] - (self.E_HFp_ex[path[0],0] + self.E_HFp_ex[path[0],1]) / 2.0
+        
+        plt.plot(E_HFm_ex[:,0], ls='--', c='r')
+        plt.plot(E_HFm_ex[:,1], ls='--', c='r')
+        plt.scatter(pth,E_HFm_ex[:,0], c='r', s=9)
+        plt.scatter(pth,E_HFm_ex[:,1], c='r', s=9)
+        plt.plot(E_HFp_ex[:,0], c='b')
+        plt.plot(E_HFp_ex[:,1], c='b')
+        plt.scatter(pth,E_HFp_ex[:,0], c='b', s=9)
+        plt.scatter(pth,E_HFp_ex[:,1], c='b', s=9)
         plt.savefig("dispHF_kappa"+str(self.hpl.kappa)+".png")
         plt.close()
         
@@ -2035,6 +2050,19 @@ class HF_BandStruc:
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
             Pm[k,:,:]=first@second
+            
+        #guaranteeing degeneracy at K and K'
+        Dirpoints=self.latt.all_dirac_ind_q(self.latt.KQX,self.latt.KQY)
+        
+        for k in Dirpoints:
+            
+            Pp[k,self.ini_band_AC:self.fini_band_AC,self.ini_band_AC:self.fini_band_AC]=np.eye(self.nbands)/2
+            Pm[k,self.ini_band_AC:self.fini_band_AC,self.ini_band_AC:self.fini_band_AC]=np.eye(self.nbands)/2
+            
+        
+        return Pp,Pm
+        
+        
 
         return Pp,Pm
     
@@ -2079,6 +2107,15 @@ class HF_BandStruc:
             second=np.conj((vec_dec[:,:halfb]).T)@vec
             Pm[k,:,:]=first@second
 
+        #guaranteeing degeneracy at K and K'
+        Dirpoints=self.latt.all_dirac_ind_q(self.latt.KQX,self.latt.KQY)
+        
+        for k in Dirpoints:
+            
+            Pp[k,self.ini_band_AC:self.fini_band_AC,self.ini_band_AC:self.fini_band_AC]=np.eye(self.nbands)/2
+            Pm[k,self.ini_band_AC:self.fini_band_AC,self.ini_band_AC:self.fini_band_AC]=np.eye(self.nbands)/2
+             
+        
         return Pp,Pm
     
     def Proy_slat_comp_dec_mu(self, psi_plus_dec, psi_minus_dec, psi_plus, psi_minus ):
@@ -2086,17 +2123,20 @@ class HF_BandStruc:
         Pp=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         Pm=np.zeros([self.latt.NpoiQ, self.nbands_init, self.nbands_init],dtype=type(1j))
         halfb=int(self.nbands_init/2)
+        print('half of the spectrum',halfb)
         
         for k in range(self.latt.NpoiQ):
             
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus_dec[k,:], 1) ) )
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus_dec[k,:], 1) ) )
+            print('occ part +',halfb)
             vec=psi_plus[k,:,:]
             vec_dec=psi_plus_dec[k,:,:]
             first=np.conj(vec.T)@(vec_dec[:,:halfb])
             second=np.conj((vec_dec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
 
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min_dec[k,:], 1) ) )   
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_min_dec[k,:], 1) ) )   
+            print('occ part -',halfb)
             vec=psi_minus[k,:,:]
             vec_dec=psi_minus_dec[k,:,:]
             first=np.conj(vec.T)@(vec_dec[:,:halfb])
@@ -2117,13 +2157,7 @@ class HF_BandStruc:
             
         #isolating bands
         P=preP[:,self.ini_band:self.fini_band,self.ini_band:self.fini_band]
-        
-        #guaranteeing degeneracy at K and K'
-        Dirpoints=self.latt.all_dirac_ind_q(self.latt.KQX,self.latt.KQY)
-        
-        for k in Dirpoints:
-            P[k,self.ini_band_HF:self.fini_band_HF,self.ini_band_HF:self.fini_band_HF]=np.eye(self.nbands)/2
-            
+        print(np.shape(P), np.shape(Delta))
         proj=P-Delta-Id/2
         
         return proj
@@ -2148,6 +2182,7 @@ class HF_BandStruc:
         Vq=V0*np.tanh(qd)/qd
         Vq[np.where(qd==0.0)[0]]=V0
         return Vq
+    
     
     def preHartree_cons(self, Mp, Mm):
         
@@ -2192,12 +2227,12 @@ class HF_BandStruc:
         
         MT=np.transpose(M, (0,2,1))
         X=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
-
         
         for k in range(self.latt.Npoi1bz):
             for q in range(self.latt.Npoi):
                 kqin=self.latt.Ikpq[k,q]
                 kin=self.latt.Ik1bz[k]
+    
                 Vq=self.V[kqin,kin]
                 X[k, :,:]=X[k, :, :]+Vq*self.LamP[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP_dag[kin,kqin,:,:])
                 # X[k, :,:]=X[k, :, :]+Vq*self.LamP_dag[kin,kqin,:,:]@(MT[kqin,:,:]@self.LamP[kin,kqin,:,:]) 
@@ -2414,7 +2449,7 @@ def main() -> int:
 
     #electron parameters
     nbands=2
-    nremote_bands=0
+    nremote_bands=5
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
@@ -2480,8 +2515,8 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract = 2 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
-        mu = 0
+        substract = 0 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
+        mu = 0.01
         filling = 0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
