@@ -1817,8 +1817,8 @@ class HF_BandStruc:
                 HBMm[:,HF_I,HF_I] = self.Ene_valley_min_1bz[:,band_I]
             
             
-            H0  = HBMp - Fock 
-            H0m = HBMm - Fock_m 
+            H0  = HBMp + Fock 
+            H0m = HBMm + Fock_m 
             
             ################################
             #Calculating Hartree
@@ -1828,8 +1828,8 @@ class HF_BandStruc:
                 preHartree_cons_G=self.preHartree_cons(proj,proj_m)
                 [Hartree,Hartree_m]=self.Hartree(preHartree_cons_G)            
 
-                H0  = H0  - Hartree
-                H0m = H0m - Hartree_m
+                H0  = H0  + Hartree
+                H0m = H0m + Hartree_m
             
                 
             ################################
@@ -2009,8 +2009,8 @@ class HF_BandStruc:
         #############################
         [path,kpath,HSP_index]=self.latt.embedded_High_symmetry_path(self.latt.KQX,self.latt.KQY)
         pth=np.arange(np.size(path))
-        E_HFm_ex = self.E_HFm_ex[path,:] - (self.E_HFm_ex[path[0],0] + self.E_HFm_ex[path[0],1]) / 2.0
-        E_HFp_ex = self.E_HFp_ex[path,:] - (self.E_HFp_ex[path[0],0] + self.E_HFp_ex[path[0],1]) / 2.0
+        E_HFm_ex = self.E_HFm_ex[path,:] #- (self.E_HFm_ex[path[0],0] + self.E_HFm_ex[path[0],1]) / 2.0
+        E_HFp_ex = self.E_HFp_ex[path,:] #- (self.E_HFp_ex[path[0],0] + self.E_HFp_ex[path[0],1]) / 2.0
         
         plt.plot(E_HFm_ex[:,0], ls='--', c='r')
         plt.plot(E_HFm_ex[:,1], ls='--', c='r')
@@ -2207,7 +2207,7 @@ class HF_BandStruc:
         Xm=np.zeros([self.latt.Npoi1bz,self.tot_nbands,self.tot_nbands],dtype=type(1j))
         
         for k in range(self.latt.Npoi1bz):
-            for G in range(self.latt.NpoiG):
+            for G in range(0,self.latt.NpoiG//2):
                 
                 kGin=self.latt.IkpG[k,G]
                 kin=self.latt.Ik1bz[k]
@@ -2215,6 +2215,16 @@ class HF_BandStruc:
 
                 X[k, :,:]  = X[k, :, :]  + self.LamP_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
                 Xm[k, :,:] = Xm[k, :, :] + self.LamM_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
+            # avoiding G=0 which is only a constant shift from the backgorund charge
+            for G in range(self.latt.NpoiG//2 + 1 , self.latt.NpoiG):
+                    
+                kGin=self.latt.IkpG[k,G]
+                kin=self.latt.Ik1bz[k]
+                VG=self.V[kGin,kin]
+
+                X[k, :,:]  = X[k, :, :]  + self.LamP_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
+                Xm[k, :,:] = Xm[k, :, :] + self.LamM_dag[ kin, kGin,:,:] * preHartree_X[G] * VG
+
 
         
         X  =  ( X  + np.conj( np.transpose(X,  (0,2,1)) ) )/2.0
@@ -2515,8 +2525,8 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract = 0 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
-        mu = 0.01
+        substract = 1 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
+        mu = 0.5/1000
         filling = 0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
