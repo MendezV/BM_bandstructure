@@ -1694,8 +1694,8 @@ class HF_BandStruc:
             [self.psi_plus_1bz,self.Ene_valley_plus_1bz,self.psi_min_1bz,self.Ene_valley_min_1bz]=disp.precompute_E_psi()
 
             print('started extending wavefunctions')
-            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
-            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz[:,self.ini_band:self.fini_band] , self.latt.umkl_Q)
+            self.Ene_valley_plus=self.hpl.ExtendE(self.Ene_valley_plus_1bz , self.latt.umkl_Q)
+            self.Ene_valley_min=self.hmin.ExtendE(self.Ene_valley_min_1bz, self.latt.umkl_Q)
 
             self.psi_plus=self.hpl.ExtendPsi(self.psi_plus_1bz, self.latt.umkl_Q)
             self.psi_min=self.hmin.ExtendPsi(self.psi_min_1bz, self.latt.umkl_Q)
@@ -2073,13 +2073,15 @@ class HF_BandStruc:
         
         for k in range(self.latt.NpoiQ):
             
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) )
+            # halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) )
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) )
             vec=psi_plus[k,:,:]
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
 
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )            
+            # halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )      
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )         
             vec=psi_minus[k,:,:]
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
@@ -2459,7 +2461,7 @@ def main() -> int:
 
     #electron parameters
     nbands=2
-    nremote_bands=5
+    nremote_bands=0
     hbarc=0.1973269804*1e-6 #ev*m
     alpha=137.0359895 #fine structure constant
     a_graphene=2.458*(1e-10) #in meters this is the lattice constant NOT the carbon-carbon distance
@@ -2526,7 +2528,7 @@ def main() -> int:
     if mode_HF==1:
         
         substract = 1 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
-        mu = 0.5/1000
+        mu = 1.0/1000
         filling = 0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
