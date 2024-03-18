@@ -121,7 +121,7 @@ class MoireTriangLattice:
             
             Gxp=GG[0]*GM1[0]+GG[1]*GM2[0]
             Gyp=GG[0]*GM1[1]+GG[1]*GM2[1]
-            IkpG.append(self.insertion_index( self.KX1bz+Gxp,self.KY1bz+Gyp, self.KQX,self.KQY))
+            IkpG.append(self.insertion_index( self.KX1bz+Gxp,self.KY1bz + Gyp, self.KQX,self.KQY))
             
         self.IkpG=np.array(IkpG).T
         self.NpoiG=np.shape(self.IkpG)[1]; print(self.NpoiG, "G numer of sampling reciprocal lattice points in momentum trans lattt")

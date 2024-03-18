@@ -2073,13 +2073,13 @@ class HF_BandStruc:
         
         for k in range(self.latt.NpoiQ):
             
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) )
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus[k,:], 1) ) ) 
             vec=psi_plus[k,:,:]
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
 
-            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )            
+            halfb = int(self.nbands_init/2) - 1 + int( np.sum( np.heaviside( self.mu - self.Ene_valley_min[k,:], 1) ) )  
             vec=psi_minus[k,:,:]
             first=np.conj(vec.T)@(vec[:,:halfb])
             second=np.conj((vec[:,:halfb]).T)@vec
@@ -2125,9 +2125,11 @@ class HF_BandStruc:
         halfb=int(self.nbands_init/2)
         print('half of the spectrum',halfb)
         
+        inf_eps = np.finfo(float).eps
+        
         for k in range(self.latt.NpoiQ):
             
-            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus_dec[k,:], 1) ) )
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_plus_dec[k,:], 1) ) ) 
             print('occ part +',halfb)
             vec=psi_plus[k,:,:]
             vec_dec=psi_plus_dec[k,:,:]
@@ -2135,7 +2137,7 @@ class HF_BandStruc:
             second=np.conj((vec_dec[:,:halfb]).T)@vec
             Pp[k,:,:]=first@second
 
-            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_min_dec[k,:], 1) ) )   
+            halfb =  int( np.sum( np.heaviside( self.mu - self.Ene_valley_min_dec[k,:], 1) ) )  
             print('occ part -',halfb)
             vec=psi_minus[k,:,:]
             vec_dec=psi_minus_dec[k,:,:]
@@ -2515,8 +2517,8 @@ def main() -> int:
     
     if mode_HF==1:
         
-        substract = 0 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
-        mu = 0.01
+        substract = 1 #0 for decoupled layers #1 for tbg at neutrality #2 for infinite temperature
+        mu = 0.0 / 1000
         filling = 0
         HB=HF_BandStruc( lq, hpl, hmin, hpl_decoupled, hmin_decoupled, nremote_bands, nbands, substract,  [V0, d_screening_norm,mu], mode_HF)
         
